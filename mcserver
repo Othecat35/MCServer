@@ -126,9 +126,9 @@ def request_download(url, filename, headers={
   "User-Agent": user_agent
 }):
   request_url = urllib.request.Request(f"{url}", headers=headers, method="GET")
-  temp_file = tempfiles_dir / filename
-  log.debug(f"Request URL: {request_url.full_url}")
+  tempfile = tempfiles_dir / filename
 
+  log.debug(f"Request URL: {request_url.full_url}")
   with urllib.request.urlopen(request_url) as response:
     with open(tempfile, mode="wb") as file:
       shutil.copyfileobj(response, file)
