@@ -42,3 +42,6 @@ Added:
 
 1.4.1
 - Make the "Let it crash" depends on MCSERVER_DEBUG=1
+
+1.4.2
+- EULA agreement consent?
