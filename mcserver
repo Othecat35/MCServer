@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.4.0"
+__version__ = "1.4.1"
 
 import argparse
 import json
@@ -304,7 +304,8 @@ def start_server(args):
 
 # Main
 def main():
-  log_level = log.DEBUG if os.getenv("MCSERVER_DEBUG") == "1" else log.INFO
+  debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
+  log_level = log.DEBUG if debug_mode else log.INFO
 
   log.basicConfig(
     format="[%(levelname)s]: %(message)s",
@@ -319,7 +320,7 @@ def main():
   parser_init.set_defaults(func=initialize_directory)
 
   # 'install' command
-  parser_install = subparsers.add_parser("install", help="Install the server")
+  parser_install = subparsers.add_parser("install", help="install the server")
   parser_install.set_defaults(func=install_server)
 
   # 'search' command
@@ -329,7 +330,7 @@ def main():
   parser_search.set_defaults(func=search_mod)
 
   # 'show' command
-  parser_show = subparsers.add_parser("show", help="Show more info about a mod")
+  parser_show = subparsers.add_parser("show", help="show more info about a mod")
   parser_show.add_argument("modid", help="slug/mod ID", nargs="+")
   parser_show.set_defaults(func=show_mod)
 
@@ -340,7 +341,7 @@ def main():
   args = parser.parse_args()
 
   # Let it crash
-  if True:
+  if debug_mode:
     args.func(args)
   else:
     try:
