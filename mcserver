@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 import argparse
 import json
@@ -38,8 +38,8 @@ default_configs = {
 
   "server": {
     "version": "1.21.11",
-    "software": {
-      "loader": "fabric",
+    "loader": {
+      "name": "fabric",
       "version": "0.18.4"
     }
   }
@@ -126,12 +126,14 @@ def request_download(url, filename, headers={
   "User-Agent": user_agent
 }):
   request_url = urllib.request.Request(f"{url}", headers=headers, method="GET")
+  temp_file = tempfiles_dir / filename
   log.debug(f"Request URL: {request_url.full_url}")
 
   with urllib.request.urlopen(request_url) as response:
-    with open(tempfiles_dir / filename, mode="wb") as file:
+    with open(tempfile, mode="wb") as file:
       shutil.copyfileobj(response, file)
-    shutil.move((tempfiles_dir / filename).resolve(), filename)
+
+    shutil.move(tempfile, filename)
 
 # Command functions
 def initialize_directory(args):
@@ -155,12 +157,16 @@ def install_server(args):
   server_config = load_config("server")
   launcher_config = load_config("launcher")
 
-  server_software = server_config["software"]
+  server_loader = server_config["loader"]
 
-  if server_software["loader"] == "fabric":
-    request_download(f"https://meta.fabricmc.net/v2/versions/loader/{server_config['version']}/{server_software['version']}/1.1.1/server/jar", launcher_config["jarfile"])
+  server_version = server_config["version"]
+  loader_version = server_loader["version"]
 
-  log.info("Done?")
+  if server_loader["name"] == "fabric":
+    log.info(f"Downloading jarfile for Minecraft {server_version} (Fabric {software_version})...")
+    request_download(f"https://meta.fabricmc.net/v2/versions/loader/{server_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
+
+  log.info("Done")
 
 def search_mod(args):
   query = " ".join(args.query)
@@ -169,7 +175,12 @@ def search_mod(args):
   modrinth_config = load_config("modrinth")
   server_config = load_config("server")
 
-  server_software = server_config["software"]
+  server_loader = server_config["loader"]
+  if server_loader["name"] == "vanilla":
+    raise Exception("Vanilla Minecraft server does not support mod")
+
+  server_version = server_config["version"]
+  loader_version = server_loader["version"]
 
   search_limit = modrinth_config["search_limit"]
   search_offset = search_limit * (page - 1)
@@ -177,10 +188,10 @@ def search_mod(args):
   search_filters = json.dumps([
     ["project_type:mod"],
     ["server_side!=unsupported"],
-    [f"categories:{server_software['loader']}"],
-    [f"versions:{server_config['version']}"]])
+    [f"categories:{server_loader['name']}"],
+    [f"versions:{server_version}"]])
 
-  log.info(f"Searching mods in Modrinth for {server_software['loader'].capitalize()} server, Minecraft {server_config['version']}...")
+  log.info(f"Searching mods in Modrinth for {server_loader['name'].capitalize()}, Minecraft server {server_version}...")
 
   response = request_get(
     "https://api.modrinth.com/v2/search",
