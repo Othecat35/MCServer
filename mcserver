@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.4.3"
+__version__ = "1.5.0"
 
 import argparse
 import json
@@ -190,13 +190,14 @@ def install_server(args):
 
 def search_mod(args):
   query = " ".join(args.query)
+  no_filter = args.no_filter
   page = args.page
 
   modrinth_config = load_config("modrinth")
   server_config = load_config("server")
 
   server_loader = server_config["loader"]
-  if server_loader["name"] == "vanilla":
+  if not no_filter and server_loader["name"] == "vanilla":
     raise Exception("Vanilla Minecraft server does not support mod")
 
   server_version = server_config["version"]
@@ -205,19 +206,29 @@ def search_mod(args):
   search_limit = modrinth_config["search_limit"]
   search_offset = search_limit * (page - 1)
 
-  search_filters = json.dumps([
-    ["project_type:mod"],
-    ["server_side!=unsupported"],
-    [f"categories:{server_loader['name']}"],
-    [f"versions:{server_version}"]])
+  search_filters = None
+  search_message = None
 
-  log.info(f"Searching mods in Modrinth for {server_loader['name'].capitalize()}, Minecraft server {server_version}...")
+  if no_filter:
+    search_message = "Searching mods in Modrinth..."
+    search_filters = [["project_type:mod"]]
+  else:
+    search_message = f"Searching mods in Modrinth for {server_loader['name'].capitalize()}, Minecraft server {server_version}..."
+    search_filters = [
+      ["project_type:mod"],
+      ["server_side!=unsupported"],
+      [f"categories:{server_loader['name']}"],
+      [f"versions:{server_version}"]
+    ]
+
+  facets = json.dumps(search_filters)
+  log.info(search_message)
 
   response = request_get(
     "https://api.modrinth.com/v2/search",
     {
       "query": query,
-      "facets": search_filters,
+      "facets": facets,
       "limit": search_limit,
       "offset": search_offset
     }
@@ -359,7 +370,10 @@ def main():
   # 'search' command
   parser_search = subparsers.add_parser("search", help="search mods from Modrinth")
   parser_search.add_argument("query", help="search query", nargs="+")
+
+  parser_search.add_argument("--no-filter", help="seach without version bounded", action="store_true")
   parser_search.add_argument("--page", help="page number of the search results", type=int, default=1)
+
   parser_search.set_defaults(func=search_mod)
 
   # 'show' command
