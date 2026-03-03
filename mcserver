@@ -233,7 +233,7 @@ def search_mod(args):
   shown_mods_count = len(mods_list) if len(mods_list) < search_limit else search_limit
 
   skipped_message = f"(skipped {search_offset} mods) " if search_offset > 1 else ""
-  log.info(f"Showing {search_limit} mods out of {total_hits} total mods {skipped_message}| Page: {page}/{math.ceil(total_hits/search_limit)}")
+  log.info(f"Showing {shown_mods_count} mods out of {total_hits} total mods {skipped_message}| Page: {page}/{math.ceil(total_hits/search_limit)}")
 
   for mod in mods_list:
     title = color_text(mod['title'], "bold")
