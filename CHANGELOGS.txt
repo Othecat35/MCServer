@@ -45,3 +45,6 @@ Added:
 
 1.4.2
 - EULA agreement consent?
+
+1.4.3
+- Change 'Showing ... mods' from using 'search_limit' to 'shown_mods_count'
