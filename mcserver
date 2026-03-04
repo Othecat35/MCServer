@@ -19,7 +19,6 @@ from pathlib import Path
 
 # Variables
 user_agent = "othecat35/MCServer"
-terminal_size = os.get_terminal_size()
 
 default_configs = {
   "launcher": {
@@ -51,6 +50,9 @@ mcserver_dir = Path(".mcserver")
 
 configs_dir = mcserver_dir / "configs"
 tempfiles_dir = mcserver_dir / "tempfiles"
+
+# Error classes
+class EULAAgreementError(Exception): pass
 
 # Color functions
 colors = {
@@ -84,17 +86,35 @@ def mod_environment_color(environment):
   elif environment == "unknown":
     return color_text("Unknown", "gray")
 
+  else:
+    return environment
+
 # Config functions
 def generate_config(config_name):
   config_filename = f"{config_name}.json"
   config_path = configs_dir / config_filename
 
-  with open(config_path, mode="xt") as config_file:
-    json.dump(
-      default_configs[config_name],
-      config_file,
-      indent=2
-    )
+  config_content = None
+  try:
+    config_content = default_config[config_name]
+  except KeyError as error:
+    raise ValueError(f"Cannot generate configuration file for '{config_name}': Default configuration not available") from error
+
+  try:
+    with open(config_path, mode="xt") as config_file:
+      json.dump(
+        config_content,
+        config_file,
+        indent=2
+      )
+  except FileExistsError as error:
+    raise FileExistsError(f"Cannot generate configuration file for '{config_name}': Configuration file already exists") from error
+  except FileNotFoundError as error:
+    raise FileNotFoundError(f"Cannot generate configuration file for '{config_name}': Configuration directory does not exist") from error
+  except IsADirectoryError as error:
+    raise IsADirectoryError(f"Cannot generate configuration file for '{config_name}': Directory with same name already exists") from error
+  except PermissionError as error:
+    raise PermissionError(f"Cannot generate configuration file for '{config_name}': Permission denied to create a file") from error
 
 def load_config(config_name):
   config_filename = f"{config_name}.json"
@@ -108,12 +128,20 @@ def load_config(config_name):
     lineno = error.lineno
     colno = error.colno
 
-    raise Exception(f"Failed to parse configuration for `{config_name}`: {msg} at line {lineno} column {colno}")
+    raise ValueError(f"Failed to parse configuration for `{config_name}`: {msg} at line {lineno} column {colno}") from error
+  except FileNotFoundError as error:
+    raise FileNotFoundError(f"Cannot load configuration file for '{config_name}': Configuration file does not exist") from error
+  except IsADirectoryError as error:
+    raise IsADirectoryError(f"Cannot load configuration file for '{config_name}': Is a directory") from error
+  except PermissionError as error:
+    raise PermissionError(f"Cannot load configuration file for '{config_name}': Permission denied to read file") from error
 
 # Requests
-def request_get(url, params={}, headers={
-  "User-Agent": user_agent
-}):
+def request_get(url, params=None, headers=None):
+  if params is None: params = {}
+  if headers is None: headers = {}
+  headers.setdefault("User-Agent", user_agent)
+
   query_string = f"?{urllib.parse.urlencode(params)}" if params else ""
   log.debug(f"Query string: {query_string}")
 
@@ -123,9 +151,10 @@ def request_get(url, params={}, headers={
   with urllib.request.urlopen(request_url) as response:
     return response.read().decode("utf-8")
 
-def request_download(url, filename, headers={
-  "User-Agent": user_agent
-}):
+def request_download(url, filename, headers=None):
+  if headers is None: headers = {}
+  headers.setdefault("User-Agent", user_agent)
+
   request_url = urllib.request.Request(f"{url}", headers=headers, method="GET")
   tempfile = tempfiles_dir / filename
 
@@ -154,6 +183,12 @@ def eula_agree():
     file.write(f"""#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).
 #{timestamp}
 eula=true""")
+
+# Functions
+def wrap_text(text, initial_indent="", subsequent_indent=""):
+  terminal_width = shutil.get_terminal_size().width
+  return "\n".join(textwrap.wrap(text, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
+
 
 # Command functions
 def initialize_directory(args):
@@ -254,7 +289,7 @@ def search_mod(args):
 
     server_side = mod_environment_color(mod["server_side"])
     client_side = mod_environment_color(mod["client_side"])
-    description = "\n".join(textwrap.wrap(mod["description"], width=terminal_size.columns, initial_indent=" ", subsequent_indent="  "))
+    description = wrap_text(mod["description"], initial_indent=" ", subsequent_indent="  "))
 
     print(f"""
 {title} ({slug}) {color("gray")}by {author}{color('reset')}
@@ -277,14 +312,14 @@ def show_mod(args):
   description = color_text(mod_info["description"], "bold")
 
   slug = color_text(mod_info["slug"], "bold")
-  id = color_text(mod_info["id"], "bold")
+  mod_id = color_text(mod_info["id"], "bold")
 
   downloads = color_text(f"{mod_info["downloads"]:,}", "bold")
   followers = color_text(f"{mod_info["followers"]:,}", "bold")
 
   categories = color_text(", ".join(entry.capitalize() for entry in mod_info["categories"]), "bold")
   loaders = color_text(", ".join(entry.capitalize() for entry in mod_info["loaders"]), "bold")
-  mc_versions = "\n".join(textwrap.wrap(f"Minecraft Versions {color_text(', '.join(mod_info['game_versions']), 'bold')}", width=terminal_width, subsequent_indent=" "))
+  mc_versions = wrap_text(f"Minecraft Versions {color_text(', '.join(mod_info['game_versions']), 'bold')}", subsequent_indent=" "))
 
   license_name = color_text(mod_info["license"]["name"], "bold")
   license_id = color_text(mod_info["license"]["id"], "bold")
@@ -293,7 +328,7 @@ def show_mod(args):
   client_side = mod_environment_color(mod_info["client_side"])
 
   print(f"""Name: {name}
-Slug/ID: {slug} ({id})
+Slug/ID: {slug} ({mod_id})
 
 Downloads: {downloads}
 Followers: {followers}
@@ -312,6 +347,12 @@ def start_server(args):
 
   jarfile = launcher_config['jarfile']
 
+  if not Path(jarfile).exists():
+    raise Exception(f"Couldn't find server jarfile '{jarfile}'")
+
+  if memory_limit["min"] > memory_limit["max"]:
+    raise Exception(f"Minimum RAM cannot be larger that maximum RAM, please check configuration for `server`")
+
   try:
     if not check_eula_agreed():
       log.warning("You need to agree to Mojang's EULA in order to run the server: https://aka.ms/MinecraftEULA")
@@ -321,15 +362,9 @@ def start_server(args):
       if answer == "Agree":
         eula_agree()
       else:
-        raise Exception("Failed to start the Minecraft server: EULA not agreed")
+        raise EULAAgreementError("Failed to start the Minecraft server: EULA not agreed")
   except KeyboardInterrupt:
-    raise Exception("\nFailed to start the Minecraft server: EULA not agreed")
-
-  if not Path(jarfile).exists():
-    raise Exception(f"Couldn't find server jarfile '{jarfile}'")
-
-  if memory_limit["min"] > memory_limit["max"]:
-    raise Exception(f"Minimum RAM cannot be larger that maximum RAM, please check configuration for `server`")
+    raise EULAAgreementError("\nFailed to start the Minecraft server: EULA not agreed")
 
   java_command_argv = [
     "java",
