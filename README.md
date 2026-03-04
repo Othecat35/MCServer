@@ -25,6 +25,4 @@ Start the server: `mcserver start`
 Search mod from Modrinth: `mcserver search <query>`
 
 ## Note
-This project is just a personal project, don't take this seriously! But, I do want to make this functional for those self-hoster nerds. Not tested at all.
-
-And about AI usage in this project... trust me, I'm just using it for "rubberducking", not really vibecoding (copy and paste from AI blindly).
+This project is just a personal project, don't take this seriously! But, I do want to make this functional for those self-hoster nerds. Not tested at all, beware.
