@@ -289,7 +289,7 @@ def search_mod(args):
 
     server_side = mod_environment_color(mod["server_side"])
     client_side = mod_environment_color(mod["client_side"])
-    description = wrap_text(mod["description"], initial_indent=" ", subsequent_indent="  "))
+    description = wrap_text(mod["description"], initial_indent=" ", subsequent_indent="  ")
 
     print(f"""
 {title} ({slug}) {color("gray")}by {author}{color('reset')}
