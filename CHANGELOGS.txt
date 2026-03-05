@@ -61,3 +61,11 @@ Added:
 
 1.5.2
 - Make the "title (slug) by author" using wrap_text
+
+1.6.0
+- Added 'add' command
+- Fixes typo on generate_config
+- 'User-Agent' now include script version
+- Added 'Temporary File' debug message in request_download
+- Added 2 new class for error
+- Added MIT license file

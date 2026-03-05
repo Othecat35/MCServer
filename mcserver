@@ -18,7 +18,7 @@ import logging as log
 from pathlib import Path
 
 # Variables
-user_agent = "othecat35/MCServer"
+user_agent = f"othecat35/MCServer/{__version__}"
 
 default_configs = {
   "launcher": {
@@ -46,13 +46,19 @@ default_configs = {
 }
 
 # Paths
-mcserver_dir = Path(".mcserver")
+current_dir = Path.cwd()
+mcserver_dir = current_dir / ".mcserver"
+
+mods_dir = current_dir / "mods"
 
 configs_dir = mcserver_dir / "configs"
 tempfiles_dir = mcserver_dir / "tempfiles"
 
 # Error classes
 class EULAAgreementError(Exception): pass
+
+class AddModError(Exception): pass
+class SearchModError(Exception): pass
 
 # Color functions
 colors = {
@@ -67,8 +73,7 @@ colors = {
 def color(color_name):
   if sys.stdout.isatty() and sys.stderr.isatty():
     return colors[color_name]
-  else:
-    return ""
+  return ""
 
 def color_text(text, color_name):
   return f"{color(color_name)}{text}{color('reset')}"
@@ -76,16 +81,12 @@ def color_text(text, color_name):
 def mod_environment_color(environment):
   if environment == "required":
     return color_text("Required", "green")
-
   elif environment == "optional":
     return color_text("Optional", "yellow")
-
   elif environment == "unsupported":
     return color_text("Unsupported", "red")
-
   elif environment == "unknown":
     return color_text("Unknown", "gray")
-
   else:
     return environment
 
@@ -96,7 +97,7 @@ def generate_config(config_name):
 
   config_content = None
   try:
-    config_content = default_config[config_name]
+    config_content = default_configs[config_name]
   except KeyError as error:
     raise ValueError(f"Cannot generate configuration file for '{config_name}': Default configuration not available") from error
 
@@ -139,6 +140,7 @@ def load_config(config_name):
 # Requests
 def request_get(url, params=None, headers=None):
   if params is None: params = {}
+
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
 
@@ -155,10 +157,12 @@ def request_download(url, filename, headers=None):
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
 
-  request_url = urllib.request.Request(f"{url}", headers=headers, method="GET")
-  tempfile = tempfiles_dir / filename
+  request_url = urllib.request.Request(url, headers=headers, method="GET")
+  tempfile = tempfiles_dir / Path(filename).name
 
   log.debug(f"Request URL: {request_url.full_url}")
+  log.debug(f"Temporary file: {tempfile}")
+
   with urllib.request.urlopen(request_url) as response:
     with open(tempfile, mode="wb") as file:
       shutil.copyfileobj(response, file)
@@ -189,8 +193,36 @@ def wrap_text(text, initial_indent="", subsequent_indent=""):
   terminal_width = shutil.get_terminal_size().columns
   return "\n".join(textwrap.wrap(text, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
 
-
 # Command functions
+def add_mod(args):
+  slug_id = args.slug_id
+
+  server_config = load_config("server")
+  server_loader = server_config["loader"]
+
+  if server_loader["name"] == "vanilla":
+    raise AddModError("Vanilla Minecraft server does not support mod")
+
+  selected_version = json.loads(request_get(f"https://api.modrinth.com/v2/project/{slug_id}/version", params={
+    "loaders": json.dumps([server_loader["name"]]),
+    "game_versions": json.dumps([server_config["version"]]),
+    "include_changelog": "false"
+  }))[0]
+
+  log.info(f"Downloading {selected_version['name']}...")
+
+  selected_file_index = 0
+  for file in selected_version["files"]:
+    if not file["primary"]:
+      selected_file_index += 1
+    else:
+      break
+
+  selected_file = selected_version["files"][selected_file_index]
+
+  mods_dir.mkdir(exist_ok=True)
+  request_download(selected_file["url"], mods_dir / selected_file["filename"])
+
 def initialize_directory(args):
   if not mcserver_dir.exists():
     log.info(f"Initializing MCServer directory at {mcserver_dir.resolve()}")
@@ -225,6 +257,7 @@ def install_server(args):
 
 def search_mod(args):
   query = " ".join(args.query)
+
   no_filter = args.no_filter
   page = args.page
 
@@ -233,7 +266,7 @@ def search_mod(args):
 
   server_loader = server_config["loader"]
   if not no_filter and server_loader["name"] == "vanilla":
-    raise Exception("Vanilla Minecraft server does not support mod")
+    raise SearchModError("Vanilla Minecraft server does not support mod")
 
   server_version = server_config["version"]
   loader_version = server_loader["version"]
@@ -293,7 +326,7 @@ def search_mod(args):
     description = wrap_text(mod["description"], initial_indent=" ", subsequent_indent="  ")
 
     print(f"""
-{mod_header}
+{mod_title}
 > {color('bold')}Server: {server_side}{color('reset')} | Client: {client_side}
 > https://modrinth.com/mod/{slug}
 {description}""")
@@ -306,11 +339,8 @@ def show_mod(args):
     f"https://api.modrinth.com/v2/project/{modid}",
   ))
 
-  terminal_width, _ = os.get_terminal_size()
-  log.debug(terminal_width)
-
   name = color_text(mod_info['title'], "bold")
-  description = color_text(mod_info["description"], "bold")
+  description = wrap_text(f"Description: {color_text(mod_info['description'], 'bold')}", subsequent_indent=' ')
 
   slug = color_text(mod_info["slug"], "bold")
   mod_id = color_text(mod_info["id"], "bold")
@@ -322,7 +352,7 @@ def show_mod(args):
   loaders = color_text(", ".join(entry.capitalize() for entry in mod_info["loaders"]), "bold")
   mc_versions = wrap_text(f"Minecraft Versions {color_text(', '.join(mod_info['game_versions']), 'bold')}", subsequent_indent=" ")
 
-  license_name = color_text(mod_info["license"]["name"], "bold")
+  license_name = color_text(mod_info["license"]["name"] if len(mod_info["license"]["name"]) > 0 else "All Rights Reserved", "bold") 
   license_id = color_text(mod_info["license"]["id"], "bold")
 
   server_side = mod_environment_color(mod_info["server_side"])
@@ -340,7 +370,7 @@ Environment: Server: {server_side} | Client: {client_side}
 {mc_versions}
 
 License: {license_name} ({license_id})
-Description: {description}""")
+{description}""")
 
 def start_server(args):
   launcher_config = load_config("launcher")
@@ -394,6 +424,11 @@ def main():
 
   parser = argparse.ArgumentParser()
   subparsers = parser.add_subparsers(required=True)
+
+  # 'add' command
+  parser_add = subparsers.add_parser("add", help="Add mod from modrinth")
+  parser_add.add_argument("slug_id", help="The slug or ID of the mod")
+  parser_add.set_defaults(func=add_mod)
 
   # 'init' command
   parser_init = subparsers.add_parser("init", help="initialize MCServer directory")
