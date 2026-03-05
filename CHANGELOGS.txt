@@ -58,3 +58,6 @@ Added:
 - Added function to wrap text to current terminal size
 - Rename 'id' to 'mod_id' in show_mods() command
 - Replace bare Exception to EULAAgreementError in start_server()
+
+1.5.1
+- Make the "title (slug) by author" using wrap_text
