@@ -319,7 +319,7 @@ def show_mod(args):
 
   categories = color_text(", ".join(entry.capitalize() for entry in mod_info["categories"]), "bold")
   loaders = color_text(", ".join(entry.capitalize() for entry in mod_info["loaders"]), "bold")
-  mc_versions = wrap_text(f"Minecraft Versions {color_text(', '.join(mod_info['game_versions']), 'bold')}", subsequent_indent=" "))
+  mc_versions = wrap_text(f"Minecraft Versions {color_text(', '.join(mod_info['game_versions']), 'bold')}", subsequent_indent=" ")
 
   license_name = color_text(mod_info["license"]["name"], "bold")
   license_id = color_text(mod_info["license"]["id"], "bold")
