@@ -75,3 +75,16 @@ Added:
 - Use min() instead of inline if to pick smallest number between mod_list and search_limit
 - Only make the 'Minecraft vanilla does not support mod' error shown when no --no-filter
 - Remove intermediate response_json variable
+
+1.6.2
+- Add timeout to request functions
+- check_eula_agreed now use .readlines instead of manually split in newlines
+- Renamed slug_id to modid in add_mod
+- Update the version search in add_mod
+- Add error messages for mod version doesn't exists and no file marked as primary in add_mod
+- Invert the if no no_filter condition
+- Correct the condition in search_mod's skipped_message to be more than 0 instead of 1
+- Simplified license name to use or instead inline if statement
+- Add intermediate mod_license variable
+- Replaced some bare Excetion
+- Update argparse help messages

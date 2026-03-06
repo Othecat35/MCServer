@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.6.1"
+__version__ = "1.6.2"
 
 import argparse
 import json
@@ -10,6 +10,7 @@ import shutil
 import textwrap
 import time
 
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -59,6 +60,8 @@ class EULAAgreementError(Exception): pass
 
 class AddModError(Exception): pass
 class SearchModError(Exception): pass
+class ShowModError(Exception): pass
+class StartServerError(Exception): pass
 
 # Color functions
 colors = {
@@ -138,7 +141,7 @@ def load_config(config_name):
     raise PermissionError(f"Cannot load configuration file for '{config_name}': Permission denied to read file") from error
 
 # Requests
-def request_get(url, params=None, headers=None):
+def request_get(url, params=None, headers=None, tiemout=5):
   if params is None: params = {}
 
   if headers is None: headers = {}
@@ -150,10 +153,10 @@ def request_get(url, params=None, headers=None):
   request_url = urllib.request.Request(f"{url}{query_string}", headers=headers, method="GET")
   log.debug(f"Request URL: {request_url.full_url}")
 
-  with urllib.request.urlopen(request_url) as response:
+  with urllib.request.urlopen(request_url, timeout=timeout) as response:
     return response.read().decode("utf-8")
 
-def request_download(url, filename, headers=None):
+def request_download(url, filename, headers=None, timeout=5):
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
 
@@ -163,7 +166,7 @@ def request_download(url, filename, headers=None):
   log.debug(f"Request URL: {request_url.full_url}")
   log.debug(f"Temporary file: {tempfile}")
 
-  with urllib.request.urlopen(request_url) as response:
+  with urllib.request.urlopen(request_url, timeout=timeout) as response:
     with open(tempfile, mode="wb") as file:
       shutil.copyfileobj(response, file)
 
@@ -173,9 +176,9 @@ def request_download(url, filename, headers=None):
 def check_eula_agreed():
   try:
     with open("eula.txt") as file:
-      for line in file.read().split("\n"):
+      for line in file.readlines():
         if line.startswith("eula=true"):
-            return True
+          return True
   except FileNotFoundError:
     pass
 
@@ -195,30 +198,35 @@ def wrap_text(text, initial_indent="", subsequent_indent=""):
 
 # Command functions
 def add_mod(args):
-  slug_id = args.slug_id
+  modid = args.modid
 
   server_config = load_config("server")
   server_loader = server_config["loader"]
 
+  loader_name = server_loader["name"]
+  server_version = server_config["version"]
+
   if server_loader["name"] == "vanilla":
     raise AddModError("Vanilla Minecraft server does not support mod")
 
-  selected_version = json.loads(request_get(f"https://api.modrinth.com/v2/project/{slug_id}/version", params={
-    "loaders": json.dumps([server_loader["name"]]),
-    "game_versions": json.dumps([server_config["version"]]),
+  selected_mod_version = json.loads(request_get(f"https://api.modrinth.com/v2/project/{modid}/version", params={
+    "loaders": json.dumps([loader_name]),
+    "game_versions": json.dumps([server_version]),
     "include_changelog": "false"
   }))[0]
 
+  if not selected_mod_version:
+    raise AddModError(f"No version found, does the mod even exists? or there's no version for {loader_name.capitalize()}, Minecraft server {server_version}")
+
   log.info(f"Downloading {selected_version['name']}...")
 
-  selected_file_index = 0
-  for file in selected_version["files"]:
-    if not file["primary"]:
-      selected_file_index += 1
-    else:
-      break
+  selected_file = next(
+    (file for file in selected_mod_version["files"] if file["primary"]),
+    None
+  )
 
-  selected_file = selected_version["files"][selected_file_index]
+  if not selected_file:
+    raise AddModError("No file found from the selected version marked primary")
 
   mods_dir.mkdir(exist_ok=True)
   request_download(selected_file["url"], mods_dir / selected_file["filename"])
@@ -267,7 +275,10 @@ def search_mod(args):
   search_filters = None
   search_message = None
 
-  if not no_filter:
+  if no_filter:
+    search_message = "Searching mods in Modrinth..."
+    search_filters = [["project_type:mod"]]
+  else:
     server_config = load_config("server")
     server_loader = server_config["loader"]
 
@@ -283,9 +294,6 @@ def search_mod(args):
       [f"categories:{server_loader['name']}"],
       [f"versions:{server_version}"]
     ]
-  else:
-    search_message = "Searching mods in Modrinth..."
-    search_filters = [["project_type:mod"]]
 
   search_limit = modrinth_config["search_limit"]
   search_offset = search_limit * (page - 1)
@@ -310,7 +318,7 @@ def search_mod(args):
   total_hits = response.get("total_hits", 0)
   shown_mods_count = min(len(mods_list), search_limit)
 
-  skipped_message = f"(skipped {search_offset} mods) " if search_offset > 1 else ""
+  skipped_message = f"(skipped {search_offset} mods) " if search_offset > 0 else ""
   log.info(f"Showing {shown_mods_count} mods out of {total_hits} total mods {skipped_message}| Page: {page}/{math.ceil(total_hits/search_limit)}")
 
   for mod in mods_list:
@@ -351,8 +359,9 @@ def show_mod(args):
   loaders = color_text(", ".join(entry.capitalize() for entry in mod_info["loaders"]), "bold")
   mc_versions = wrap_text(f"Minecraft Versions {color_text(', '.join(mod_info['game_versions']), 'bold')}", subsequent_indent=" ")
 
-  license_name = color_text(mod_info["license"]["name"] if len(mod_info["license"]["name"]) > 0 else "All Rights Reserved", "bold") 
-  license_id = color_text(mod_info["license"]["id"], "bold")
+  mod_license = mod_info["license"]
+  license_name = color_text(mod_license["name"] or "All Rights Reserved", "bold") 
+  license_id = color_text(mod_license["id"], "bold")
 
   server_side = mod_environment_color(mod_info["server_side"])
   client_side = mod_environment_color(mod_info["client_side"])
@@ -378,10 +387,10 @@ def start_server(args):
   jarfile = launcher_config['jarfile']
 
   if not Path(jarfile).exists():
-    raise Exception(f"Couldn't find server jarfile '{jarfile}'")
+    raise StartServerError(f"Couldn't find server jarfile '{jarfile}'")
 
   if memory_limit["min"] > memory_limit["max"]:
-    raise Exception(f"Minimum RAM cannot be larger that maximum RAM, please check configuration for `server`")
+    raise StartServerError(f"Minimum RAM cannot be larger that maximum RAM, please check configuration for `server`")
 
   try:
     if not check_eula_agreed():
@@ -425,34 +434,34 @@ def main():
   subparsers = parser.add_subparsers(required=True)
 
   # 'add' command
-  parser_add = subparsers.add_parser("add", help="Add mod from modrinth")
-  parser_add.add_argument("slug_id", help="The slug or ID of the mod")
+  parser_add = subparsers.add_parser("add", help="Add (Download) mod from modrinth")
+  parser_add.add_argument("modid", help="Slug or ID of the mod")
   parser_add.set_defaults(func=add_mod)
 
   # 'init' command
-  parser_init = subparsers.add_parser("init", help="initialize MCServer directory")
+  parser_init = subparsers.add_parser("init", help="Initialize MCServer directory")
   parser_init.set_defaults(func=initialize_directory)
 
   # 'install' command
-  parser_install = subparsers.add_parser("install", help="install the server")
+  parser_install = subparsers.add_parser("install", help="Install the server")
   parser_install.set_defaults(func=install_server)
 
   # 'search' command
-  parser_search = subparsers.add_parser("search", help="search mods from Modrinth")
-  parser_search.add_argument("query", help="search query", nargs="+")
+  parser_search = subparsers.add_parser("search", help="Search mods from Modrinth")
+  parser_search.add_argument("query", help="Search query", nargs="+")
 
-  parser_search.add_argument("--no-filter", help="seach without version bounded", action="store_true")
-  parser_search.add_argument("--page", help="page number of the search results", type=int, default=1)
+  parser_search.add_argument("--no-filter", help="Search mods without the filter", action="store_true")
+  parser_search.add_argument("--page", help="Page number of the search results", type=int, default=1)
 
   parser_search.set_defaults(func=search_mod)
 
   # 'show' command
-  parser_show = subparsers.add_parser("show", help="show more info about a mod")
-  parser_show.add_argument("modid", help="slug/mod ID", nargs="+")
+  parser_show = subparsers.add_parser("show", help="Show more info about a mod")
+  parser_show.add_argument("modid", help="Slug or ID of the mod", nargs="+")
   parser_show.set_defaults(func=show_mod)
 
   # 'start' command
-  parser_start = subparsers.add_parser("start", help="start the server")
+  parser_start = subparsers.add_parser("start", help="Start the server")
   parser_start.set_defaults(func=start_server)
 
   args = parser.parse_args()
