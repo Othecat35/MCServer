@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.6.0"
+__version__ = "1.6.1"
 
 import argparse
 import json
@@ -262,25 +262,20 @@ def search_mod(args):
   page = args.page
 
   modrinth_config = load_config("modrinth")
-  server_config = load_config("server")
-
-  server_loader = server_config["loader"]
-  if not no_filter and server_loader["name"] == "vanilla":
-    raise SearchModError("Vanilla Minecraft server does not support mod")
-
-  server_version = server_config["version"]
-  loader_version = server_loader["version"]
-
-  search_limit = modrinth_config["search_limit"]
-  search_offset = search_limit * (page - 1)
+  server_config = None
 
   search_filters = None
   search_message = None
 
-  if no_filter:
-    search_message = "Searching mods in Modrinth..."
-    search_filters = [["project_type:mod"]]
-  else:
+  if not no_filter:
+    server_config = load_config("server")
+    server_loader = server_config["loader"]
+
+    server_version = server_config["version"]
+
+    if server_loader["name"] == "vanilla":
+      raise SearchModError("Vanilla Minecraft server does not support mod")
+
     search_message = f"Searching mods in Modrinth for {server_loader['name'].capitalize()}, Minecraft server {server_version}..."
     search_filters = [
       ["project_type:mod"],
@@ -288,28 +283,32 @@ def search_mod(args):
       [f"categories:{server_loader['name']}"],
       [f"versions:{server_version}"]
     ]
+  else:
+    search_message = "Searching mods in Modrinth..."
+    search_filters = [["project_type:mod"]]
 
-  facets = json.dumps(search_filters)
+  search_limit = modrinth_config["search_limit"]
+  search_offset = search_limit * (page - 1)
+
   log.info(search_message)
 
-  response = request_get(
+  response = json.loads(request_get(
     "https://api.modrinth.com/v2/search",
     {
       "query": query,
-      "facets": facets,
+      "facets": json.dumps(search_filters),
       "limit": search_limit,
       "offset": search_offset
     }
-  )
+  ))
 
-  response_json = json.loads(response)
-  mods_list = response_json.get("hits", [])
+  mods_list = response.get("hits", [])
 
   if not mods_list:
-    raise Exception(f"No mod found")
+    raise SearchModError(f"No mod found")
 
-  total_hits = response_json.get("total_hits", 0)
-  shown_mods_count = len(mods_list) if len(mods_list) < search_limit else search_limit
+  total_hits = response.get("total_hits", 0)
+  shown_mods_count = min(len(mods_list), search_limit)
 
   skipped_message = f"(skipped {search_offset} mods) " if search_offset > 1 else ""
   log.info(f"Showing {shown_mods_count} mods out of {total_hits} total mods {skipped_message}| Page: {page}/{math.ceil(total_hits/search_limit)}")
@@ -319,14 +318,14 @@ def search_mod(args):
     slug = mod["slug"]
     author = f"by {mod['author']}"
 
-    mod_title = wrap_text(f"{title} ({slug}) {color_text(author, 'gray')}", subsequent_indent=" ")
+    mod_header = wrap_text(f"{title} ({slug}) {color_text(author, 'gray')}", subsequent_indent=" ")
 
     server_side = mod_environment_color(mod["server_side"])
     client_side = mod_environment_color(mod["client_side"])
     description = wrap_text(mod["description"], initial_indent=" ", subsequent_indent="  ")
 
     print(f"""
-{mod_title}
+{mod_header}
 > {color('bold')}Server: {server_side}{color('reset')} | Client: {client_side}
 > https://modrinth.com/mod/{slug}
 {description}""")

@@ -69,3 +69,9 @@ Added:
 - Added 'Temporary File' debug message in request_download
 - Added 2 new class for error
 - Added MIT license file
+
+1.6.1
+- Make search_mod only load launcher config if no --no-filter
+- Use min() instead of inline if to pick smallest number between mod_list and search_limit
+- Only make the 'Minecraft vanilla does not support mod' error shown when no --no-filter
+- Remove intermediate response_json variable
