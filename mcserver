@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.6.3"
+__version__ = "1.6.4"
 
 import argparse
 import json
@@ -19,11 +19,11 @@ import logging as log
 from pathlib import Path
 
 # Variables
-user_agent = f"othecat35/MCServer/{__version__}"
+user_agent = f"othecat35/MCServer v{__version__}"
 
 default_configs = {
   "launcher": {
-     "ram": {
+    "ram": {
       "_comment": "Memory size in MebiByte (MiB)",
       "min": 512,
       "max": 2_048
@@ -31,7 +31,7 @@ default_configs = {
 
     "jarfile": "Launcher.jar",
     "hide_gui": True,
- },
+  },
 
   "modrinth": {
     "search_limit": 20
@@ -56,12 +56,12 @@ configs_dir = mcserver_dir / "configs"
 tempfiles_dir = mcserver_dir / "tempfiles"
 
 # Error classes
-class EULAAgreementError(Exception): pass
-
 class AddModError(Exception): pass
 class SearchModError(Exception): pass
 class ShowModError(Exception): pass
 class StartServerError(Exception): pass
+
+class EULAAgreementError(Exception): pass
 
 # Color functions
 colors = {
@@ -192,13 +192,19 @@ def eula_agree():
 eula=true""")
 
 # Functions
+def print_help(args):
+  parser = args.parser
+
+  parser.print_help()
+  sys.exit(0)
+
 def wrap_text(text, initial_indent="", subsequent_indent=""):
   terminal_width = shutil.get_terminal_size().columns
   return "\n".join(textwrap.wrap(text, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
 
 # Command functions
 def add_mod(args):
-  modid = args.modid
+  mods = args.mods
 
   server_config = load_config("server")
   server_loader = server_config["loader"]
@@ -209,14 +215,14 @@ def add_mod(args):
   if server_loader["name"] == "vanilla":
     raise AddModError("Vanilla Minecraft server does not support mod")
 
-  response = json.loads(request_get(f"https://api.modrinth.com/v2/project/{modid}/version", params={
+  mod = mods[0]
+  response = json.loads(request_get(f"https://api.modrinth.com/v2/project/{mod}/version", params={
     "loaders": json.dumps([loader_name]),
     "game_versions": json.dumps([server_version]),
     "include_changelog": "false"
   }))
 
-  log.debug(json.dumps(selected_mod_version, indent=2))
-  if not selected_mod_version:
+  if not response:
     raise AddModError(f"No version found, does the mod even exists? or, there's no version for {loader_name.capitalize()}, Minecraft server {server_version}")
 
   selected_mod_version = response[0]
@@ -286,15 +292,16 @@ def search_mod(args):
     server_loader = server_config["loader"]
 
     server_version = server_config["version"]
+    loader_name = server_loader["name"]
 
-    if server_loader["name"] == "vanilla":
+    if loader_name == "vanilla":
       raise SearchModError("Vanilla Minecraft server does not support mod")
 
-    search_message = f"Searching mods in Modrinth for {server_loader['name'].capitalize()}, Minecraft server {server_version}..."
+    search_message = f"Searching \"{query}\" in Modrinth for {loader_name.capitalize()}, Minecraft server {server_version}..."
     search_filters = [
       ["project_type:mod"],
       ["server_side!=unsupported"],
-      [f"categories:{server_loader['name']}"],
+      [f"categories:{loader_name}"],
       [f"versions:{server_version}"]
     ]
 
@@ -318,11 +325,13 @@ def search_mod(args):
   if not mods_list:
     raise SearchModError(f"No mod found")
 
-  total_hits = response.get("total_hits", 0)
+  total_hits = response.get('total_hits', 0)
+  total_pages = math.ceil(total_hits/search_limit)
+
   shown_mods_count = min(len(mods_list), search_limit)
 
   skipped_message = f"(skipped {search_offset} mods) " if search_offset > 0 else ""
-  log.info(f"Showing {shown_mods_count} mods out of {total_hits} total mods {skipped_message}| Page: {page}/{math.ceil(total_hits/search_limit)}")
+  log.info(f"Showing {shown_mods_count} mods out of {total_hits} total mods {skipped_message}| Page: {page}/{total_pages}")
 
   for mod in mods_list:
     title = color_text(mod['title'], "bold")
@@ -342,11 +351,12 @@ def search_mod(args):
 {description}""")
 
 def show_mod(args):
-  modid = args.modid[0]
+  mods = args.mods
 
+  mod = mods[0]
   log.info("Getting mod info...")
   mod_info = json.loads(request_get(
-    f"https://api.modrinth.com/v2/project/{modid}",
+    f"https://api.modrinth.com/v2/project/{mod}",
   ))
 
   name = color_text(mod_info['title'], "bold")
@@ -433,39 +443,50 @@ def main():
     level=log_level
   )
 
-  parser = argparse.ArgumentParser()
-  subparsers = parser.add_subparsers(required=True)
+  # Parser
+  parser = argparse.ArgumentParser(prog="mcserver",
+    description="A CLI tool to help managing Minecraft: Java Edition server.",
+    epilog="Not created for Windows.")
 
-  # 'add' command
-  parser_add = subparsers.add_parser("add", help="Add (Download) mod from modrinth")
-  parser_add.add_argument("modid", help="Slug or ID of the mod")
-  parser_add.set_defaults(func=add_mod)
+  parser.add_argument("--version",
+    action="version",
+    version="%(prog)s " + __version__)
 
-  # 'init' command
+  parser.set_defaults(func=print_help, parser=parser)
+  subparsers = parser.add_subparsers(title="Commands")
+
+  # Setup
+  #'init' command
   parser_init = subparsers.add_parser("init", help="Initialize MCServer directory")
   parser_init.set_defaults(func=initialize_directory)
 
-  # 'install' command
+  #'install' command
   parser_install = subparsers.add_parser("install", help="Install the server")
   parser_install.set_defaults(func=install_server)
 
-  # 'search' command
-  parser_search = subparsers.add_parser("search", help="Search mods from Modrinth")
-  parser_search.add_argument("query", help="Search query", nargs="+")
+  #'start' command
+  parser_start = subparsers.add_parser("start", help="Start the server")
+  parser_start.set_defaults(func=start_server)
 
-  parser_search.add_argument("--no-filter", help="Search mods without the filter", action="store_true")
-  parser_search.add_argument("--page", help="Page number of the search results", type=int, default=1)
+  # Mod management
+  #'add' command
+  parser_add = subparsers.add_parser("add", help="Download mod(s) from Modrinth")
+  parser_add.add_argument("mods", nargs="+", help="Slug (or ID) of the mod(s)")
+  parser_add.set_defaults(func=add_mod)
+
+  #'search' command
+  parser_search = subparsers.add_parser("search", help="Search mod(s) from Modrinth")
+  parser_search.add_argument("query", nargs="*", help="Query to search")
+
+  parser_search.add_argument("-n", "--no-filter",  action="store_true", help="Do not use any search filters")
+  parser_search.add_argument("-p", "--page",default=1,  type=int, help="Page(s) number", metavar="N")
 
   parser_search.set_defaults(func=search_mod)
 
-  # 'show' command
-  parser_show = subparsers.add_parser("show", help="Show more info about a mod")
-  parser_show.add_argument("modid", help="Slug or ID of the mod", nargs="+")
+  #'show' command
+  parser_show = subparsers.add_parser("show", help="Show info about mod(s)")
+  parser_show.add_argument("mods", help="Slug (or ID) of the mod(s)", nargs="+")
   parser_show.set_defaults(func=show_mod)
-
-  # 'start' command
-  parser_start = subparsers.add_parser("start", help="Start the server")
-  parser_start.set_defaults(func=start_server)
 
   args = parser.parse_args()
 

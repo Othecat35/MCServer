@@ -94,3 +94,8 @@ Added:
 - Fix typo in request_get for timeout (tiemout)
 - Add debug to output add_mod get version response
 - "Downloading ..." message now includes filename
+
+1.6.4
+- Update User-Agent string
+- Make the default action is print help and exit (./mcserver -> help)
+- Extensively update argparse
