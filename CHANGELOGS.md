@@ -20,9 +20,9 @@ Added:
 # 1.2.0
 - Move java command options to a seperate launcher.json configuration
 
-1.2.1
+# 1.2.1
 - Renamed function color_string to color_text
-- Replace all raise error to Exception
+- Replace all raise error type with Exception
 - Update "Showing ... out of ... mods ..." message to have pages count
 - Update mod_environment_color to use color_text
 
@@ -81,9 +81,9 @@ Added:
 - check_eula_agreed now use .readlines instead of manually split in newlines
 - Renamed slug_id to modid in add_mod
 - Update the version search in add_mod
-- Add error messages for mod version doesn't exists and no file marked as primary in add_mod
+- Add error messages for mod version doesn\'t exists and no file marked as primary in add_mod
 - Invert the if no no_filter condition
-- Correct the condition in search_mod's skipped_message to be more than 0 instead of 1
+- Correct the condition in search_mod\'s skipped_message to be more than 0 instead of 1
 - Simplified license name to use or instead inline if statement
 - Add intermediate mod_license variable
 - Replaced some bare Excetion
@@ -94,4 +94,3 @@ Added:
 - Fix typo in request_get for timeout (tiemout)
 - Add debug to output add_mod get version response
 - "Downloading ..." message now includes filename
-
