@@ -88,3 +88,10 @@ Added:
 - Add intermediate mod_license variable
 - Replaced some bare Excetion
 - Update argparse help messages
+
+1.6.3
+- Fix bug when add_mod got 0 result from getting mod version
+- Fix typo in request_get for timeout (tiemout)
+- Add debug to output add_mod get version response
+- "Downloading ..." message now includes filename
+

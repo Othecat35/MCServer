@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.6.2"
+__version__ = "1.6.3"
 
 import argparse
 import json
@@ -141,7 +141,7 @@ def load_config(config_name):
     raise PermissionError(f"Cannot load configuration file for '{config_name}': Permission denied to read file") from error
 
 # Requests
-def request_get(url, params=None, headers=None, tiemout=5):
+def request_get(url, params=None, headers=None, timeout=5):
   if params is None: params = {}
 
   if headers is None: headers = {}
@@ -209,16 +209,17 @@ def add_mod(args):
   if server_loader["name"] == "vanilla":
     raise AddModError("Vanilla Minecraft server does not support mod")
 
-  selected_mod_version = json.loads(request_get(f"https://api.modrinth.com/v2/project/{modid}/version", params={
+  response = json.loads(request_get(f"https://api.modrinth.com/v2/project/{modid}/version", params={
     "loaders": json.dumps([loader_name]),
     "game_versions": json.dumps([server_version]),
     "include_changelog": "false"
-  }))[0]
+  }))
 
+  log.debug(json.dumps(selected_mod_version, indent=2))
   if not selected_mod_version:
-    raise AddModError(f"No version found, does the mod even exists? or there's no version for {loader_name.capitalize()}, Minecraft server {server_version}")
+    raise AddModError(f"No version found, does the mod even exists? or, there's no version for {loader_name.capitalize()}, Minecraft server {server_version}")
 
-  log.info(f"Downloading {selected_version['name']}...")
+  selected_mod_version = response[0]
 
   selected_file = next(
     (file for file in selected_mod_version["files"] if file["primary"]),
@@ -229,6 +230,8 @@ def add_mod(args):
     raise AddModError("No file found from the selected version marked primary")
 
   mods_dir.mkdir(exist_ok=True)
+  log.info(f"Downloading {selected_mod_version['name']} ({selected_file['filename']})...")
+
   request_download(selected_file["url"], mods_dir / selected_file["filename"])
 
 def initialize_directory(args):
