@@ -99,3 +99,9 @@ Added:
 - Update User-Agent string
 - Make the default action is print help and exit (./mcserver -> help)
 - Extensively update argparse
+
+1.6.5
+- Get response_offset as reference
+- Update skipped_message in search_mod to use response_offset instead of search_offset
+- Add more info such as download and follows count when searching
+- Change search_message to be 'Searching for mods with "<query>" in Modrinth...'

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.6.4"
+__version__ = "1.6.5"
 
 import argparse
 import json
@@ -19,7 +19,7 @@ import logging as log
 from pathlib import Path
 
 # Variables
-user_agent = f"othecat35/MCServer v{__version__}"
+user_agent = f"othecat35/MCServer {__version__}"
 
 default_configs = {
   "launcher": {
@@ -285,7 +285,7 @@ def search_mod(args):
   search_message = None
 
   if no_filter:
-    search_message = "Searching mods in Modrinth..."
+    search_message = f"Searching mods with \"{query}\" in Modrinth..."
     search_filters = [["project_type:mod"]]
   else:
     server_config = load_config("server")
@@ -297,7 +297,7 @@ def search_mod(args):
     if loader_name == "vanilla":
       raise SearchModError("Vanilla Minecraft server does not support mod")
 
-    search_message = f"Searching \"{query}\" in Modrinth for {loader_name.capitalize()}, Minecraft server {server_version}..."
+    search_message = f"Searching mods with \"{query}\" in Modrinth for {loader_name.capitalize()}, Minecraft server {server_version}..."
     search_filters = [
       ["project_type:mod"],
       ["server_side!=unsupported"],
@@ -321,24 +321,28 @@ def search_mod(args):
   ))
 
   mods_list = response.get("hits", [])
-
   if not mods_list:
     raise SearchModError(f"No mod found")
 
   total_hits = response.get('total_hits', 0)
-  total_pages = math.ceil(total_hits/search_limit)
+  total_pages = math.ceil(total_hits / search_limit)
 
+  response_offset = response.get("offset", 0)
   shown_mods_count = min(len(mods_list), search_limit)
 
-  skipped_message = f"(skipped {search_offset} mods) " if search_offset > 0 else ""
-  log.info(f"Showing {shown_mods_count} mods out of {total_hits} total mods {skipped_message}| Page: {page}/{total_pages}")
+  skipped_message = f"(skipped {response_offset} mod(s)) " if response_offset > 0 else ""
+  log.info(f"Showing {shown_mods_count} mod(s) out of {total_hits} total mod(s) {skipped_message}| Page: {page}/{total_pages}")
 
   for mod in mods_list:
-    title = color_text(mod['title'], "bold")
-    slug = mod["slug"]
-    author = f"by {mod['author']}"
+    title = color_text(mod.get("title", ""), "bold")
+    slug = mod.get("slug", "")
+    author = f"by {mod.get('author', "")}"
 
     mod_header = wrap_text(f"{title} ({slug}) {color_text(author, 'gray')}", subsequent_indent=" ")
+
+    downloads_count = mod.get("downloads", 0)
+    follows_count = mod.get("follows", 0)
+    downloads_follows = color_text(f"[ Downloads: {downloads_count:,} | Follows: {follows_count:,} ]", "gray")
 
     server_side = mod_environment_color(mod["server_side"])
     client_side = mod_environment_color(mod["client_side"])
@@ -346,7 +350,7 @@ def search_mod(args):
 
     print(f"""
 {mod_header}
-> {color('bold')}Server: {server_side}{color('reset')} | Client: {client_side}
+[ {color('bold')}Server: {server_side}{color('reset')} | Client: {client_side} ] {downloads_follows}
 > https://modrinth.com/mod/{slug}
 {description}""")
 
