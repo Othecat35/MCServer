@@ -105,3 +105,9 @@ Added:
 - Update skipped_message in search_mod to use response_offset instead of search_offset
 - Add more info such as download and follows count when searching
 - Change search_message to be 'Searching for mods with "<query>" in Modrinth...'
+
+1.6.6
+- Make isatty at the start of script instead of everytime color() got called
+- Update *_config error messages
+- Add "Got response status" in request_* debug message
+- Add function fetch_mod_version for preparing to do BFS mod dependency resolution

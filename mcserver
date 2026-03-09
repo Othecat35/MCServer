@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
-__version__ = "1.6.5"
+__version__ = "1.6.6"
 
 import argparse
 import json
 import math
 import os
-import sys
 import shutil
+import sys
 import textwrap
 import time
 
-import urllib.error
 import urllib.parse
 import urllib.request
 
 import logging as log
-
 from pathlib import Path
 
 # Variables
+isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"othecat35/MCServer {__version__}"
 
 default_configs = {
@@ -30,7 +29,7 @@ default_configs = {
     },
 
     "jarfile": "Launcher.jar",
-    "hide_gui": True,
+    "hide_gui": True
   },
 
   "modrinth": {
@@ -48,10 +47,9 @@ default_configs = {
 
 # Paths
 current_dir = Path.cwd()
-mcserver_dir = current_dir / ".mcserver"
-
 mods_dir = current_dir / "mods"
 
+mcserver_dir = current_dir / ".mcserver"
 configs_dir = mcserver_dir / "configs"
 tempfiles_dir = mcserver_dir / "tempfiles"
 
@@ -62,6 +60,7 @@ class ShowModError(Exception): pass
 class StartServerError(Exception): pass
 
 class EULAAgreementError(Exception): pass
+class FetchModVersionError(Exception): pass
 
 # Color functions
 colors = {
@@ -74,8 +73,8 @@ colors = {
 }
 
 def color(color_name):
-  if sys.stdout.isatty() and sys.stderr.isatty():
-    return colors[color_name]
+  if isatty:
+    return colors.get(color_name, "")
   return ""
 
 def color_text(text, color_name):
@@ -90,8 +89,7 @@ def mod_environment_color(environment):
     return color_text("Unsupported", "red")
   elif environment == "unknown":
     return color_text("Unknown", "gray")
-  else:
-    return environment
+  return environment
 
 # Config functions
 def generate_config(config_name):
@@ -99,10 +97,11 @@ def generate_config(config_name):
   config_path = configs_dir / config_filename
 
   config_content = None
+
   try:
     config_content = default_configs[config_name]
   except KeyError as error:
-    raise ValueError(f"Cannot generate configuration file for '{config_name}': Default configuration not available") from error
+    raise ValueError(f"Failed to generate configuration file for '{config_name}': No default configuration available") from error
 
   try:
     with open(config_path, mode="xt") as config_file:
@@ -112,13 +111,13 @@ def generate_config(config_name):
         indent=2
       )
   except FileExistsError as error:
-    raise FileExistsError(f"Cannot generate configuration file for '{config_name}': Configuration file already exists") from error
+    raise FileExistsError(f"Cannot create configuration file for '{config_name}': File already exists") from error
   except FileNotFoundError as error:
-    raise FileNotFoundError(f"Cannot generate configuration file for '{config_name}': Configuration directory does not exist") from error
+    raise FileNotFoundError(f"Cannot create configuration file for '{config_name}': Configuration directory does not exist") from error
   except IsADirectoryError as error:
-    raise IsADirectoryError(f"Cannot generate configuration file for '{config_name}': Directory with same name already exists") from error
+    raise IsADirectoryError(f"Cannot create configuration file for '{config_name}': Directory with same name already exists") from error
   except PermissionError as error:
-    raise PermissionError(f"Cannot generate configuration file for '{config_name}': Permission denied to create a file") from error
+    raise PermissionError(f"Cannot create configuration file for '{config_name}': Permission denied to create file") from error
 
 def load_config(config_name):
   config_filename = f"{config_name}.json"
@@ -128,32 +127,33 @@ def load_config(config_name):
     with open(config_path, mode="rt") as config_file:
       return json.load(config_file)
   except json.JSONDecodeError as error:
-    msg = error.msg.lower()
+    msg = error.msg
     lineno = error.lineno
     colno = error.colno
 
-    raise ValueError(f"Failed to parse configuration for `{config_name}`: {msg} at line {lineno} column {colno}") from error
+    raise ValueError(f"Failed to load configuration for `{config_name}`: {msg} at line {lineno} column {colno}") from error
+
   except FileNotFoundError as error:
-    raise FileNotFoundError(f"Cannot load configuration file for '{config_name}': Configuration file does not exist") from error
+    raise FileNotFoundError(f"Cannot read configuration file for '{config_name}': Configuration file does not exist") from error
   except IsADirectoryError as error:
-    raise IsADirectoryError(f"Cannot load configuration file for '{config_name}': Is a directory") from error
+    raise IsADirectoryError(f"Cannot read configuration file for '{config_name}': Not a file (is a directory)") from error
   except PermissionError as error:
-    raise PermissionError(f"Cannot load configuration file for '{config_name}': Permission denied to read file") from error
+    raise PermissionError(f"Cannot read configuration file for '{config_name}': Permission denied to read file") from error
 
 # Requests
-def request_get(url, params=None, headers=None, timeout=5):
+def request_fetch(url, params=None, headers=None, timeout=5):
   if params is None: params = {}
 
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
 
   query_string = f"?{urllib.parse.urlencode(params)}" if params else ""
-  log.debug(f"Query string: {query_string}")
-
   request_url = urllib.request.Request(f"{url}{query_string}", headers=headers, method="GET")
-  log.debug(f"Request URL: {request_url.full_url}")
+
+  log.debug(f"Fetching URL: {request_url.full_url}")
 
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
+    log.debug(f"Got response status: {response.status}")
     return response.read().decode("utf-8")
 
 def request_download(url, filename, headers=None, timeout=5):
@@ -163,14 +163,57 @@ def request_download(url, filename, headers=None, timeout=5):
   request_url = urllib.request.Request(url, headers=headers, method="GET")
   tempfile = tempfiles_dir / Path(filename).name
 
-  log.debug(f"Request URL: {request_url.full_url}")
+  log.debug(f"Downloading URL: {request_url.full_url}")
   log.debug(f"Temporary file: {tempfile}")
 
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
+    log.debug(f"Got response status: {response.status}")
     with open(tempfile, mode="wb") as file:
       shutil.copyfileobj(response, file)
 
     shutil.move(tempfile, filename)
+
+def fetch_mod_version(modid, game_version, loader):
+  response = json.loads(request_fetch(f"https://api.modrinth.com/v2/project/{modid}/version", params={
+    "loaders": json.dumps([loader]),
+    "game_versions": json.dumps([game_version]),
+    "include_changelog": "false"
+  }))
+
+  if not response:
+    raise FetchModVersionError(f"No version found in mod '{modid}' for {loader.capitalize()}, Minecraft {game_version}")
+
+  selected_version = response[0]
+
+  selected_file = None
+  for file in selected_version["files"]:
+    if file["primary"]:
+      selected_file = file
+      break
+
+  dependencies = []
+  for depended_mod in selected_version["dependencies"]:
+    dependencies.append({
+      "id": depended_mod["project_id"],
+      "type": depended_mod["dependency_type"]
+    })
+
+  return {
+    "data": {
+      "version_id": selected_version["id"],
+      "project_id": selected_version["project_id"],
+      "name": selected_version["name"],
+      "version_number": selected_version["version_number"],
+      "version_type": selected_version["version_type"],
+      "file": {
+        "hashes": selected_file["hashes"],
+        "url": selected_file["url"],
+        "filename": selected_file["filename"],
+        "size": selected_file["size"]
+      }
+    },
+    "dependencies": dependencies
+  }
 
 # EULA functions
 def check_eula_agreed():
@@ -216,29 +259,16 @@ def add_mod(args):
     raise AddModError("Vanilla Minecraft server does not support mod")
 
   mod = mods[0]
-  response = json.loads(request_get(f"https://api.modrinth.com/v2/project/{mod}/version", params={
-    "loaders": json.dumps([loader_name]),
-    "game_versions": json.dumps([server_version]),
-    "include_changelog": "false"
-  }))
 
-  if not response:
-    raise AddModError(f"No version found, does the mod even exists? or, there's no version for {loader_name.capitalize()}, Minecraft server {server_version}")
+  fetched_version = fetch_mod_version(mod, server_version, loader_name)
 
-  selected_mod_version = response[0]
+  data = fetched_version["data"]
+  data_file = data["file"]
 
-  selected_file = next(
-    (file for file in selected_mod_version["files"] if file["primary"]),
-    None
-  )
-
-  if not selected_file:
-    raise AddModError("No file found from the selected version marked primary")
+  log.info(f"Downloading mod (version {data['name']})...")
 
   mods_dir.mkdir(exist_ok=True)
-  log.info(f"Downloading {selected_mod_version['name']} ({selected_file['filename']})...")
-
-  request_download(selected_file["url"], mods_dir / selected_file["filename"])
+  request_download(data_file["url"], mods_dir / data_file["filename"])
 
 def initialize_directory(args):
   if not mcserver_dir.exists():
@@ -310,7 +340,7 @@ def search_mod(args):
 
   log.info(search_message)
 
-  response = json.loads(request_get(
+  response = json.loads(request_fetch(
     "https://api.modrinth.com/v2/search",
     {
       "query": query,
@@ -359,7 +389,7 @@ def show_mod(args):
 
   mod = mods[0]
   log.info("Getting mod info...")
-  mod_info = json.loads(request_get(
+  mod_info = json.loads(request_fetch(
     f"https://api.modrinth.com/v2/project/{mod}",
   ))
 
