@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.6.6"
+__version__ = "1.6.7"
 
 import argparse
 import json
@@ -192,10 +192,10 @@ def fetch_mod_version(modid, game_version, loader):
       break
 
   dependencies = []
-  for depended_mod in selected_version["dependencies"]:
+  for dependency in selected_version["dependencies"]:
     dependencies.append({
-      "id": depended_mod["project_id"],
-      "type": depended_mod["dependency_type"]
+      "id": dependency["project_id"],
+      "type": dependency["dependency_type"]
     })
 
   return {
@@ -263,8 +263,12 @@ def add_mod(args):
   fetched_version = fetch_mod_version(mod, server_version, loader_name)
 
   data = fetched_version["data"]
+  dependencies = fetched_version["dependencies"]
+
   data_file = data["file"]
 
+  for dependency in dependencies:
+    log.info(f"The mod ID {dependency["id"]} is {dependency["type"]} to this mod")
   log.info(f"Downloading mod (version {data['name']})...")
 
   mods_dir.mkdir(exist_ok=True)

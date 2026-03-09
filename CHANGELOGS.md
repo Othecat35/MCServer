@@ -111,3 +111,7 @@ Added:
 - Update *_config error messages
 - Add "Got response status" in request_* debug message
 - Add function fetch_mod_version for preparing to do BFS mod dependency resolution
+
+1.6.7
+- Print every dependency a mod need in add_command
+- Renamed depended_mod to dependency in fetch_mod_version
