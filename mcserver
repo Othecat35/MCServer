@@ -274,7 +274,7 @@ def add_mod(args):
   data_file = data["file"]
 
   for dependency in dependencies:
-    log.info(f"The mod ID {dependency["id"]} is {dependency["type"]} to this mod")
+    log.info(f"The mod ID {dependency['id']} is {dependency['type']} to this mod")
   log.info(f"Downloading mod (version {data['name']})...")
 
   mods_dir.mkdir(exist_ok=True)
@@ -474,7 +474,7 @@ def start_server(args):
     java_command_argv.append("nogui")
 
   log.info("Starting Minecraft server...")
-  log.debug(f"Executing command: {" ".join(java_command_argv)}")
+  log.debug(f"Executing command: {' '.join(java_command_argv)}")
   os.execvp("java", java_command_argv)
 
 # Main
