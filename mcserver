@@ -237,6 +237,10 @@ def eula_agree():
 eula=true""")
 
 # Functions
+def hahaha_yes():
+  print("The cake, is a lie.")
+  sys.exit(0)
+
 def print_help(args):
   parser = args.parser
 
@@ -475,6 +479,7 @@ def start_server(args):
 
 # Main
 def main():
+  if ((sys.argv[1] if len(sys.argv) > 1 else "") == "cake"): hahaha_yes()
   debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
   log_level = log.DEBUG if debug_mode else log.INFO
 
@@ -532,7 +537,7 @@ def main():
 
   # Let it crash
   if debug_mode:
-    args.func(args)
+   args.func(args)
   else:
     try:
       args.func(args)
