@@ -1,7 +1,0 @@
-{
-  "version": "1.21.11",
-  "loader": {
-    "name": "fabric",
-    "version": "0.18.4"
-  }
-}

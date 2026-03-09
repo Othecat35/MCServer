@@ -20,6 +20,8 @@ from pathlib import Path
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"othecat35/MCServer {__version__}"
 
+eula_agree_sentence = "I agree"
+
 default_configs = {
   "launcher": {
     "ram": {
@@ -446,10 +448,10 @@ def start_server(args):
   try:
     if not check_eula_agreed():
       log.warning("You need to agree to Mojang's EULA in order to run the server: https://aka.ms/MinecraftEULA")
-      log.info(f"Type {color_text('Agree', 'yellow')} (case-sensitive) to agree with Mojang's EULA.")
+      log.info(f"Type {color_text(eula_agree_sentence, 'yellow')} (case-sensitive) to agree with Mojang's EULA.")
       answer = input("> ")
 
-      if answer == "Agree":
+      if answer == eula_agree_sentence:
         eula_agree()
       else:
         raise EULAAgreementError("Failed to start the Minecraft server: EULA not agreed")

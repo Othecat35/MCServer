@@ -1,9 +1,0 @@
-{
-  "ram": {
-    "_comment": "Memory size in MebiByte (MiB)",
-    "min": 512,
-    "max": 2048
-  },
-  "jarfile": "Launcher.jar",
-  "hide_gui": true
-}
