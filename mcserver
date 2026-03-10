@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.6.7"
+__version__ = "1.6.8"
 
 import argparse
 import json
@@ -193,6 +193,9 @@ def fetch_mod_version(modid, game_version, loader):
       selected_file = file
       break
 
+  if selected_file is None:
+    raise FetchModVersionError(f"This version of the mod \"{modid}\" doesn't have any file marked primary")
+
   dependencies = []
   for dependency in selected_version["dependencies"]:
     dependencies.append({
@@ -238,7 +241,7 @@ eula=true""")
 
 # Functions
 def hahaha_yes():
-  print("The cake, is a lie.")
+  print("The cake is a lie")
   sys.exit(0)
 
 def print_help(args):
@@ -376,7 +379,7 @@ def search_mod(args):
   for mod in mods_list:
     title = color_text(mod.get("title", ""), "bold")
     slug = mod.get("slug", "")
-    author = f"by {mod.get('author', "")}"
+    author = f"by {mod.get('author', '')}"
 
     mod_header = wrap_text(f"{title} ({slug}) {color_text(author, 'gray')}", subsequent_indent=" ")
 
@@ -409,8 +412,8 @@ def show_mod(args):
   slug = color_text(mod_info["slug"], "bold")
   mod_id = color_text(mod_info["id"], "bold")
 
-  downloads = color_text(f"{mod_info["downloads"]:,}", "bold")
-  followers = color_text(f"{mod_info["followers"]:,}", "bold")
+  downloads = color_text(f"{mod_info['downloads']:,}", "bold")
+  followers = color_text(f"{mod_info['followers']:,}", "bold")
 
   categories = color_text(", ".join(entry.capitalize() for entry in mod_info["categories"]), "bold")
   loaders = color_text(", ".join(entry.capitalize() for entry in mod_info["loaders"]), "bold")
@@ -447,7 +450,7 @@ def start_server(args):
     raise StartServerError(f"Couldn't find server jarfile '{jarfile}'")
 
   if memory_limit["min"] > memory_limit["max"]:
-    raise StartServerError(f"Minimum RAM cannot be larger that maximum RAM, please check configuration for `server`")
+    raise StartServerError(f"Minimum RAM cannot be larger that maximum RAM, please check configuration for `launcher`")
 
   try:
     if not check_eula_agreed():

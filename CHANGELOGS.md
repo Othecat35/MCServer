@@ -115,3 +115,7 @@ Added:
 1.6.7
 - Print every dependency a mod need in add_command
 - Renamed depended_mod to dependency in fetch_mod_version
+
+1.6.8
+- Add check if no primary file detected in fetch_mod_version
+- "Fix" f-string, double quote inside double quote f-string
