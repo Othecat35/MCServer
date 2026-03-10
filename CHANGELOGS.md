@@ -119,3 +119,9 @@ Added:
 1.6.8
 - Add check if no primary file detected in fetch_mod_version
 - "Fix" f-string, double quote inside double quote f-string
+
+1.7.0
+- Directly implement simple BFS mod dependency resolving for now, great -_-. not even iterating through couple of commits...
+- Add check in wrap_text of int in *_indent where it supposed to be a str
+- Renamed fetch_mod_version -> project_id to just id
+- Removed "Got status code" debug messages

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.6.8"
+__version__ = "1.7.0"
 
 import argparse
 import json
@@ -155,7 +155,6 @@ def request_fetch(url, params=None, headers=None, timeout=5):
   log.debug(f"Fetching URL: {request_url.full_url}")
 
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
-    log.debug(f"Got response status: {response.status}")
     return response.read().decode("utf-8")
 
 def request_download(url, filename, headers=None, timeout=5):
@@ -169,7 +168,6 @@ def request_download(url, filename, headers=None, timeout=5):
   log.debug(f"Temporary file: {tempfile}")
 
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
-    log.debug(f"Got response status: {response.status}")
     with open(tempfile, mode="wb") as file:
       shutil.copyfileobj(response, file)
 
@@ -206,7 +204,7 @@ def fetch_mod_version(modid, game_version, loader):
   return {
     "data": {
       "version_id": selected_version["id"],
-      "project_id": selected_version["project_id"],
+      "id": selected_version["project_id"],
       "name": selected_version["name"],
       "version_number": selected_version["version_number"],
       "version_type": selected_version["version_type"],
@@ -251,6 +249,11 @@ def print_help(args):
   sys.exit(0)
 
 def wrap_text(text, initial_indent="", subsequent_indent=""):
+  if isinstance(initial_indent, int):
+    raise ValueError("initial_indent supposed to be a str, duh!")
+  elif isinstance(subsequent_indent, int):
+    raise ValueError("subsequent_indent supposed to be a str, duh!")
+
   terminal_width = shutil.get_terminal_size().columns
   return "\n".join(textwrap.wrap(text, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
 
@@ -265,23 +268,139 @@ def add_mod(args):
   server_version = server_config["version"]
 
   if server_loader["name"] == "vanilla":
-    raise AddModError("Vanilla Minecraft server does not support mod")
+    raise AddModError("Vanilla Minecraft server does not support mod.")
 
-  mod = mods[0]
+  log.info("Getting mod dependency(ies) information...")
 
-  fetched_version = fetch_mod_version(mod, server_version, loader_name)
+  unresolved_dependencies = []
+  resolved_dependencies = set()
+  resolved_data = []
 
-  data = fetched_version["data"]
-  dependencies = fetched_version["dependencies"]
+  for mod in mods:
+    if mod in resolved_dependencies:
+      continue
 
-  data_file = data["file"]
+    log.debug(f"Getting version info of '{mod}'...")
+    response = fetch_mod_version(mod, server_version, loader_name)
 
-  for dependency in dependencies:
-    log.info(f"The mod ID {dependency['id']} is {dependency['type']} to this mod")
-  log.info(f"Downloading mod (version {data['name']})...")
+    data = response["data"]
+    dependencies = response["dependencies"]
+
+    data["type"] = "required"
+    resolved_data.append(data)
+
+    resolved_dependencies.add(mod) # Add slug/ID
+    resolved_dependencies.add(data["id"]) # Only add ID
+
+    for dependency in dependencies:
+      unresolved_dependencies.append(dependency)
+      log.debug(f"Added '{dependency['id']}' as unresolved {dependency['type']} dependency.")
+
+  while unresolved_dependencies:
+    resolving_dependency = unresolved_dependencies.pop(0)
+
+    mod_id = resolving_dependency["id"]
+    dependency_type = resolving_dependency["type"]
+
+    if mod_id in resolved_dependencies:
+      continue
+
+    log.debug(f"Processing unresolved dependency '{mod_id}'...")
+    resolved_dependencies.add(mod_id)
+
+    if dependency_type == "embedded":
+      log.debug("Skipped processing 'embedded' mod dependency")
+      continue
+
+    if dependency_type == "incompactible":
+      log.info(f"Skipped mod {mod_id} because it is marked as incompactible.") # Keep it simple for now
+
+    response = None
+
+    try:
+      response = fetch_mod_version(mod_id, server_version, loader_name)
+    except FetchModVersionError:
+      if dependency_type == "optional":
+        log.warning(f"An optional dependency doesn't have version for {loader_name.capitalize()}, Minecraft {server_version}.") # We'll fetch info about that mod later
+        continue
+
+      raise AddModError(f"This mod contains dependency that doesn't have version for {loader_name.capitalize}, Minecraft {server_version}.")
+
+    data = response["data"]
+    dependencies = response["dependencies"]
+
+    data["type"] = dependency_type
+    resolved_data.append(data)
+
+    for dependency in dependencies:
+      mod_id = dependency["id"]
+      if mod_id not in resolved_dependencies:
+        unresolved_dependencies.append(dependency)
+        log.debug(f"Added '{mod_id}' as unresolved {dependency['type']} dependency")
+
+  # Get mod IDs
+  mod_ids = []
+  total_size = 0
+
+  required_mod_ids = set()
+  optional_mod_ids = set()
+
+  for mod in resolved_data:
+    if mod["type"] == "required":
+      required_mod_ids.add(mod["id"])
+    elif mod["type"] == "optional":
+      optional_mod_ids.add(mod["id"])
+
+    total_size += mod["file"]["size"]
+    mod_ids.append(mod["id"])
+
+  response = json.loads(request_fetch("https://api.modrinth.com/v2/projects", params={
+    "ids": json.dumps(mod_ids)
+  }))
+
+  optional_modname_list = []
+  required_modname_list = []
+
+  for mod in response:
+    if mod["id"] in required_mod_ids:
+      required_modname_list.append(f"{mod['title']} ({mod['slug']})")
+    elif mod['id'] in optional_mod_ids:
+      optional_modname_list.append(f"{mod['title']} ({mod['slug']})")
+
+  log.info("The mod(s) that are going to be downloaded:")
+  print(wrap_text(", ".join(required_modname_list), initial_indent="  ", subsequent_indent="  "))
+
+  if optional_mod_ids:
+    log.info("The mod(s) that are optional:")
+    print(wrap_text(", ".join(optional_modname_list), initial_indent="  ", subsequent_indent="  "))
+
+  print()
+  # log.info(f"Will download {total_size}B of mod(s) file.")
+
+  continue_action = True
+  answer = " "
+
+  try:
+    answer = input("Do you want to continue? [Y/n] ")
+  except KeyboardInterrupt:
+    continue_action = False
+
+  match answer.lower():
+    case "y" | "yes" | "":
+      pass
+    case "n" | "no" | _:
+      continue_action = False
+
+  if not continue_action:
+    raise AddModError("Abort.")
 
   mods_dir.mkdir(exist_ok=True)
-  request_download(data_file["url"], mods_dir / data_file["filename"])
+  for mod in resolved_data:
+    if mod["type"] == "required":
+      mod_file = mod["file"]
+
+      log.info(f"Downloading version {mod['name']}...")
+      request_download(mod_file["url"], mods_dir / mod_file["filename"])
 
 def initialize_directory(args):
   if not mcserver_dir.exists():
