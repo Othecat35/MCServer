@@ -338,7 +338,7 @@ def search_mod(args):
     loader_name = server_loader["name"]
 
     if loader_name == "vanilla":
-      raise SearchModError("Vanilla Minecraft server does not support mod.")
+      raise SearchModError("Vanilla Minecraft server does not support mod")
 
     search_message = f"Searching mods with \"{query}\" in Modrinth for {loader_name.capitalize()}, Minecraft server {server_version}..."
     search_filters = [
