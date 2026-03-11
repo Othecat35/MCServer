@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-__version__ = "1.7.0"
+__version__ = "1.8.0"
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -19,8 +20,10 @@ from pathlib import Path
 # Variables
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"othecat35/MCServer {__version__}"
-
+loaders_list = ["fabric", "vanilla"]
 eula_agree_sentence = "I agree"
+
+read_chunk_size = 1024 * 64 # 64KiB
 
 default_configs = {
   "launcher": {
@@ -41,8 +44,8 @@ default_configs = {
   "server": {
     "version": "1.21.11",
     "loader": {
-      "name": "fabric",
-      "version": "0.18.4"
+      "name": "vanilla",
+      "version": ""
     }
   }
 }
@@ -57,12 +60,14 @@ tempfiles_dir = mcserver_dir / "tempfiles"
 
 # Error classes
 class AddModError(Exception): pass
+class InstallServerError(Exception): pass
 class SearchModError(Exception): pass
 class ShowModError(Exception): pass
 class StartServerError(Exception): pass
 
 class EULAAgreementError(Exception): pass
 class FetchModVersionError(Exception): pass
+class RequestDownloadError(Exception): pass
 
 # Color functions
 colors = {
@@ -93,17 +98,51 @@ def mod_environment_color(environment):
     return color_text("Unknown", "gray")
   return environment
 
+# Functions
+def hahaha_yes():
+  print("The cake is a lie")
+  sys.exit(0)
+
+def print_help(args):
+  parser = args.parser
+
+  parser.print_help()
+  sys.exit(0)
+
+def merge_dict(base, update):
+  for key, value in update.items():
+    if key in base and isinstance(base[key], dict) and isinstance(value, dict):
+      merge_dict(base[key], value)
+    elif value is None:
+      pass
+    else:
+      base[key] = value
+
+def wrap_text(text, initial_indent="", subsequent_indent=""):
+  if not isinstance(initial_indent, str):
+    raise ValueError("initial_indent supposed to be a str, duh!")
+  elif not isinstance(subsequent_indent, str):
+    raise ValueError("subsequent_indent supposed to be a str, duh!")
+
+  terminal_width = shutil.get_terminal_size().columns
+  return "\n".join(textwrap.wrap(text, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
+
 # Config functions
-def generate_config(config_name):
+def generate_config(config_name, update_config=None):
+  if update_config is None:
+    update_config = {}
+
   config_filename = f"{config_name}.json"
   config_path = configs_dir / config_filename
 
   config_content = None
 
   try:
-    config_content = default_configs[config_name]
+    config_content = default_configs[config_name].copy()
   except KeyError as error:
     raise ValueError(f"Failed to generate configuration file for '{config_name}': No default configuration available") from error
+
+  merge_dict(config_content, update_config)
 
   try:
     with open(config_path, mode="xt") as config_file:
@@ -157,7 +196,7 @@ def request_fetch(url, params=None, headers=None, timeout=5):
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
     return response.read().decode("utf-8")
 
-def request_download(url, filename, headers=None, timeout=5):
+def request_download(url, filename, sha1hash=None, headers=None, timeout=5):
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
 
@@ -167,11 +206,27 @@ def request_download(url, filename, headers=None, timeout=5):
   log.debug(f"Downloading URL: {request_url.full_url}")
   log.debug(f"Temporary file: {tempfile}")
 
+  # Download the file into a temporary directrory
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
     with open(tempfile, mode="wb") as file:
       shutil.copyfileobj(response, file)
 
-    shutil.move(tempfile, filename)
+  if sha1hash:
+    log.debug("Calculating SHA1 digest of the temporary file...")
+    sha1sum = hashlib.sha1()
+    with open(tempfile, mode="rb") as file:
+      while True:
+        data = file.read(read_chunk_size)
+        if not data:
+          break
+
+        sha1sum.update(data)
+
+    if sha1sum.hexdigest() != sha1hash:
+      raise RequestDownloadError("Downloaded file's SHA1 digest doesn't match!")
+
+  log.debug("Moving temporary file to its destination...")
+  shutil.move(tempfile, filename)
 
 def fetch_mod_version(modid, game_version, loader):
   response = json.loads(request_fetch(f"https://api.modrinth.com/v2/project/{modid}/version", params={
@@ -236,26 +291,6 @@ def eula_agree():
     file.write(f"""#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).
 #{timestamp}
 eula=true""")
-
-# Functions
-def hahaha_yes():
-  print("The cake is a lie")
-  sys.exit(0)
-
-def print_help(args):
-  parser = args.parser
-
-  parser.print_help()
-  sys.exit(0)
-
-def wrap_text(text, initial_indent="", subsequent_indent=""):
-  if isinstance(initial_indent, int):
-    raise ValueError("initial_indent supposed to be a str, duh!")
-  elif isinstance(subsequent_indent, int):
-    raise ValueError("subsequent_indent supposed to be a str, duh!")
-
-  terminal_width = shutil.get_terminal_size().columns
-  return "\n".join(textwrap.wrap(text, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
 
 # Command functions
 def add_mod(args):
@@ -403,6 +438,14 @@ def add_mod(args):
       request_download(mod_file["url"], mods_dir / mod_file["filename"])
 
 def initialize_directory(args):
+  server = args.server
+
+  loader = args.loader
+  loader_version = args.loader_version
+
+  min_ram = args.min_ram
+  max_ram = args.max_ram
+
   if not mcserver_dir.exists():
     log.info(f"Initializing MCServer directory at {mcserver_dir.resolve()}")
   else:
@@ -413,9 +456,34 @@ def initialize_directory(args):
   configs_dir.mkdir(exist_ok=True)
   tempfiles_dir.mkdir(exist_ok=True)
 
+  if server is None:
+    log.info("Getting Mojang game version manifest...")
+    latest_version = json.loads(request_fetch("http://launchermeta.mojang.com/mc/game/version_manifest.json"))["latest"]["release"]
+
+    log.info(f"'--server' was not specified, setting it to {latest_version} (the latest release version)")
+    server = latest_version
+
   for config in default_configs.keys():
+    update_values = {}
+    if config == "launcher":
+      update_values = {
+        "ram": {
+          "min": min_ram,
+          "max": max_ram
+        }
+      }
+
+    if config == "server":
+      update_values = {
+        "version": server,
+        "loader": {
+          "name": loader,
+          "version": loader_version
+        }
+      }
+
     try:
-      generate_config(config)
+      generate_config(config, update_config=update_values)
     except FileExistsError:
       log.debug(f"Configuration file for `{config}` already exists, not regenerating")
 
@@ -424,15 +492,33 @@ def install_server(args):
   launcher_config = load_config("launcher")
 
   server_loader = server_config["loader"]
-
   server_version = server_config["version"]
+
+  loader_name = server_loader["name"]
   loader_version = server_loader["version"]
 
-  if server_loader["name"] == "fabric":
-    log.info(f"Downloading jarfile for Minecraft {server_version} (Fabric {loader_version})...")
-    request_download(f"https://meta.fabricmc.net/v2/versions/loader/{server_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
+  match loader_name:
+    case "fabric":
+      log.info(f"Downloading Fabric loader {loader_version} for Minecraft server {server_version}...")
+      request_download(f"https://meta.fabricmc.net/v2/versions/loader/{server_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
+    case "vanilla":
+      log.info("Getting Mojang game version manifest...")
+      version_manifest = json.loads(request_fetch("http://launchermeta.mojang.com/mc/game/version_manifest.json"))
 
-  log.info("Done")
+      selected_version_url = None
+      for version in version_manifest["versions"]:
+        if version["id"] == server_version:
+          selected_version_url =  version["url"]
+          break
+
+      server_download = json.loads(request_fetch(selected_version_url))["downloads"]["server"]
+      log.info(f"Downloading jarfile for vanilla Minecraft server {server_version}...")
+
+      request_download(server_download["url"], launcher_config["jarfile"], sha1hash=server_download["sha1"])
+    case _:
+      raise InstallServerError(f"Server loader '{loader_name}' is not supported")
+
+  log.info("Server installation is complete.")
 
 def search_mod(args):
   query = " ".join(args.query)
@@ -625,6 +711,13 @@ def main():
   # Setup
   #'init' command
   parser_init = subparsers.add_parser("init", help="Initialize MCServer directory")
+
+  parser_init.add_argument("--server", help="Minecraft server version") # Auto fetch latest when None or not specified
+  parser_init.add_argument("--loader", choices=loaders_list, default="vanilla", help="Server mod loader (vanilla for unmodded server)")
+  parser_init.add_argument("--loader-version", help="The server mod loader's version")
+
+  parser_init.add_argument("--min-ram", default=512, type=int, help="The minimum RAM for server (in Mebibyte)")
+  parser_init.add_argument("--max-ram", default=2048, type=int, help="The maximum RAM for server (in Mebibyte)")
   parser_init.set_defaults(func=initialize_directory)
 
   #'install' command
@@ -646,7 +739,7 @@ def main():
   parser_search.add_argument("query", nargs="*", help="Query to search")
 
   parser_search.add_argument("-n", "--no-filter",  action="store_true", help="Do not use any search filters")
-  parser_search.add_argument("-p", "--page",default=1,  type=int, help="Page(s) number", metavar="N")
+  parser_search.add_argument("-p", "--page", default=1, type=int, help="Page(s) number", metavar="N")
 
   parser_search.set_defaults(func=search_mod)
 

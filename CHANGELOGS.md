@@ -125,3 +125,8 @@ Added:
 - Add check in wrap_text of int in *_indent where it supposed to be a str
 - Renamed fetch_mod_version -> project_id to just id
 - Removed "Got status code" debug messages
+
+1.8.0
+- Add SHA1 checksum inside request_download
+- Add couple of flags in `init` to manipulate some configs
+- Add vanilla server install
