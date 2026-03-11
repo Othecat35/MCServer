@@ -130,3 +130,9 @@ Added:
 - Add SHA1 checksum inside request_download
 - Add couple of flags in `init` to manipulate some configs
 - Add vanilla server install
+
+---
+
+## 1.8.1
+### Fixed
+- Typo in mod dependency resolution

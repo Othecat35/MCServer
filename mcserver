@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.8.0"
+__version__ = "1.8.1"
 
 import argparse
 import hashlib
@@ -99,14 +99,14 @@ def mod_environment_color(environment):
   return environment
 
 # Functions
-def hahaha_yes():
-  print("The cake is a lie")
-  sys.exit(0)
-
 def print_help(args):
   parser = args.parser
 
   parser.print_help()
+  sys.exit(0)
+
+def hahaha_yes():
+  print("The cake is a lie")
   sys.exit(0)
 
 def merge_dict(base, update):
@@ -120,9 +120,9 @@ def merge_dict(base, update):
 
 def wrap_text(text, initial_indent="", subsequent_indent=""):
   if not isinstance(initial_indent, str):
-    raise ValueError("initial_indent supposed to be a str, duh!")
+    raise ValueError(f"initial_indent must be str, not {type(initial_indent)}")
   elif not isinstance(subsequent_indent, str):
-    raise ValueError("subsequent_indent supposed to be a str, duh!")
+    raise ValueError(f"subsequent_indent must be str, not {type(subsequent_indent)}")
 
   terminal_width = shutil.get_terminal_size().columns
   return "\n".join(textwrap.wrap(text, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
@@ -247,7 +247,7 @@ def fetch_mod_version(modid, game_version, loader):
       break
 
   if selected_file is None:
-    raise FetchModVersionError(f"This version of the mod \"{modid}\" doesn't have any file marked primary")
+    raise FetchModVersionError(f"This version of the mod \"{modid}\" does not have any file marked primary")
 
   dependencies = []
   for dependency in selected_version["dependencies"]:
@@ -288,7 +288,8 @@ def check_eula_agreed():
 def eula_agree():
   timestamp = time.strftime("%a %b %d %H:%M:%S GMT %Y", time.gmtime())
   with open("eula.txt", mode="wt") as file:
-    file.write(f"""#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).
+    file.write(f"""\
+#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).
 #{timestamp}
 eula=true""")
 
@@ -347,8 +348,9 @@ def add_mod(args):
       log.debug("Skipped processing 'embedded' mod dependency")
       continue
 
-    if dependency_type == "incompactible":
-      log.info(f"Skipped mod {mod_id} because it is marked as incompactible.") # Keep it simple for now
+    if dependency_type == "incompatible":
+      log.info(f"Skipped mod {mod_id} because it is marked as incompatible.") # Keep it simple for now...
+      continue
 
     response = None
 
@@ -359,7 +361,7 @@ def add_mod(args):
         log.warning(f"An optional dependency doesn't have version for {loader_name.capitalize()}, Minecraft {server_version}.") # We'll fetch info about that mod later
         continue
 
-      raise AddModError(f"This mod contains dependency that doesn't have version for {loader_name.capitalize}, Minecraft {server_version}.")
+      raise AddModError(f"This mod contains dependency that doesn't have version for {loader_name.capitalize()}, Minecraft {server_version}.")
 
     data = response["data"]
     dependencies = response["dependencies"]
@@ -714,7 +716,7 @@ def main():
 
   parser_init.add_argument("--server", help="Minecraft server version") # Auto fetch latest when None or not specified
   parser_init.add_argument("--loader", choices=loaders_list, default="vanilla", help="Server mod loader (vanilla for unmodded server)")
-  parser_init.add_argument("--loader-version", help="The server mod loader's version")
+  parser_init.add_argument("--loader-version", help="The server mod loader's version (not checked if exists)")
 
   parser_init.add_argument("--min-ram", default=512, type=int, help="The minimum RAM for server (in Mebibyte)")
   parser_init.add_argument("--max-ram", default=2048, type=int, help="The maximum RAM for server (in Mebibyte)")
