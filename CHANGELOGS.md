@@ -155,9 +155,13 @@ Added:
 - Some command description and option description
 - Size info include disclaimer of it also counts optional mods
 - Moved debug environment and log level to the top
-### Romoved
+### Removed
 - Moving tempfile to its destination debug log
 
 ## 1.9.3
 ### Changed
 - Upgrade HTTP to HTTPS (Mojang APIs)
+
+## 1.9.4
+### Fixed
+- Generating config now use deepcopy to avoid changing the default config

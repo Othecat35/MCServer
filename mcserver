@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-__version__ = "1.9.3"
+__version__ = "1.9.4"
 
 import argparse
+import copy
 import hashlib
 import json
 import math
@@ -170,7 +171,7 @@ def generate_config(config_name, update_config=None):
   config_content = None
 
   try:
-    config_content = default_configs[config_name].copy()
+    config_content = copy.deepcopy(default_configs[config_name])
   except KeyError as error:
     raise ValueError(f"Failed to generate configuration file for '{config_name}': No default configuration available") from error
 
