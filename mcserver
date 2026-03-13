@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.8.1"
+__version__ = "1.9.0"
 
 import argparse
 import hashlib
@@ -24,6 +24,9 @@ loaders_list = ["fabric", "vanilla"]
 eula_agree_sentence = "I agree"
 
 read_chunk_size = 1024 * 64 # 64KiB
+
+si_prefixes = ["", "K", "M", "B", "T"]
+iec_prefixes = ["B", "KiB", "MiB", "GiB", "TiB"]
 
 default_configs = {
   "launcher": {
@@ -60,6 +63,7 @@ tempfiles_dir = mcserver_dir / "tempfiles"
 
 # Error classes
 class AddModError(Exception): pass
+class InitializeDirectoryError(Exception): pass
 class InstallServerError(Exception): pass
 class SearchModError(Exception): pass
 class ShowModError(Exception): pass
@@ -117,6 +121,29 @@ def merge_dict(base, update):
       pass
     else:
       base[key] = value
+
+def format_number(number, unit_type="si"):
+  unit_multiples = 0
+  prefixes = 0
+
+  if unit_type == "si":
+    unit_multiples = 1_000
+    prefixes = si_prefixes
+  elif unit_type == "iec":
+    unit_multiples = 1_024
+    prefixes = iec_prefixes
+  else:
+    raise ValueError(f"'{unit_type}' is not a valid unit type")
+
+  iteration = 0
+  while number >= unit_multiples:
+    if iteration > len(prefixes) - 2:
+      break
+
+    number //= unit_multiples
+    iteration += 1
+
+  return f"{number:,}{prefixes[iteration]}"
 
 def wrap_text(text, initial_indent="", subsequent_indent=""):
   if not isinstance(initial_indent, str):
@@ -412,7 +439,7 @@ def add_mod(args):
     print(wrap_text(", ".join(optional_modname_list), initial_indent="  ", subsequent_indent="  "))
 
   print()
-  # log.info(f"Will download {total_size}B of mod(s) file.")
+  log.info(f"Will download {format_number(total_size, 'iec')} worth of file(s).")
 
   continue_action = True
   answer = " "
@@ -440,7 +467,7 @@ def add_mod(args):
       request_download(mod_file["url"], mods_dir / mod_file["filename"])
 
 def initialize_directory(args):
-  server = args.server
+  mc_version = args.mc_version
 
   loader = args.loader
   loader_version = args.loader_version
@@ -458,12 +485,15 @@ def initialize_directory(args):
   configs_dir.mkdir(exist_ok=True)
   tempfiles_dir.mkdir(exist_ok=True)
 
-  if server is None:
+  if mc_version is None:
     log.info("Getting Mojang game version manifest...")
     latest_version = json.loads(request_fetch("http://launchermeta.mojang.com/mc/game/version_manifest.json"))["latest"]["release"]
 
-    log.info(f"'--server' was not specified, setting it to {latest_version} (the latest release version)")
-    server = latest_version
+    log.info(f"'--mc-versio' was not specified, setting it to {latest_version} (the latest release version)")
+    mc_version = latest_version
+
+  if (loader != "vanilla") and not loader_version:
+    raise InitializeDirectoryError("--loader and --loader-version must be set together")
 
   for config in default_configs.keys():
     update_values = {}
@@ -477,7 +507,7 @@ def initialize_directory(args):
 
     if config == "server":
       update_values = {
-        "version": server,
+        "version": mc_version,
         "loader": {
           "name": loader,
           "version": loader_version
@@ -575,13 +605,13 @@ def search_mod(args):
     raise SearchModError(f"No mod found")
 
   total_hits = response.get('total_hits', 0)
-  total_pages = math.ceil(total_hits / search_limit)
+  total_pages = format_number(math.ceil(total_hits / search_limit))
 
   response_offset = response.get("offset", 0)
-  shown_mods_count = min(len(mods_list), search_limit)
+  shown_mods_count = format_number(min(len(mods_list), search_limit))
 
-  skipped_message = f"(skipped {response_offset} mod(s)) " if response_offset > 0 else ""
-  log.info(f"Showing {shown_mods_count} mod(s) out of {total_hits} total mod(s) {skipped_message}| Page: {page}/{total_pages}")
+  skipped_message = f"(skipped {format_number(response_offset)} mod(s)) " if response_offset > 0 else ""
+  log.info(f"Showing {shown_mods_count} mod(s) out of {format_number(total_hits)} total mod(s) {skipped_message}| Page: {format_number(page)}/{total_pages}")
 
   for mod in mods_list:
     title = color_text(mod.get("title", ""), "bold")
@@ -590,9 +620,9 @@ def search_mod(args):
 
     mod_header = wrap_text(f"{title} ({slug}) {color_text(author, 'gray')}", subsequent_indent=" ")
 
-    downloads_count = mod.get("downloads", 0)
-    follows_count = mod.get("follows", 0)
-    downloads_follows = color_text(f"[ Downloads: {downloads_count:,} | Follows: {follows_count:,} ]", "gray")
+    downloads = format_number(mod.get("downloads", 0))
+    follows = format_number(mod.get("follows", 0))
+    downloads_follows = color_text(f"[ Downloads: {downloads} | Follows: {follows} ]", "gray")
 
     server_side = mod_environment_color(mod["server_side"])
     client_side = mod_environment_color(mod["client_side"])
@@ -619,8 +649,8 @@ def show_mod(args):
   slug = color_text(mod_info["slug"], "bold")
   mod_id = color_text(mod_info["id"], "bold")
 
-  downloads = color_text(f"{mod_info['downloads']:,}", "bold")
-  followers = color_text(f"{mod_info['followers']:,}", "bold")
+  downloads = color_text(f"{format_number(mod_info['downloads'])}", "bold")
+  followers = color_text(f"{format_number(mod_info['followers'])}", "bold")
 
   categories = color_text(", ".join(entry.capitalize() for entry in mod_info["categories"]), "bold")
   loaders = color_text(", ".join(entry.capitalize() for entry in mod_info["loaders"]), "bold")
@@ -714,12 +744,12 @@ def main():
   #'init' command
   parser_init = subparsers.add_parser("init", help="Initialize MCServer directory")
 
-  parser_init.add_argument("--server", help="Minecraft server version") # Auto fetch latest when None or not specified
+  parser_init.add_argument("--mc-version", help="The Minecraft server version", metavar="version") # Auto fetch latest when None or not specified
   parser_init.add_argument("--loader", choices=loaders_list, default="vanilla", help="Server mod loader (vanilla for unmodded server)")
-  parser_init.add_argument("--loader-version", help="The server mod loader's version (not checked if exists)")
+  parser_init.add_argument("--loader-version", help="The server mod loader's version (not checked if exists)", metavar="version")
 
-  parser_init.add_argument("--min-ram", default=512, type=int, help="The minimum RAM for server (in Mebibyte)")
-  parser_init.add_argument("--max-ram", default=2048, type=int, help="The maximum RAM for server (in Mebibyte)")
+  parser_init.add_argument("--min-ram", default=512, type=int, help="The minimum RAM for server (in Mebibyte)", metavar="size")
+  parser_init.add_argument("--max-ram", default=2048, type=int, help="The maximum RAM for server (in Mebibyte)", metavar="size")
   parser_init.set_defaults(func=initialize_directory)
 
   #'install' command

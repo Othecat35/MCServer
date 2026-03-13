@@ -136,3 +136,10 @@ Added:
 ## 1.8.1
 ### Fixed
 - Typo in mod dependency resolution
+
+## 1.9.0
+### Added
+- Function to format large number with unit
+## Changed
+- Numbers now use the format number for easier reading
+- `init` command options name changed
