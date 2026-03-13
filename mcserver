@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.9.1"
+__version__ = "1.9.2"
 
 import argparse
 import hashlib
@@ -18,15 +18,19 @@ import logging as log
 from pathlib import Path
 
 # Variables
+debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
+log_level = log.DEBUG if debug_mode else log.INFO
+
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"Othecat35/MCServer {__version__}"
+
 loaders_list = ["fabric", "vanilla"]
 eula_agree_sentence = "I agree"
 
-read_chunk_size = 1024 * 64 # 64KiB
-
 si_prefixes = ["", "K", "M", "B", "T"]
 iec_prefixes = ["B", "KiB", "MiB", "GiB", "TiB"]
+
+read_chunk_size = 1024 * 64 # 64KiB
 
 default_configs = {
   "launcher": {
@@ -59,6 +63,7 @@ mods_dir = current_dir / "mods"
 
 mcserver_dir = current_dir / ".mcserver"
 configs_dir = mcserver_dir / "configs"
+
 tempfiles_dir = mcserver_dir / "tempfiles"
 
 # Error classes
@@ -110,7 +115,7 @@ def print_help(args):
   sys.exit(0)
 
 def hahaha_yes():
-  print("The cake is a lie")
+  print("The cake is a lie.")
   sys.exit(0)
 
 def merge_dict(base, update):
@@ -252,7 +257,6 @@ def request_download(url, filename, sha1hash=None, headers=None, timeout=5):
     if sha1sum.hexdigest() != sha1hash:
       raise RequestDownloadError("Downloaded file's SHA1 digest doesn't match!")
 
-  log.debug("Moving temporary file to its destination...")
   shutil.move(tempfile, filename)
 
 def fetch_mod_version(modid, game_version, loader):
@@ -439,7 +443,7 @@ def add_mod(args):
     print(wrap_text(", ".join(optional_modname_list), initial_indent="  ", subsequent_indent="  "))
 
   print()
-  log.info(f"Will download {format_number(total_size, 'iec')} worth of file(s).")
+  log.info(f"Will download {format_number(total_size, 'iec')} worth of file(s) [including optional].")
 
   continue_action = True
   answer = " "
@@ -720,8 +724,6 @@ def start_server(args):
 # Main
 def main():
   if ((sys.argv[1] if len(sys.argv) > 1 else "") == "cake"): hahaha_yes()
-  debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
-  log_level = log.DEBUG if debug_mode else log.INFO
 
   log.basicConfig(
     format="[%(levelname)s]: %(message)s",
@@ -740,51 +742,52 @@ def main():
   parser.set_defaults(func=print_help, parser=parser)
   subparsers = parser.add_subparsers(title="Commands")
 
-  # Setup
-  #'init' command
-  parser_init = subparsers.add_parser("init", help="Initialize MCServer directory")
+  #Setup
+  # 'init' command
+  parser_init = subparsers.add_parser("init", help="Initialize server configuration")
 
-  parser_init.add_argument("--mc-version", help="The Minecraft server version", metavar="version") # Auto fetch latest when None or not specified
-  parser_init.add_argument("--loader", choices=loaders_list, default="vanilla", help="Server mod loader (vanilla for unmodded server)")
-  parser_init.add_argument("--loader-version", help="The server mod loader's version (not checked if exists)", metavar="version")
+  parser_init.add_argument("--mc-version", help="Version of the Minecraft server", metavar="version") # Auto fetch latest when None (or not specified)
 
-  parser_init.add_argument("--min-ram", default=512, type=int, help="The minimum RAM for server (in Mebibyte)", metavar="size")
-  parser_init.add_argument("--max-ram", default=2048, type=int, help="The maximum RAM for server (in Mebibyte)", metavar="size")
+  parser_init.add_argument("--loader", choices=loaders_list, default="vanilla", help="Mod loader for the server (vanilla for unmodded server)")
+  parser_init.add_argument("--loader-version", help="Version of the server's mod loader (not checked if exists)", metavar="version")
+
+  parser_init.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for server (in Mebibyte)", metavar="size")
+  parser_init.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for server (in Mebibyte)", metavar="size")
   parser_init.set_defaults(func=initialize_directory)
 
-  #'install' command
+  # 'install' command
   parser_install = subparsers.add_parser("install", help="Install the server")
   parser_install.set_defaults(func=install_server)
 
-  #'start' command
+  # 'start' command
   parser_start = subparsers.add_parser("start", help="Start the server")
   parser_start.set_defaults(func=start_server)
 
-  # Mod management
-  #'add' command
-  parser_add = subparsers.add_parser("add", help="Download mod(s) from Modrinth")
+  #Mod management
+  # 'add' command
+  parser_add = subparsers.add_parser("add", help="Add mod(s) from Modrinth")
   parser_add.add_argument("mods", nargs="+", help="Slug (or ID) of the mod(s)")
   parser_add.set_defaults(func=add_mod)
 
-  #'search' command
-  parser_search = subparsers.add_parser("search", help="Search mod(s) from Modrinth")
+  # 'search' command
+  parser_search = subparsers.add_parser("search", help="Search mods in Modrinth")
   parser_search.add_argument("query", nargs="*", help="Query to search")
 
-  parser_search.add_argument("-n", "--no-filter",  action="store_true", help="Do not use any search filters")
-  parser_search.add_argument("-p", "--page", default=1, type=int, help="Page(s) number", metavar="N")
+  parser_search.add_argument("-n", "--no-filter",  action="store_true", help="No search filter when searching")
+  parser_search.add_argument("-p", "--page", default=1, type=int, help="Page number", metavar="N")
 
   parser_search.set_defaults(func=search_mod)
 
-  #'show' command
-  parser_show = subparsers.add_parser("show", help="Show info about mod(s)")
+  # 'show' command
+  parser_show = subparsers.add_parser("show", help="Show information about mod(s)")
   parser_show.add_argument("mods", help="Slug (or ID) of the mod(s)", nargs="+")
   parser_show.set_defaults(func=show_mod)
 
+  # Let it crash
   args = parser.parse_args()
 
-  # Let it crash
   if debug_mode:
-   args.func(args)
+    args.func(args)
   else:
     try:
       args.func(args)

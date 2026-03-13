@@ -149,3 +149,12 @@ Added:
 - Update User-Agent to reflect username change
 ### Fixed
 - A typo when --mc-version option is not used
+
+## 1.9.2
+### Changed
+- Some command description and option description
+- Size info include disclaimer of it also counts optional mods
+- Moved debug environment and log level to the top
+
+### Romoved
+- Moving tempfile to its destination debug log
