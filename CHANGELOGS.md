@@ -143,3 +143,9 @@ Added:
 ### Changed
 - Numbers now use the format number for easier reading
 - `init` command options name changed
+
+## 1.9.1
+### Changed
+- Update User-Agent to reflect username change
+### Fixed
+- A typo when --mc-version option is not used

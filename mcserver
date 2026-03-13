@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.9.0"
+__version__ = "1.9.1"
 
 import argparse
 import hashlib
@@ -19,7 +19,7 @@ from pathlib import Path
 
 # Variables
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
-user_agent = f"othecat35/MCServer {__version__}"
+user_agent = f"Othecat35/MCServer {__version__}"
 loaders_list = ["fabric", "vanilla"]
 eula_agree_sentence = "I agree"
 
@@ -489,7 +489,7 @@ def initialize_directory(args):
     log.info("Getting Mojang game version manifest...")
     latest_version = json.loads(request_fetch("http://launchermeta.mojang.com/mc/game/version_manifest.json"))["latest"]["release"]
 
-    log.info(f"'--mc-versio' was not specified, setting it to {latest_version} (the latest release version)")
+    log.info(f"'--mc-version' was not specified, setting it to {latest_version} (the latest release version)")
     mc_version = latest_version
 
   if (loader != "vanilla") and not loader_version:
