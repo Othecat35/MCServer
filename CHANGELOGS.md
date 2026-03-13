@@ -140,6 +140,6 @@ Added:
 ## 1.9.0
 ### Added
 - Function to format large number with unit
-## Changed
+### Changed
 - Numbers now use the format number for easier reading
 - `init` command options name changed
