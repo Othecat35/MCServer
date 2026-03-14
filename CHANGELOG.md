@@ -165,3 +165,7 @@ Added:
 ## 1.9.4
 ### Fixed
 - Generating config now use deepcopy to avoid changing the default config
+
+## 1.9.5
+### Changed
+- The script will exit with code 1 if any error happens
