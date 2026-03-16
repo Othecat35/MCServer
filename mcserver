@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.9.7"
+__version__ = "1.9.8"
 
 import argparse
 import copy
@@ -489,7 +489,7 @@ def add_mod(args):
       mod_file = mod["file"]
 
       log.info(f"Downloading version {mod['name']}...")
-      request_download(mod_file["url"], mods_dir / mod_file["filename"], hashes=mod["hashes"])
+      request_download(mod_file["url"], mods_dir / mod_file["filename"], hashes=mod_file["hashes"])
 
 def initialize_server(args):
   mc_version = args.mc_version

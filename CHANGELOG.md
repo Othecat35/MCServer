@@ -171,6 +171,7 @@ Added:
 - The script will exit with code 1 if any error happens
 
 ---
+
 Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.9.6] - 2026-03-16
@@ -200,3 +201,8 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Changed
 - Update `show_mods` output structure
+
+## [1.9.8] - 2026-03-16
+
+### Fixed
+- Downloading mod uses the wrong dictionary for hashes, mod instead of mod_file
