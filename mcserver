@@ -664,45 +664,53 @@ def search_mod(args):
 def show_mod(args):
   mods = args.mods
 
-  mod = mods[0]
-  log.info("Getting mod info...")
-  mod_info = json.loads(request_fetch(
-    f"https://api.modrinth.com/v2/project/{mod}",
+  log.info("Getting mod(s) information...")
+  mods_info = json.loads(request_fetch(
+    "https://api.modrinth.com/v2/projects",
+    params={
+      "ids": json.dumps(mods)
+    }
   ))
 
-  name = color_string(mod_info['title'], "bold")
-  description = wrap_text(f"Description: {color_string(mod_info['description'], 'bold')}", subsequent_indent=' ')
+  mod_index = 0
+  for mod in mods_info:
+    title = color_string(mod.get("title", "") or "<No Title>", "bold")
+    slug = color_string(mod.get("slug", f"<{mods[mod_index]}>"), "bold")
 
-  slug = color_string(mod_info["slug"], "bold")
-  mod_id = color_string(mod_info["id"], "bold")
+    downloads = color_string(format_number(mod.get("downloads", 0)), "bold")
+    followers = color_string(format_number(mod.get("followers", 0)), "bold")
 
-  downloads = color_string(f"{format_number(mod_info['downloads'])}", "bold")
-  followers = color_string(f"{format_number(mod_info['followers'])}", "bold")
+    mod_categories = ', '.join(mod.get('categories', ['None'])).title()
+    categories = wrap_text(f"Categories: {color_string(mod_categories, 'bold')}", subsequent_indent="  ")
 
-  categories = color_string(", ".join(entry.capitalize() for entry in mod_info["categories"]), "bold")
-  loaders = color_string(", ".join(entry.capitalize() for entry in mod_info["loaders"]), "bold")
-  mc_versions = wrap_text(f"Minecraft Versions {color_string(', '.join(mod_info['game_versions']), 'bold')}", subsequent_indent=" ")
+    mod_loaders = ', '.join(mod.get('loaders', ['None'])).title()
+    loaders = wrap_text(f"Loaders: {color_string(mod_loaders, 'bold')}", subsequent_indent="  ")
 
-  mod_license = mod_info["license"]
-  license_name = color_string(mod_license["name"] or "All Rights Reserved", "bold") 
-  license_id = color_string(mod_license["id"], "bold")
+    mod_game_versions = ', '.join(mod.get('game_versions', ['None'])).title()
+    game_versions = wrap_text(f"Minecraft Versions: {color_string(mod_game_versions, 'bold')}", subsequent_indent="  ")
 
-  server_side = mod_environment_color(mod_info["server_side"])
-  client_side = mod_environment_color(mod_info["client_side"])
+    server_side = color_string(f"Server: {mod_environment_color(mod.get('server_side', '<Unknown>'))}", "bold")
+    client_side = mod_environment_color(mod.get("client_side", "<Unknown>"))
 
-  print(f"""Name: {name}
-Slug/ID: {slug} ({mod_id})
+    mod_license = mod.get("license", {})
+    license_name = color_string(mod_license.get("name", "") or "All Rights Reserved", "bold")
+    license_id = color_string(mod_license.get("id", "") or "LicenseRef-All-Rights-Reserved", "bold")
 
+    mod_description = mod.get('description', '<No Description>')
+    description = wrap_text(f"Description: {color_string(mod_description, 'bold')}", subsequent_indent="  ")
+
+    if (mod_index >= 1): print()
+    print(f"""Name: {title} ({slug})
 Downloads: {downloads}
 Followers: {followers}
-
-Categories: {categories}
-Loaders: {loaders}
-Environment: Server: {server_side} | Client: {client_side}
-{mc_versions}
-
+{categories}
+{loaders}
+{game_versions}
+Environment: {server_side} | Client: {client_side}
 License: {license_name} ({license_id})
 {description}""")
+
+    mod_index += 1
 
 def start_server(args):
   launcher_config = load_config("launcher")
