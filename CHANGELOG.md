@@ -192,3 +192,11 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Fixed
 - Check if dependency is already added as unresolved when initial fetching im `add_mod`
+
+## [1.9.7] - 2026-03-16
+
+### Added
+- `show_mods` finally support multiple mods
+
+### Changed
+- Update `show_mods` output structure
