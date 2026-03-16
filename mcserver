@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.9.8"
+__version__ = "1.9.9"
 
 import argparse
 import copy
@@ -55,7 +55,8 @@ default_configs = {
   },
 
   "modrinth": {
-    "search_limit": 20
+    "search_limit": 20,
+    "sort_by": "relevance"
   },
 
   "server": {
@@ -146,10 +147,12 @@ def format_number(number, unit_type="si"):
     if iteration > len(prefixes) - 2:
       break
 
-    number //= unit_multiples
+    number /= unit_multiples
     iteration += 1
 
-  return f"{number:,}{prefixes[iteration]}"
+  #Whoa, a hack!
+  number_string = str(f"{number:.2f}").removesuffix("0").removesuffix(".0")
+  return f"{number_string}{prefixes[iteration]}"
 
 def wrap_text(text, initial_indent="", subsequent_indent=""):
   if not isinstance(initial_indent, str):
@@ -464,7 +467,7 @@ def add_mod(args):
     print(wrap_text(", ".join(optional_modname_list), initial_indent="  ", subsequent_indent="  "))
 
   print()
-  log.info(f"Will download {format_number(total_size, 'iec')} worth of file(s) [including optional].")
+  log.info(f"Will download {format_number(total_size, 'iec')} worth of file(s) [including optional, but not going to download optional].")
 
   continue_action = True
   answer = " "
@@ -581,18 +584,21 @@ def install_server(args):
 
 def search_mod(args):
   query = " ".join(args.query)
-
   no_filter = args.no_filter
+
   page = args.page
+  sort_by = args.sort_by
 
   modrinth_config = load_config("modrinth")
   server_config = None
+
+  search_index = sort_by or modrinth_config.get("sort_by", "relevance")
 
   search_filters = None
   search_message = None
 
   if no_filter:
-    search_message = f"Searching mods with \"{query}\" in Modrinth..."
+    search_message = f"Searching mods with '{query}' in Modrinth sorted by {search_index}..."
     search_filters = [["project_type:mod"]]
   else:
     server_config = load_config("server")
@@ -604,7 +610,7 @@ def search_mod(args):
     if loader_name == "vanilla":
       raise SearchModError("Vanilla Minecraft server does not support mod")
 
-    search_message = f"Searching mods with \"{query}\" in Modrinth for {loader_name.capitalize()}, Minecraft server {server_version}..."
+    search_message = f"Searching mods with '{query}' in Modrinth for {loader_name.capitalize()}, Minecraft server {server_version} sorted by {search_index}..."
     search_filters = [
       ["project_type:mod"],
       ["server_side!=unsupported"],
@@ -622,6 +628,7 @@ def search_mod(args):
     {
       "query": query,
       "facets": json.dumps(search_filters),
+      "index": search_index,
       "limit": search_limit,
       "offset": search_offset
     }
@@ -632,13 +639,13 @@ def search_mod(args):
     raise SearchModError(f"No mod found")
 
   total_hits = response.get('total_hits', 0)
-  total_pages = format_number(math.ceil(total_hits / search_limit))
+  total_pages = f"{math.ceil(total_hits / search_limit):,}"
 
   response_offset = response.get("offset", 0)
   shown_mods_count = format_number(min(len(mods_list), search_limit))
 
-  skipped_message = f"(skipped {format_number(response_offset)} mod(s)) " if response_offset > 0 else ""
-  log.info(f"Showing {shown_mods_count} mod(s) out of {format_number(total_hits)} total mod(s) {skipped_message}| Page: {format_number(page)}/{total_pages}")
+  skipped_message = f"(skipped {response_offset:,} mod(s)) " if response_offset > 0 else ""
+  log.info(f"Showing {shown_mods_count:,} mod(s) out of {total_hits:,} total mod(s) {skipped_message}| Page: {page:,}/{total_pages}")
 
   for mod in mods_list:
     title = color_string(mod.get("title", ""), "bold")
@@ -803,9 +810,10 @@ def main():
   # 'search' command
   parser_search = subparsers.add_parser("search", help="Search mods in Modrinth")
   parser_search.add_argument("query", nargs="*", help="Query to search")
-
   parser_search.add_argument("-n", "--no-filter",  action="store_true", help="No search filter when searching")
+
   parser_search.add_argument("-p", "--page", default=1, type=int, help="Page number", metavar="N")
+  parser_search.add_argument("-s", "--sort-by", choices=["downloads", "follows", "newest", "relevance", "updated"], type=str, help="Sort the result with", metavar="S")
 
   parser_search.set_defaults(func=search_mod)
 

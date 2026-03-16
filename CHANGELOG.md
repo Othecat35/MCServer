@@ -206,3 +206,14 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Fixed
 - Downloading mod uses the wrong dictionary for hashes, mod instead of mod_file
+
+## [1.9.9] - 2026-03-16
+
+### Added
+- `--sort-by` option for `search_mod` used to specify what index to sort the mod
+- `<modrinth>.sort_by` configuration, same as `--sort-by`
+
+### Changed
+- `format_number` behavior to include the last 2 decimal
+- Not format numbering for mod counts and pages, instead now is just comma
+- `add_mod` now more clarify that it will not download optional mods yet
