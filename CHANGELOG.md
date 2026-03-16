@@ -169,3 +169,27 @@ Added:
 ## 1.9.5
 ### Changed
 - The script will exit with code 1 if any error happens
+
+---
+Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
+
+## [1.9.6] - 2026-03-16
+
+### Added
+- SHA512 option in `request_download`
+
+### Changed
+- Moved `colors` to "Variables" section
+- Renamed `read_chunk_size` to `checksum_chunk_size`
+- Renamed `initialize_directory` to `initialize_server` (and its error type)
+- Rename `color_text` to `color_string`
+- Update `format_number` error message
+- Default timeout is now 10 (seconds)
+- Replace \" to \' in `fetch_mod_version` error message
+- Add "from Modrinth" in help message of command `show_mod`
+- Update messages in `initialize_server` to reflect the function change
+- Update some function calls to reflect those changes (rename function and added funcrionally)
+
+### Fixed
+- Check if dependency is already added as unresolved when initial fetching im `add_mod`
+

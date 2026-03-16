@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.9.5"
+__version__ = "1.9.6"
 
 import argparse
 import copy
@@ -31,7 +31,16 @@ eula_agree_sentence = "I agree"
 si_prefixes = ["", "K", "M", "B", "T"]
 iec_prefixes = ["B", "KiB", "MiB", "GiB", "TiB"]
 
-read_chunk_size = 1024 * 64 # 64KiB
+checksum_chunk_size = 1024 * 64 # 64KiB
+
+colors = {
+  "bold": "\033[1m",
+  "gray": "\033[90m",
+  "green": "\033[92m",
+  "red": "\033[91m",
+  "reset": "\033[0m",
+  "yellow": "\033[93m"
+}
 
 default_configs = {
   "launcher": {
@@ -69,7 +78,7 @@ tempfiles_dir = mcserver_dir / "tempfiles"
 
 # Error classes
 class AddModError(Exception): pass
-class InitializeDirectoryError(Exception): pass
+class InitializeServerError(Exception): pass
 class InstallServerError(Exception): pass
 class SearchModError(Exception): pass
 class ShowModError(Exception): pass
@@ -80,32 +89,23 @@ class FetchModVersionError(Exception): pass
 class RequestDownloadError(Exception): pass
 
 # Color functions
-colors = {
-  "bold": "\033[1m",
-  "gray": "\033[90m",
-  "green": "\033[92m",
-  "red": "\033[91m",
-  "reset": "\033[0m",
-  "yellow": "\033[93m"
-}
-
 def color(color_name):
   if isatty:
     return colors.get(color_name, "")
   return ""
 
-def color_text(text, color_name):
-  return f"{color(color_name)}{text}{color('reset')}"
+def color_string(string, color_name):
+  return f"{color(color_name)}{string}{color('reset')}"
 
 def mod_environment_color(environment):
   if environment == "required":
-    return color_text("Required", "green")
+    return color_string("Required", "green")
   elif environment == "optional":
-    return color_text("Optional", "yellow")
+    return color_string("Optional", "yellow")
   elif environment == "unsupported":
-    return color_text("Unsupported", "red")
+    return color_string("Unsupported", "red")
   elif environment == "unknown":
-    return color_text("Unknown", "gray")
+    return color_string("Unknown", "gray")
   return environment
 
 # Functions
@@ -139,7 +139,7 @@ def format_number(number, unit_type="si"):
     unit_multiples = 1_024
     prefixes = iec_prefixes
   else:
-    raise ValueError(f"'{unit_type}' is not a valid unit type")
+    raise ValueError(f"'{unit_type}' is not a valid number unit type")
 
   iteration = 0
   while number >= unit_multiples:
@@ -215,9 +215,8 @@ def load_config(config_name):
     raise PermissionError(f"Cannot read configuration file for '{config_name}': Permission denied to read file") from error
 
 # Requests
-def request_fetch(url, params=None, headers=None, timeout=5):
+def request_fetch(url, params=None, headers=None, timeout=10):
   if params is None: params = {}
-
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
 
@@ -229,7 +228,8 @@ def request_fetch(url, params=None, headers=None, timeout=5):
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
     return response.read().decode("utf-8")
 
-def request_download(url, filename, sha1hash=None, headers=None, timeout=5):
+def request_download(url, filename, hashes=None, headers=None, timeout=10):
+  if hashes is None: hashes = {}
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
 
@@ -244,19 +244,38 @@ def request_download(url, filename, sha1hash=None, headers=None, timeout=5):
     with open(tempfile, mode="wb") as file:
       shutil.copyfileobj(response, file)
 
-  if sha1hash:
-    log.debug("Calculating SHA1 digest of the temporary file...")
-    sha1sum = hashlib.sha1()
-    with open(tempfile, mode="rb") as file:
-      while True:
-        data = file.read(read_chunk_size)
-        if not data:
-          break
+  if hashes:
+    expected_sha1 = hashes.get("sha1", None)
+    expected_sha512 = hashes.get("sha512", None)
 
-        sha1sum.update(data)
+    if expected_sha512:
+      log.debug("Calculating SHA512 digest of downloaded file...")
+      sha512sum = hashlib.sha512()
 
-    if sha1sum.hexdigest() != sha1hash:
-      raise RequestDownloadError("Downloaded file's SHA1 digest doesn't match!")
+      with open(tempfile, mode="rb") as file:
+        while True:
+          data = file.read(checksum_chunk_size)
+          if not data:
+            break
+
+          sha512sum.update(data)
+
+      if sha512sum.hexdigest() != expected_sha512:
+        raise RequestDownloadError("Downloaded file does not matched with expected SHA512 hash")
+    elif expected_sha1:
+      log.debug("Calculating SHA1 digest of downloaded file...")
+      sha1sum = hashlib.sha1()
+
+      with open(tempfile, mode="rb") as file:
+        while True:
+          data = file.read(checksum_chunk_size)
+          if not data:
+            break
+
+          sha1sum.update(data)
+
+      if sha1sum.hexdigest() != expected_sha1:
+        raise RequestDownloadError("Downloaded file does not matched with expected SHA1 hash")
 
   shutil.move(tempfile, filename)
 
@@ -279,7 +298,7 @@ def fetch_mod_version(modid, game_version, loader):
       break
 
   if selected_file is None:
-    raise FetchModVersionError(f"This version of the mod \"{modid}\" does not have any file marked primary")
+    raise FetchModVersionError(f"This version of the mod '{modid}' does not have any file marked primary")
 
   dependencies = []
   for dependency in selected_version["dependencies"]:
@@ -320,8 +339,7 @@ def check_eula_agreed():
 def eula_agree():
   timestamp = time.strftime("%a %b %d %H:%M:%S GMT %Y", time.gmtime())
   with open("eula.txt", mode="wt") as file:
-    file.write(f"""\
-#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).
+    file.write(f"""#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).
 #{timestamp}
 eula=true""")
 
@@ -336,7 +354,7 @@ def add_mod(args):
   server_version = server_config["version"]
 
   if server_loader["name"] == "vanilla":
-    raise AddModError("Vanilla Minecraft server does not support mod.")
+    raise AddModError("Vanilla Minecraft server does not support mod")
 
   log.info("Getting mod dependency(ies) information...")
 
@@ -346,6 +364,7 @@ def add_mod(args):
 
   for mod in mods:
     if mod in resolved_dependencies:
+      log.debug(f"Skipping processing processed mod: {mod}")
       continue
 
     log.debug(f"Getting version info of '{mod}'...")
@@ -361,8 +380,9 @@ def add_mod(args):
     resolved_dependencies.add(data["id"]) # Only add ID
 
     for dependency in dependencies:
-      unresolved_dependencies.append(dependency)
-      log.debug(f"Added '{dependency['id']}' as unresolved {dependency['type']} dependency.")
+      if not dependency["id"] in resolved_dependencies:
+        unresolved_dependencies.append(dependency)
+        log.debug(f"Added '{dependency['id']}' as unresolved {dependency['type']} dependency.")
 
   while unresolved_dependencies:
     resolving_dependency = unresolved_dependencies.pop(0)
@@ -469,9 +489,9 @@ def add_mod(args):
       mod_file = mod["file"]
 
       log.info(f"Downloading version {mod['name']}...")
-      request_download(mod_file["url"], mods_dir / mod_file["filename"])
+      request_download(mod_file["url"], mods_dir / mod_file["filename"], hashes=mod["hashes"])
 
-def initialize_directory(args):
+def initialize_server(args):
   mc_version = args.mc_version
 
   loader = args.loader
@@ -481,9 +501,9 @@ def initialize_directory(args):
   max_ram = args.max_ram
 
   if not mcserver_dir.exists():
-    log.info(f"Initializing MCServer directory at {mcserver_dir.resolve()}")
+    log.info(f"Initializing server configuration...")
   else:
-    log.info(f"Reinitializing MCServer directory at {mcserver_dir.resolve()}")
+    log.info(f"Reinitializing server confuguration...")
 
   mcserver_dir.mkdir(exist_ok=True)
 
@@ -498,7 +518,7 @@ def initialize_directory(args):
     mc_version = latest_version
 
   if (loader != "vanilla") and not loader_version:
-    raise InitializeDirectoryError("--loader and --loader-version must be set together")
+    raise InitializeServerError("--loader and --loader-version must be set together")
 
   for config in default_configs.keys():
     update_values = {}
@@ -551,7 +571,9 @@ def install_server(args):
       server_download = json.loads(request_fetch(selected_version_url))["downloads"]["server"]
       log.info(f"Downloading jarfile for vanilla Minecraft server {server_version}...")
 
-      request_download(server_download["url"], launcher_config["jarfile"], sha1hash=server_download["sha1"])
+      request_download(server_download["url"], launcher_config["jarfile"], hashes={
+        "sha1": server_download["sha1"]
+      })
     case _:
       raise InstallServerError(f"Server loader '{loader_name}' is not supported")
 
@@ -619,15 +641,15 @@ def search_mod(args):
   log.info(f"Showing {shown_mods_count} mod(s) out of {format_number(total_hits)} total mod(s) {skipped_message}| Page: {format_number(page)}/{total_pages}")
 
   for mod in mods_list:
-    title = color_text(mod.get("title", ""), "bold")
+    title = color_string(mod.get("title", ""), "bold")
     slug = mod.get("slug", "")
     author = f"by {mod.get('author', '')}"
 
-    mod_header = wrap_text(f"{title} ({slug}) {color_text(author, 'gray')}", subsequent_indent=" ")
+    mod_header = wrap_text(f"{title} ({slug}) {color_string(author, 'gray')}", subsequent_indent=" ")
 
     downloads = format_number(mod.get("downloads", 0))
     follows = format_number(mod.get("follows", 0))
-    downloads_follows = color_text(f"[ Downloads: {downloads} | Follows: {follows} ]", "gray")
+    downloads_follows = color_string(f"[ Downloads: {downloads} | Follows: {follows} ]", "gray")
 
     server_side = mod_environment_color(mod["server_side"])
     client_side = mod_environment_color(mod["client_side"])
@@ -648,22 +670,22 @@ def show_mod(args):
     f"https://api.modrinth.com/v2/project/{mod}",
   ))
 
-  name = color_text(mod_info['title'], "bold")
-  description = wrap_text(f"Description: {color_text(mod_info['description'], 'bold')}", subsequent_indent=' ')
+  name = color_string(mod_info['title'], "bold")
+  description = wrap_text(f"Description: {color_string(mod_info['description'], 'bold')}", subsequent_indent=' ')
 
-  slug = color_text(mod_info["slug"], "bold")
-  mod_id = color_text(mod_info["id"], "bold")
+  slug = color_string(mod_info["slug"], "bold")
+  mod_id = color_string(mod_info["id"], "bold")
 
-  downloads = color_text(f"{format_number(mod_info['downloads'])}", "bold")
-  followers = color_text(f"{format_number(mod_info['followers'])}", "bold")
+  downloads = color_string(f"{format_number(mod_info['downloads'])}", "bold")
+  followers = color_string(f"{format_number(mod_info['followers'])}", "bold")
 
-  categories = color_text(", ".join(entry.capitalize() for entry in mod_info["categories"]), "bold")
-  loaders = color_text(", ".join(entry.capitalize() for entry in mod_info["loaders"]), "bold")
-  mc_versions = wrap_text(f"Minecraft Versions {color_text(', '.join(mod_info['game_versions']), 'bold')}", subsequent_indent=" ")
+  categories = color_string(", ".join(entry.capitalize() for entry in mod_info["categories"]), "bold")
+  loaders = color_string(", ".join(entry.capitalize() for entry in mod_info["loaders"]), "bold")
+  mc_versions = wrap_text(f"Minecraft Versions {color_string(', '.join(mod_info['game_versions']), 'bold')}", subsequent_indent=" ")
 
   mod_license = mod_info["license"]
-  license_name = color_text(mod_license["name"] or "All Rights Reserved", "bold") 
-  license_id = color_text(mod_license["id"], "bold")
+  license_name = color_string(mod_license["name"] or "All Rights Reserved", "bold") 
+  license_id = color_string(mod_license["id"], "bold")
 
   server_side = mod_environment_color(mod_info["server_side"])
   client_side = mod_environment_color(mod_info["client_side"])
@@ -697,7 +719,7 @@ def start_server(args):
   try:
     if not check_eula_agreed():
       log.warning("You need to agree to Mojang's EULA in order to run the server: https://aka.ms/MinecraftEULA")
-      log.info(f"Type {color_text(eula_agree_sentence, 'yellow')} (case-sensitive) to agree with Mojang's EULA.")
+      log.info(f"Type {color_string(eula_agree_sentence, 'yellow')} (case-sensitive) to agree with Mojang's EULA.")
       answer = input("> ")
 
       if answer == eula_agree_sentence:
@@ -754,7 +776,7 @@ def main():
 
   parser_init.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for server (in Mebibyte)", metavar="size")
   parser_init.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for server (in Mebibyte)", metavar="size")
-  parser_init.set_defaults(func=initialize_directory)
+  parser_init.set_defaults(func=initialize_server)
 
   # 'install' command
   parser_install = subparsers.add_parser("install", help="Install the server")
@@ -780,7 +802,7 @@ def main():
   parser_search.set_defaults(func=search_mod)
 
   # 'show' command
-  parser_show = subparsers.add_parser("show", help="Show information about mod(s)")
+  parser_show = subparsers.add_parser("show", help="Show information about mod(s) from Modrinth")
   parser_show.add_argument("mods", help="Slug (or ID) of the mod(s)", nargs="+")
   parser_show.set_defaults(func=show_mod)
 
@@ -796,4 +818,6 @@ def main():
       log.error(error)
       sys.exit(1)
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+  main()
+
