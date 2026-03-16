@@ -192,4 +192,3 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Fixed
 - Check if dependency is already added as unresolved when initial fetching im `add_mod`
-
