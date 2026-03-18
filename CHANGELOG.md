@@ -222,3 +222,17 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Fixed
 - Remove `format_number` for mod search result message in favor of more precise thousands separator instead
+
+## [1.10.0] - 2026-03-18
+
+### Added
+- "manual" dependency type
+
+### Changed
+- Move the BFS dependency resolving to its own function (`resolve_mods_dependencies`)
+- `fetch_mod_version` now use list of game version and loader instead of just 1 of them
+- Type hinting for `resolve_mods_dependencies` and `fetch_mod_version`
+
+### Fixed
+- "embedded" is now not marked as resolved until a mod actually has different dependency type for it
+- Adapted `manual` types to `required` for download mods logic (quick hack)
