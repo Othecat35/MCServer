@@ -217,3 +217,8 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 - `format_number` behavior to include the last 2 decimal
 - Not format numbering for mod counts and pages, instead now is just comma
 - `add_mod` now more clarify that it will not download optional mods yet
+
+## [1.9.10] - 2025-03-18
+
+### Fixed
+- Remove `format_number` for mod search result message in favor of more precise tjousands seperator instead
