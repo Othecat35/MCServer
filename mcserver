@@ -642,7 +642,7 @@ def search_mod(args):
   total_pages = f"{math.ceil(total_hits / search_limit):,}"
 
   response_offset = response.get("offset", 0)
-  shown_mods_count = format_number(min(len(mods_list), search_limit))
+  shown_mods_count = min(len(mods_list), search_limit)
 
   skipped_message = f"(skipped {response_offset:,} mod(s)) " if response_offset > 0 else ""
   log.info(f"Showing {shown_mods_count:,} mod(s) out of {total_hits:,} total mod(s) {skipped_message}| Page: {page:,}/{total_pages}")

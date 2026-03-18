@@ -19,3 +19,16 @@ new things
 
 Here's where I can yap about something
 - CHANGELOGS.md is primarily for myself?
+
+
+dependencies and dependents
+mod indexing
+split mod dependency resolution and download from the add_mod command
+make it nicer (imposible)
+what am I doing making this project? my school has nothing to do with it. Me being self-depricating and having Impostor Syndrome while coding is apperently normal? how?
+paper? later.
+progress bar
+more efficient sha calculating directly while downloading instead if after downloading
+warn client only mod because as the same suggest, it is designed for server! client already have too much attention.
+fabric installer, be dynamic (but sadly coding is not that magical that I can command the computer easily :insert_smile_with_tears_emoji:)
+
