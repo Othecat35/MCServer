@@ -18,7 +18,7 @@ Added:
 - Replace textwrap.shorten to .wrap in `search` mod description
 
 # 1.2.0
-- Move java command options to a seperate launcher.json configuration
+- Move java command options to a sepsrate launcher.json configuration
 
 # 1.2.1
 - Renamed function color_string to color_text
@@ -50,10 +50,10 @@ Added:
 - Change 'Showing ... mods' from using 'search_limit' to 'shown_mods_count'
 
 1.5.0
-- Added option '--no-filter' to 'search' mod without version-dependant filter
+- Added option '--no-filter' to 'search' mod without version-dependent filter
 
 1.5.1
-- Added failback value for mod_environment_color()
+- Added fallback value for mod_environment_color()
 - Added error message rewrites for config_generate, config_load
 - Added function to wrap text to current terminal size
 - Rename 'id' to 'mod_id' in show_mods() command
@@ -86,7 +86,7 @@ Added:
 - Correct the condition in search_mod\'s skipped_message to be more than 0 instead of 1
 - Simplified license name to use or instead inline if statement
 - Add intermediate mod_license variable
-- Replaced some bare Excetion
+- Replaced some bare Exception
 - Update argparse help messages
 
 1.6.3
@@ -189,10 +189,10 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 - Replace \" to \' in `fetch_mod_version` error message
 - Add "from Modrinth" in help message of command `show_mod`
 - Update messages in `initialize_server` to reflect the function change
-- Update some function calls to reflect those changes (rename function and added funcrionally)
+- Update some function calls to reflect those changes (rename function and added functionality)
 
 ### Fixed
-- Check if dependency is already added as unresolved when initial fetching im `add_mod`
+- Check if dependency is already added as unresolved when initial fetching in `add_mod`
 
 ## [1.9.7] - 2026-03-16
 
@@ -221,4 +221,4 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 ## [1.9.10] - 2026-03-18
 
 ### Fixed
-- Remove `format_number` for mod search result message in favor of more precise tjousands seperator instead
+- Remove `format_number` for mod search result message in favor of more precise thousands separator instead

@@ -25,7 +25,7 @@ dependencies and dependents
 mod indexing
 split mod dependency resolution and download from the add_mod command
 make it nicer (imposible)
-what am I doing making this project? my school has nothing to do with it. Me being self-depricating and having Impostor Syndrome while coding is apperently normal? how?
+what am I doing making this project? my school has nothing to do with it. Me being self-deprecating and having Impostor Syndrome while coding is apparently normal? how?
 paper? later.
 progress bar
 more efficient sha calculating directly while downloading instead if after downloading
