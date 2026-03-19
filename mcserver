@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.10.0"
+__version__ = "1.10.1"
 
 import argparse
 import copy
@@ -31,7 +31,7 @@ eula_agree_sentence = "I agree"
 si_prefixes = ["", "K", "M", "B", "T"]
 iec_prefixes = ["B", "KiB", "MiB", "GiB", "TiB"]
 
-checksum_chunk_size = 1024 * 64 # 64KiB
+read_chunk_size = 1024 * 64 # 64KiB
 
 colors = {
   "bold": "\033[1m",
@@ -87,7 +87,7 @@ class StartServerError(Exception): pass
 
 class EULAAgreementError(Exception): pass
 class FetchModVersionError(Exception): pass
-class RequestDownloadError(Exception): pass
+class DownloadURLError(Exception): pass
 class ResolveModsDependenciesError(Exception): pass
 
 # Color functions
@@ -219,7 +219,7 @@ def load_config(config_name):
     raise PermissionError(f"Cannot read configuration file for '{config_name}': Permission denied to read file") from error
 
 # Requests
-def request_fetch(url, params=None, headers=None, timeout=10):
+def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int =10):
   if params is None: params = {}
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
@@ -232,59 +232,54 @@ def request_fetch(url, params=None, headers=None, timeout=10):
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
     return response.read().decode("utf-8")
 
-def request_download(url, filename, hashes=None, headers=None, timeout=10):
+def download_url(url: str, filename: str | Path, hashes: dict = None, headers: dict = None, timeout: int = 10):
+  filename = Path(filename)
   if hashes is None: hashes = {}
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
 
   request_url = urllib.request.Request(url, headers=headers, method="GET")
-  tempfile = tempfiles_dir / Path(filename).name
+  tempfile = tempfiles_dir / filename.name
 
   log.debug(f"Downloading URL: {request_url.full_url}")
   log.debug(f"Temporary file: {tempfile}")
 
-  # Download the file into a temporary directrory
+  hash_algorithm = None
+  hash_name = None
+
+  if hashes.get("sha512"):
+    hash_algorithm = hashlib.sha512()
+    hash_name = "sha512"
+  elif hashes.get("sha1"):
+    hash_algorithm = hashlib.sha1()
+    hash_name = "sha1"
+
+  if hash_name:
+    log.debug(f"Calculating hash {hash_name} while downloading...")
+
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
     with open(tempfile, mode="wb") as file:
-      shutil.copyfileobj(response, file)
+      while True:
+        data = response.read(read_chunk_size)
 
-  if hashes:
-    expected_sha1 = hashes.get("sha1", None)
-    expected_sha512 = hashes.get("sha512", None)
+        if not data:
+          break
 
-    if expected_sha512:
-      log.debug("Calculating SHA512 digest of downloaded file...")
-      sha512sum = hashlib.sha512()
+        if hash_algorithm:
+          hash_algorithm.update(data)
 
-      with open(tempfile, mode="rb") as file:
-        while True:
-          data = file.read(checksum_chunk_size)
-          if not data:
-            break
+        file.write(data)
 
-          sha512sum.update(data)
+    if hash_algorithm:
+      expected_hash = hashes[hash_name]
 
-      if sha512sum.hexdigest() != expected_sha512:
-        raise RequestDownloadError("Downloaded file does not matched with expected SHA512 hash")
-    elif expected_sha1:
-      log.debug("Calculating SHA1 digest of downloaded file...")
-      sha1sum = hashlib.sha1()
-
-      with open(tempfile, mode="rb") as file:
-        while True:
-          data = file.read(checksum_chunk_size)
-          if not data:
-            break
-
-          sha1sum.update(data)
-
-      if sha1sum.hexdigest() != expected_sha1:
-        raise RequestDownloadError("Downloaded file does not matched with expected SHA1 hash")
+      if hash_algorithm.hexdigest() != expected_hash:
+        raise DownloadURLError(f"Downloaded file '{tempfile.relative_to(current_dir)}' hash does not match with the expected {hash_name} hash")
 
   shutil.move(tempfile, filename)
 
 def fetch_mod_version(modid: str, game_versions: list, loaders: list):
-  response = json.loads(request_fetch(f"https://api.modrinth.com/v2/project/{modid}/version", params={
+  response = json.loads(fetch_url(f"https://api.modrinth.com/v2/project/{modid}/version", params={
     "loaders": json.dumps(loaders),
     "game_versions": json.dumps(game_versions),
     "include_changelog": "false"
@@ -493,7 +488,7 @@ def add_mod(args):
     total_size += mod["file"]["size"]
     mod_ids.append(mod["id"])
 
-  response = json.loads(request_fetch("https://api.modrinth.com/v2/projects", params={
+  response = json.loads(fetch_url("https://api.modrinth.com/v2/projects", params={
     "ids": json.dumps(mod_ids)
   }))
 
@@ -539,7 +534,7 @@ def add_mod(args):
       mod_file = mod["file"]
 
       log.info(f"Downloading version {mod['name']}...")
-      request_download(mod_file["url"], mods_dir / mod_file["filename"], hashes=mod_file["hashes"])
+      download_url(mod_file["url"], mods_dir / mod_file["filename"], hashes=mod_file["hashes"])
 
 def initialize_server(args):
   mc_version = args.mc_version
@@ -562,7 +557,7 @@ def initialize_server(args):
 
   if mc_version is None:
     log.info("Getting Mojang game version manifest...")
-    latest_version = json.loads(request_fetch("https://launchermeta.mojang.com/mc/game/version_manifest.json"))["latest"]["release"]
+    latest_version = json.loads(fetch_url("https://launchermeta.mojang.com/mc/game/version_manifest.json"))["latest"]["release"]
 
     log.info(f"'--mc-version' was not specified, setting it to {latest_version} (the latest release version)")
     mc_version = latest_version
@@ -607,10 +602,10 @@ def install_server(args):
   match loader_name:
     case "fabric":
       log.info(f"Downloading Fabric loader {loader_version} for Minecraft server {server_version}...")
-      request_download(f"https://meta.fabricmc.net/v2/versions/loader/{server_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
+      download_url(f"https://meta.fabricmc.net/v2/versions/loader/{server_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
     case "vanilla":
       log.info("Getting Mojang game version manifest...")
-      version_manifest = json.loads(request_fetch("https://launchermeta.mojang.com/mc/game/version_manifest.json"))
+      version_manifest = json.loads(fetch_url("https://launchermeta.mojang.com/mc/game/version_manifest.json"))
 
       selected_version_url = None
       for version in version_manifest["versions"]:
@@ -618,10 +613,10 @@ def install_server(args):
           selected_version_url =  version["url"]
           break
 
-      server_download = json.loads(request_fetch(selected_version_url))["downloads"]["server"]
+      server_download = json.loads(fetch_url(selected_version_url))["downloads"]["server"]
       log.info(f"Downloading jarfile for vanilla Minecraft server {server_version}...")
 
-      request_download(server_download["url"], launcher_config["jarfile"], hashes={
+      download_url(server_download["url"], launcher_config["jarfile"], hashes={
         "sha1": server_download["sha1"]
       })
     case _:
@@ -670,7 +665,7 @@ def search_mod(args):
 
   log.info(search_message)
 
-  response = json.loads(request_fetch(
+  response = json.loads(fetch_url(
     "https://api.modrinth.com/v2/search",
     {
       "query": query,
@@ -719,7 +714,7 @@ def show_mod(args):
   mods = args.mods
 
   log.info("Getting mod(s) information...")
-  mods_info = json.loads(request_fetch(
+  mods_info = json.loads(fetch_url(
     "https://api.modrinth.com/v2/projects",
     params={
       "ids": json.dumps(mods)

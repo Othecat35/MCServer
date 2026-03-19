@@ -20,9 +20,11 @@ System-wide (Requires root):
 3. Run `chmod +x mcserver`
 
 ## Usage
-Initialize directory: `mcserver init`
-Start the server: `mcserver start`
-Search mod from Modrinth: `mcserver search <query>`
+- Initialize the server: `mcserver init [options]`
+- Install the server: `mcserver install`
+- Search mods from Modrinth: `mcserver search [<query>] [options]`
+- Show mods information from Modrinth: `mcserver show <mods>`
+- Start the server: `mcserver start`
 
 ## Note
 This project is just a personal project, don't take this seriously! But, I do want to make this functional for those self-hoster nerds. Not tested at all, beware.

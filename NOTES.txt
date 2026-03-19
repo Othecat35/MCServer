@@ -23,12 +23,11 @@ Here's where I can yap about something
 
 dependencies and dependents
 mod indexing
-split mod dependency resolution and download from the add_mod command
+split mod dependency resolution and download from the add_mod command: done, but just the BFS
 make it nicer (imposible)
 what am I doing making this project? my school has nothing to do with it. Me being self-deprecating and having Impostor Syndrome while coding is apparently normal? how?
 paper? later.
 progress bar
-more efficient sha calculating directly while downloading instead if after downloading
+more efficient sha calculating directly while downloading instead if after downloading: yay
 warn client only mod because as the same suggest, it is designed for server! client already have too much attention.
 fabric installer, be dynamic (but sadly coding is not that magical that I can command the computer easily :insert_smile_with_tears_emoji:)
-

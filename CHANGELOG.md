@@ -236,3 +236,15 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 ### Fixed
 - "embedded" is now not marked as resolved until a mod actually has different dependency type for it
 - Adapted `manual` types to `required` for download mods logic (quick hack)
+
+## [1.10.1] - 2026-03-19
+
+### Added
+- Type hinting to `fetch_url` and `download_url`
+
+### Changed
+- Renamed function `request_fetch` to `fetch_url`
+- Renamed function `request_download` to `download_url`
+- Hash are now calculated directly while downloading instead of seperate read
+- Renamed variable `checksum_chunk_size` to `read_chunk_size`
+- Params `filename` in `download_url` is forced to be `Path` object
