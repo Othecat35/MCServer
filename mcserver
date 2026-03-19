@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.10.3"
+__version__ = "1.10.4"
 
 import argparse
 import copy
@@ -705,7 +705,7 @@ def search_mod(args):
 
     print(f"""
 {mod_header}
-[ {server_side} | Client: {client_side} | Client: {client_side} ] {downloads_follows}
+[ {server_side} | Client: {client_side} ] {downloads_follows}
 > https://modrinth.com/mod/{slug}
 {description}""")
 

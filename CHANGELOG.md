@@ -267,3 +267,8 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 - Renamed function `resolve_mods_dependencies` to `resolve_mods`
 - Remove unnecesseary loop for `resolve_mods`
 - `search_mod` now use color\_string
+
+## [1.10.4] - 2026-03-18
+
+### Fixed
+- Removed duplicate "Client" in `search_mods`
