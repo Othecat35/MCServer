@@ -245,7 +245,7 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 ### Changed
 - Renamed function `request_fetch` to `fetch_url`
 - Renamed function `request_download` to `download_url`
-- Hash are now calculated directly while downloading instead of seperate read
+- Hash are now calculated directly while downloading instead of separate read
 - Renamed variable `checksum_chunk_size` to `read_chunk_size`
 - Params `filename` in `download_url` is forced to be `Path` object
 
@@ -257,7 +257,7 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 ## [1.10.3] - 2026-03-19
 
 ### Added
-- Add funtion `print_status`
+- Add function `print_status`
 - Add "Resolving mod..." dynamic message
 - Add cursor-related ANSI code to `ansi_codes`
 
@@ -266,4 +266,4 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 - Renamed variable `colors` to `ansi_name`
 - Renamed function `resolve_mods_dependencies` to `resolve_mods`
 - Remove unnecesseary loop for `resolve_mods`
-- `search_mod` now use color_string
+- `search_mod` now use color\_string
