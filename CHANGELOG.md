@@ -251,5 +251,19 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [1.10.2] - 2026-03-19
 
-### Changed
+### Added
 - Add "Expected Hash" and "Got Hash" debug log
+
+## [1.10.3] - 2026-03-19
+
+### Added
+- Add funtion `print_status`
+- Add "Resolving mod..." dynamic message
+- Add cursor-related ANSI code to `ansi_codes`
+
+### Changed
+- Renamed function `color` to `ansi`
+- Renamed variable `colors` to `ansi_name`
+- Renamed function `resolve_mods_dependencies` to `resolve_mods`
+- Remove unnecesseary loop for `resolve_mods`
+- `search_mod` now use color_string

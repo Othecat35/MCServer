@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.10.2"
+__version__ = "1.10.3"
 
 import argparse
 import copy
@@ -23,6 +23,7 @@ debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
 log_level = log.DEBUG if debug_mode else log.INFO
 
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
+last_status_message = ""
 user_agent = f"Othecat35/MCServer {__version__}"
 
 loaders_list = ["fabric", "vanilla"]
@@ -33,13 +34,18 @@ iec_prefixes = ["B", "KiB", "MiB", "GiB", "TiB"]
 
 read_chunk_size = 1024 * 64 # 64KiB
 
-colors = {
-  "bold": "\033[1m",
+ansi_codes = {
   "gray": "\033[90m",
   "green": "\033[92m",
   "red": "\033[91m",
+  "yellow": "\033[93m",
+
+  "bold": "\033[1m",
   "reset": "\033[0m",
-  "yellow": "\033[93m"
+
+  "clear_line": "\033[K",
+  "cursor_up": "\033[A",
+  "start_line": "\033[G",
 }
 
 default_configs = {
@@ -91,13 +97,13 @@ class DownloadURLError(Exception): pass
 class ResolveModsDependenciesError(Exception): pass
 
 # Color functions
-def color(color_name):
+def ansi(name):
   if isatty:
-    return colors.get(color_name, "")
+    return ansi_codes.get(name, "")
   return ""
 
 def color_string(string, color_name):
-  return f"{color(color_name)}{string}{color('reset')}"
+  return f"{ansi(color_name)}{string}{ansi('reset')}"
 
 def mod_environment_color(environment):
   if environment == "required":
@@ -116,6 +122,19 @@ def print_help(args):
 
   parser.print_help()
   sys.exit(0)
+
+def print_status(message: str, dynamic: str = None):
+  if dynamic is None: dynamic = ""
+  global last_status_message
+
+  if not dynamic:
+    if not isatty:
+      if message != last_status_message:
+        print(message)
+
+        last_status_message = message
+  else:
+    print(f"{ansi('clear_line')} {dynamic}", end=ansi('start_line'), flush=True)
 
 def hahaha_yes():
   print("The cake is a lie.")
@@ -328,117 +347,91 @@ def fetch_mod_version(modid: str, game_versions: list, loaders: list):
     "dependencies": dependencies
   }
 
-def resolve_mods_dependencies(mods_id: list, game_version: str, loader_name: str):
+def resolve_mods(mods_id: list, game_version: str, loader_name: str, update_status: callable = None):
   # Initialize variables
-  unresolved_dependencies = []
-  resolved_dependecies = set()
+  unresolved_mods = []
+  resolved_mods = set()
 
-  dependencies_data = []
+  resolved_mods_data = []
   incompatible_dependencies = set()
 
-  # Fetch initial mods info
+  # Initial mod list
   for mod in mods_id:
-    # Mark any "dependency" as manual if matches `mod_id`
-    for dependency_data in dependencies_data:
-      if dependency_data["id"] == mod:
-        log.debug(f"Marking a mod type as 'manual': {mod}")
-        dependency_data["type"] = "manual"
-        break
+    unresolved_mods.append({
+      "id": mod,
+      "type": "required"
+    })
+
+  # Fetch all unresolved_dependencies until empty
+  while unresolved_mods:
+    mod = unresolved_mods.pop(0)
+
+    mod_id = mod["id"]
+    mod_type = mod["type"]
 
     # Check if mod is already resolved
-    if mod in resolved_dependecies:
-      log.debug(f"Skipping already resolved mod: {mod}")
+    if mod_id in resolved_mods:
+      log.debug(f"Mod is already resolved: {mod_id}")
       continue
 
-    # Getting mod version info
-    log.debug(f"Getting mod version information of {mod}...")
-    version_info = fetch_mod_version(mod, [game_version], [loader_name])
+    # Skip processing for 'embedded' mod
+    if mod_type == "embedded":
+      log.debug(f"Mod is marked as 'embedded': {mod_id}, skipping")
+      continue
 
-    version_data = version_info["data"]
-    version_dependencies = version_info["dependencies"]
+    # Check if mod is already marked as 'incompatible'
+    if mod_id in incompatible_dependencies:
+      log.debug(f"Mod is marked as 'incompatible': {mod_id}, not processing")
+      continue
 
-    # Append data to `mods_data` such as dependency type and file
-    version_data["type"] = "manual"
-    dependencies_data.append(version_data)
+    # Check if mod is marked as 'incompatible'
+    if mod_type == "incompatible":
+      log.warning(f"Mod is marked as 'incompatible': {mod_id}, adding to `incompatible_dependencies`")
+      incompatible_dependencies.add(mod_id)
+      continue
 
-    # Make sure the mod doesn't get fetched again
-    log.debug(f"Adding mod as resolved dependencies: {mod}")
-    resolved_dependecies.update({ mod, version_data["id"] })
+    log.debug(f"Resolving mod version information of {mod_id}...")
 
-    # Add dependencies to `unresolved_dependencies`
+    # Try fetch mod version
+    version = None
+
+    try:
+      version = fetch_mod_version(mod_id, [game_version], [loader_name])
+    except FetchModVersionError as error:
+      if mod_type == "optional":
+        log.warning(f"An optional mod doesn't have version for {loader_name.capitalize()}, Minecraft {game_version}.")
+        resolved_mods.add(mod_id)
+        continue
+
+      raise ResolveModsDependenciesError(f"No version found for mod: {mod_id}") from error
+
+    # Append dependency type in data
+    version_data = version["data"]
+    version_dependencies = version["dependencies"]
+
+    # Append mod data to dependencies_data
+    version_data["type"] = mod_type
+    resolved_mods_data.append(version_data)
+
+    # Update status
+    if update_status is not None:
+      update_status(len(resolved_mods_data), len(resolved_mods))
+
+    # Add dependency as resolved
+    resolved_mods.update({ version_data["id"], mod_id })
+
+    # Dependency squared
     for dependency in version_dependencies:
       dependency_id = dependency["id"]
 
-      if dependency_id in resolved_dependecies:
-        log.debug(f"Skipping already resolved dependency: {dependency_id}")
+      if dependency_id in resolved_mods:
+        log.debug(f"Skip adding already resolved dependency: {dependency_id}")
       else:
-        log.debug(f"Adding mod as unresolved dependency: {dependency_id}")
-        unresolved_dependencies.append(dependency)
-
-  # Fetch the rest of the dependencies info
-  while unresolved_dependencies:
-    dependency = unresolved_dependencies.pop(0)
-
-    dependency_id = dependency["id"]
-    dependency_type = dependency["type"]
-
-    # Check if dependency is already resolved, skip (remove from `unresolved_dependencies`)
-    if dependency_id in resolved_dependecies:
-      log.debug(f"Dependency already resolved: {dependency_id}")
-      continue
-
-    # Check if dependency is already marked as 'incompatible'
-    if dependency_id in incompatible_dependencies:
-      log.debug(f"Dependency is marked as 'incopatible': {dependency_id}, not processing")
-      continue
-
-    # Check if dependency is marked as 'incompatible'
-    if dependency_type == "incompatible":
-      log.warning(f"Dependency is marked as 'incompatible': {dependency_id}, adding to `incompatible_dependencies`")
-      incompatible_dependencies.add(dependency_id)
-      continue
-
-    # Skip processing for 'embedded' dependency, skip (remove from `unresolved_dependencies`)
-    if dependency_type == "embedded":
-      log.debug(f"Dependency is marked as 'embedded': {dependency_id}, skipping")
-      continue
-
-    log.debug(f"Resolving dependency version information of {dependency_id}...")
-
-    # Try fetch dependency version
-    dependency_version = None
-    try:
-      dependency_version = fetch_mod_version(dependency_id, [game_version], [loader_name])
-    except FetchModVersionError as error:
-      if dependency_type == "optional":
-        log.warning(f"An optional dependency doesn't have version for {loader_name.capitalize()}, Minecraft {game_version}.")
-        continue
-
-      raise ResolveModsDependenciesError("No version found for dependency") from error
-
-    # Append dependency type in data
-    version_data = dependency_version["data"]
-    version_dependencies = dependency_version["dependencies"]
-
-    # Append dependency data to dependencies_data
-    version_data["type"] = dependency_type
-    dependencies_data.append(version_data)
-
-    # Add dependency as resolved
-    resolved_dependecies.update({ version_data["id"], dependency_id })
-
-    # Dependency squared
-    for dependency2 in version_dependencies:
-      dependency2_id = dependency2["id"]
-
-      if dependency2_id in resolved_dependecies:
-        log.debug(f"Skipping already resolved dependency: {dependency2_id}")
-      else:
-        log.debug(f"Adding dependency2 as unresolved dependency: {dependency2_id}")
-        unresolved_dependencies.append(dependency2)
+        log.debug(f"Adding dependency as unresolved mods: {dependency_id}")
+        unresolved_mods.append(dependency)
   
   return {
-    "dependencies_data": dependencies_data,
+    "dependencies_data": resolved_mods_data,
     "incompatible_dependencies": incompatible_dependencies
   }
 
@@ -474,7 +467,8 @@ def add_mod(args):
   if server_loader["name"] == "vanilla":
     raise AddModError("Vanilla Minecraft server does not support mod")
 
-  resolved_dependencies = resolve_mods_dependencies(mods, server_version, loader_name)
+  print()
+  resolved_dependencies = resolve_mods(mods, server_version, loader_name, lambda resolved, unresolved: print_status("Resolving mod dependencies...", dynamic=f"Resolving mod dependencies... {resolved} out of {unresolved} done"))
   resolved_data = resolved_dependencies["dependencies_data"]
 
   # Get mod IDs
@@ -705,13 +699,13 @@ def search_mod(args):
     follows = format_number(mod.get("follows", 0))
     downloads_follows = color_string(f"[ Downloads: {downloads} | Follows: {follows} ]", "gray")
 
-    server_side = mod_environment_color(mod["server_side"])
+    server_side = color_string(f"Server: {mod_environment_color(mod['server_side'])}", "bold")
     client_side = mod_environment_color(mod["client_side"])
     description = wrap_text(mod["description"], initial_indent=" ", subsequent_indent="  ")
 
     print(f"""
 {mod_header}
-[ {color('bold')}Server: {server_side}{color('reset')} | Client: {client_side} ] {downloads_follows}
+[ {server_side} | Client: {client_side} | Client: {client_side} ] {downloads_follows}
 > https://modrinth.com/mod/{slug}
 {description}""")
 
