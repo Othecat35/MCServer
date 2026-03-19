@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.10.4"
+__version__ = "1.10.5"
 
 import argparse
 import copy
@@ -525,7 +525,7 @@ def add_mod(args):
       continue_action = False
 
   if not continue_action:
-    raise AddModError("Abort.")
+    raise AddModError("Cancelled")
 
   mods_dir.mkdir(exist_ok=True)
   for mod in resolved_data:

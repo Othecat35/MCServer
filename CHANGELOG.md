@@ -272,3 +272,8 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Fixed
 - Removed duplicate "Client" in `search_mods`
+
+## [1.20.5] - 2026-03-19
+
+### Changed
+- Edit message in `add_mods` from "Abort" to "Cancelled"
