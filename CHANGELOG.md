@@ -248,3 +248,8 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 - Hash are now calculated directly while downloading instead of seperate read
 - Renamed variable `checksum_chunk_size` to `read_chunk_size`
 - Params `filename` in `download_url` is forced to be `Path` object
+
+## [1.10.2] - 2026-03-19
+
+### Changed
+- Add "Expected Hash" and "Got Hash" debug log

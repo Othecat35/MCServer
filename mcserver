@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.10.1"
+__version__ = "1.10.2"
 
 import argparse
 import copy
@@ -246,6 +246,7 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
 
   hash_algorithm = None
   hash_name = None
+  expected_hash = None
 
   if hashes.get("sha512"):
     hash_algorithm = hashlib.sha512()
@@ -255,7 +256,9 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
     hash_name = "sha1"
 
   if hash_name:
+    expected_hash = hashes[hash_name]
     log.debug(f"Calculating hash {hash_name} while downloading...")
+    log.debug(f"Expected {hash_name}: {expected_hash}")
 
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
     with open(tempfile, mode="wb") as file:
@@ -271,13 +274,15 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
         file.write(data)
 
     if hash_algorithm:
-      expected_hash = hashes[hash_name]
+      calculated_hash = hash_algorithm.hexdigest()
 
-      if hash_algorithm.hexdigest() != expected_hash:
+      log.debug(f"Got hash: {calculated_hash}")
+      if calculated_hash != expected_hash:
         raise DownloadURLError(f"Downloaded file '{tempfile.relative_to(current_dir)}' hash does not match with the expected {hash_name} hash")
 
   shutil.move(tempfile, filename)
 
+# Mod Versions
 def fetch_mod_version(modid: str, game_versions: list, loaders: list):
   response = json.loads(fetch_url(f"https://api.modrinth.com/v2/project/{modid}/version", params={
     "loaders": json.dumps(loaders),
