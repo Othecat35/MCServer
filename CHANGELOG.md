@@ -277,3 +277,8 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Changed
 - Edit message in `add_mods` from "Abort" to "Cancelled"
+
+### [1.10.6] - 2026-03-20
+
+### Changed
+- Replace the hack of removing leading 0 of `format_number` using round(, 2) and :g
