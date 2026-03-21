@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.10.8"
+__version__ = "1.10.9"
 
 import argparse
 import copy
@@ -24,6 +24,7 @@ log_level = log.DEBUG if debug_mode else log.INFO
 
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"Othecat35/MCServer {__version__}"
+modrinth_api = "https://api.modrinth.com/v2/"
 last_status_message = ""
 
 loaders_list = ["fabric", "vanilla"]
@@ -66,7 +67,7 @@ default_configs = {
   },
 
   "server": {
-    "version": "1.21.11",
+    "version": "", # Auto-fetched the latest version when init without --mc-version
     "loader": {
       "name": "vanilla",
       "version": ""
@@ -127,14 +128,13 @@ def print_status(message: str, dynamic: str = None):
   if dynamic is None: dynamic = ""
   global last_status_message
 
-  if not dynamic:
-    if not isatty:
-      if message != last_status_message:
-        print(message)
-
-        last_status_message = message
-  else:
+  if dynamic and isatty and not debug_mode:
     print(f"{ansi('clear_line')} {dynamic}", end=ansi('start_line'), flush=True)
+  else:
+    if message != last_status_message:
+      print(message, flush=True)
+
+      last_status_message = message
 
 def hahaha_yes():
   print("The cake is a lie.")
@@ -301,7 +301,7 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
 
 # Mod Versions
 def fetch_mod_version(modid: str, game_versions: list, loaders: list):
-  response = json.loads(fetch_url(f"https://api.modrinth.com/v2/project/{modid}/version", params={
+  response = json.loads(fetch_url(f"{modrinth_api}project/{modid}/version", params={
     "loaders": json.dumps(loaders),
     "game_versions": json.dumps(game_versions),
     "include_changelog": "false"
@@ -485,7 +485,7 @@ def add_mod(args):
     total_size += mod["file"]["size"]
     mod_ids.append(mod["id"])
 
-  response = json.loads(fetch_url("https://api.modrinth.com/v2/projects", params={
+  response = json.loads(fetch_url(f"{modrinth_api}projects", params={
     "ids": json.dumps(mod_ids)
   }))
 
@@ -663,7 +663,7 @@ def search_mod(args):
   log.info(search_message)
 
   response = json.loads(fetch_url(
-    "https://api.modrinth.com/v2/search",
+    f"{modrinth_api}search",
     {
       "query": query,
       "facets": json.dumps(search_filters),
@@ -712,7 +712,7 @@ def show_mod(args):
 
   log.info("Getting mod(s) information...")
   mods_info = json.loads(fetch_url(
-    "https://api.modrinth.com/v2/projects",
+    f"{modrinth_api}projects",
     params={
       "ids": json.dumps(mods)
     }
@@ -798,13 +798,24 @@ def start_server(args):
   log.debug(f"Executing command: {' '.join(java_command_argv)}")
   os.execvp("java", java_command_argv)
 
+
+# Log handler
+class ClearLineHandler(log.StreamHandler):
+  def emit(self, record):
+    self.stream.write(ansi('clear_line') + ansi('start_line'))
+    self.stream.flush()
+    super().emit(record)
+
 # Main
 def main():
   if ((sys.argv[1] if len(sys.argv) > 1 else "") == "cake"): hahaha_yes()
 
+  log_handler = ClearLineHandler(sys.stdout)
+  log_handler.setFormatter(log.Formatter("[%(levelname)s]: %(message)s"))
+
   log.basicConfig(
-    format="[%(levelname)s]: %(message)s",
-    level=log_level
+    level=log_level,
+    handlers=[log_handler]
   )
 
   # Parser
@@ -875,4 +886,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-

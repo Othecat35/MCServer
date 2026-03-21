@@ -293,3 +293,14 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Fixed
 - Remove "metavar" for "sort by" in `search_mod`
+
+## [1.10.9] - 2026-03-21
+
+### Added
+- Log handler for clearing current line (adapting `print_status`)
+
+### Changed
+- Moved Modrinth API URL to a variable `modrinth_api`
+
+### Fixed
+- Corrected behavior of `print_status`
