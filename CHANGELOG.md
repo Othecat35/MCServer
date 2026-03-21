@@ -288,3 +288,8 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 ### Changed
 - Fix typo in `init_server` of configuration
 - Removed leftover `number_format` variable
+
+## [1.10.8] - 2026-03-21
+
+### Fixed
+- Remove "metavar" for "sort by" in `search_mod`

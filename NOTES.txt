@@ -31,3 +31,4 @@ progress bar
 more efficient sha calculating directly while downloading instead if after downloading: yay
 warn client only mod because as the same suggest, it is designed for server! client already have too much attention.
 fabric installer, be dynamic (but sadly coding is not that magical that I can command the computer easily :insert_smile_with_tears_emoji:)
+mod indexing is per mod. dependants and depends, is a list, which contains id and type.
