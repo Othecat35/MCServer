@@ -268,7 +268,7 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 - Remove unnecesseary loop for `resolve_mods`
 - `search_mod` now use color\_string
 
-## [1.10.4] - 2026-03-18
+## [1.10.4] - 2026-03-19
 
 ### Fixed
 - Removed duplicate "Client" in `search_mods`
@@ -282,3 +282,9 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Changed
 - Replace the hack of removing leading 0 of `format_number` using round(, 2) and :g
+
+## [1.10.7] - 2026-03-21
+
+### Changed
+- Fix typo in `init_server` of configuration
+- Removed leftover `number_format` variable
