@@ -256,7 +256,8 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
   headers.setdefault("User-Agent", user_agent)
 
   request_url = urllib.request.Request(url, headers=headers, method="GET")
-  tempfile = tempfiles_dir / filename.name
+  basename = filename.name
+  tempfile = tempfiles_dir / basename
 
   log.debug(f"Downloading URL: {request_url.full_url}")
   log.debug(f"Temporary file: {tempfile}")
@@ -277,6 +278,7 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
     log.debug(f"Calculating hash {hash_name} while downloading...")
     log.debug(f"Expected {hash_name}: {expected_hash}")
 
+  downloaded_length = 0
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
     with open(tempfile, mode="wb") as file:
       while True:
@@ -287,6 +289,9 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
 
         if hash_algorithm:
           hash_algorithm.update(data)
+
+        downloaded_length += len(data)
+        print_status(f"Downloading {basename}...", dynamic=f"Downloading {basename}... {downloaded_length}")
 
         file.write(data)
 
