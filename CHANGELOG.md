@@ -304,3 +304,9 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Fixed
 - Corrected behavior of `print_status`
+
+## [1.10.10] - 2026-03-22
+
+### Changed
+- `search_mod` now indent the initial with 2 spaces and subsequent by 1 space
+- Use `enumerate` in show_mods as counter

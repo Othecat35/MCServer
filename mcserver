@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.10.9"
+__version__ = "1.10.10"
 
 import argparse
 import copy
@@ -699,7 +699,7 @@ def search_mod(args):
 
     server_side = color_string(f"Server: {mod_environment_color(mod['server_side'])}", "bold")
     client_side = mod_environment_color(mod["client_side"])
-    description = wrap_text(mod["description"], initial_indent=" ", subsequent_indent="  ")
+    description = wrap_text(mod["description"], initial_indent="  ", subsequent_indent=" ")
 
     print(f"""
 {mod_header}
@@ -718,8 +718,7 @@ def show_mod(args):
     }
   ))
 
-  mod_index = 0
-  for mod in mods_info:
+  for mod_index, mod in enumerate(mods_info):
     title = color_string(mod.get("title", "") or "<No Title>", "bold")
     slug = color_string(mod.get("slug", f"<{mods[mod_index]}>"), "bold")
 
@@ -733,7 +732,7 @@ def show_mod(args):
     loaders = wrap_text(f"Loaders: {color_string(mod_loaders, 'bold')}", subsequent_indent="  ")
 
     mod_game_versions = ', '.join(mod.get('game_versions', ['None'])).title()
-    game_versions = wrap_text(f"Minecraft Versions: {color_string(mod_game_versions, 'bold')}", subsequent_indent="  ")
+    game_versions = wrap_text(f"Minecraft Versions: {color_string(mod_game_versions, 'bold')}", subsequent_indent=" ")
 
     server_side = color_string(f"Server: {mod_environment_color(mod.get('server_side', '<Unknown>'))}", "bold")
     client_side = mod_environment_color(mod.get("client_side", "<Unknown>"))
@@ -743,7 +742,7 @@ def show_mod(args):
     license_id = color_string(mod_license.get("id", "") or "LicenseRef-All-Rights-Reserved", "bold")
 
     mod_description = mod.get('description', '<No Description>')
-    description = wrap_text(f"Description: {color_string(mod_description, 'bold')}", subsequent_indent="  ")
+    description = wrap_text(f"Description: {color_string(mod_description, 'bold')}", subsequent_indent=" ")
 
     if (mod_index >= 1): print()
     print(f"""Name: {title} ({slug})
@@ -755,8 +754,6 @@ Followers: {followers}
 Environment: {server_side} | Client: {client_side}
 License: {license_name} ({license_id})
 {description}""")
-
-    mod_index += 1
 
 def start_server(args):
   launcher_config = load_config("launcher")
