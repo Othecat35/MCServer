@@ -309,4 +309,9 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Changed
 - `search_mod` now indent the initial with 2 spaces and subsequent by 1 space
-- Use `enumerate` in show_mods as counter
+- Use `enumerate` in `show_mods` as counter
+
+## [1.10.11] - 2026-03-23
+
+### Added
+- Progress indicator for `download_url`
