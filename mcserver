@@ -279,7 +279,7 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
     log.debug(f"Expected {hash_name}: {expected_hash}")
 
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
-    content_length = response.getheader("Content-Length", default=0)
+    content_length = int(response.getheader("Content-Length", default=0))
     downloaded_length = 0
 
     with open(tempfile, mode="wb") as file:
@@ -293,7 +293,11 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
           hash_algorithm.update(data)
 
         downloaded_length += len(data)
-        print_status(f"Downloading {basename}...", dynamic=f"Downloading {basename}... {downloaded_length}/{content_length}")
+
+        if content_length == 0:
+          print_status(f"Downloading {basename}... (unknown final size)", dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}")
+        else:
+          print_status(f"Downloading {basename}... File size: {format_number(content_length, 'iec')}", dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}/{format_number(content_length, 'iec')} ({round(downloaded_length / content_length * 100)}%)")
 
         file.write(data)
 
