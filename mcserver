@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.10.11"
+__version__ = "1.10.12"
 
 import argparse
 import copy
@@ -214,7 +214,7 @@ def generate_config(config_name, update_config=None):
   except PermissionError as error:
     raise PermissionError(f"Cannot create configuration file for '{config_name}': Permission denied to create file") from error
 
-def load_config(config_name):
+def load_config(config_name, allow_missing=False):
   config_filename = f"{config_name}.json"
   config_path = configs_dir / config_filename
 
@@ -229,13 +229,20 @@ def load_config(config_name):
     raise ValueError(f"Failed to load configuration for `{config_name}`: {msg} at line {lineno} column {colno}") from error
 
   except FileNotFoundError as error:
-    raise FileNotFoundError(f"Cannot read configuration file for '{config_name}': Configuration file does not exist") from error
+    if allow_missing:
+      log.warning(f"Configuration file '{config_name}' is missing, using existing default value")
+      try:
+        return default_configs[config_name]
+      except KeyError:
+        raise KeyError(f"No default configuration found for '{config_name}'") from error # from the FileNotFoundError
+    else:
+      raise FileNotFoundError(f"Cannot read configuration file for '{config_name}': Configuration file does not exist") from error
   except IsADirectoryError as error:
     raise IsADirectoryError(f"Cannot read configuration file for '{config_name}': Not a file (is a directory)") from error
   except PermissionError as error:
     raise PermissionError(f"Cannot read configuration file for '{config_name}': Permission denied to read file") from error
 
-# Requests
+# URLs
 def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int =10):
   if params is None: params = {}
   if headers is None: headers = {}
@@ -639,18 +646,18 @@ def search_mod(args):
   page = args.page
   sort_by = args.sort_by
 
-  modrinth_config = load_config("modrinth")
+  modrinth_config = load_config("modrinth", allow_missing=True)
   server_config = None
 
   search_index = sort_by or modrinth_config.get("sort_by", "relevance")
 
-  search_filters = None
-  search_message = None
+  search_filters = [["project_type:mod"]]
+  search_message = f"Searching mods with '{query}' in Modrinth sorted by {search_index}..."
 
-  if no_filter:
-    search_message = f"Searching mods with '{query}' in Modrinth sorted by {search_index}..."
-    search_filters = [["project_type:mod"]]
-  else:
+
+  if not (configs_dir / "server.json").exists():
+    log.warning("Configuration file 'server' is missing, no version filter will be applied")
+  elif not no_filter:
     server_config = load_config("server")
     server_loader = server_config["loader"]
 

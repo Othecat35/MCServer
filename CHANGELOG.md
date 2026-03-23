@@ -315,3 +315,12 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Added
 - Progress indicator for `download_url`
+
+## [1.10.12] - 2026-03-23
+
+### Added
+- Option in `load_config` to `allow_missing`
+
+### Changed
+- Make `search` work without `init` (no "modrinth" or "server" config)
+
