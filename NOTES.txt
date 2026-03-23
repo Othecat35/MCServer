@@ -32,3 +32,5 @@ more efficient sha calculating directly while downloading instead if after downl
 warn client only mod because as the same suggest, it is designed for server! client already have too much attention.
 fabric installer, be dynamic (but sadly coding is not that magical that I can command the computer easily :insert_smile_with_tears_emoji:)
 mod indexing is per mod. dependants and depends, is a list, which contains id and type.
+move the print_status as a callback to intergrate directly in resolve_mods
+download_url with a status indicator like how much is downloaded vs total seems great

@@ -278,8 +278,10 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
     log.debug(f"Calculating hash {hash_name} while downloading...")
     log.debug(f"Expected {hash_name}: {expected_hash}")
 
-  downloaded_length = 0
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
+    content_length = response.getheader("Content-Length", default=0)
+    downloaded_length = 0
+
     with open(tempfile, mode="wb") as file:
       while True:
         data = response.read(read_chunk_size)
@@ -291,7 +293,7 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
           hash_algorithm.update(data)
 
         downloaded_length += len(data)
-        print_status(f"Downloading {basename}...", dynamic=f"Downloading {basename}... {downloaded_length}")
+        print_status(f"Downloading {basename}...", dynamic=f"Downloading {basename}... {downloaded_length}/{content_length}")
 
         file.write(data)
 
