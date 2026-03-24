@@ -331,3 +331,11 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Changed
 - `search_mod` now use the `pluralize` function
+
+## [1.10.14] - 2026-03-24
+
+### Added
+- `padding` parameter to `mod_environment_color`
+
+### Changed
+- Make the line in square brackets aligned to eachother in `search_mod`

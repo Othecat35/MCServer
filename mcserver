@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.10.13"
+__version__ = "1.10.14"
 
 import argparse
 import copy
@@ -106,16 +106,16 @@ def ansi(name):
 def color_string(string, color_name):
   return f"{ansi(color_name)}{string}{ansi('reset')}"
 
-def mod_environment_color(environment):
+def mod_environment_color(environment: str, padding: int = 0):
   if environment == "required":
-    return color_string("Required", "green")
+    return color_string(f"{'Required': <{padding}}", "green")
   elif environment == "optional":
-    return color_string("Optional", "yellow")
+    return color_string(f"{'Optional': <{padding}}", "yellow")
   elif environment == "unsupported":
-    return color_string("Unsupported", "red")
+    return color_string(f"{'Unsupported': <{padding}}", "red")
   elif environment == "unknown":
-    return color_string("Unknown", "gray")
-  return environment
+    return color_string(f"{'Unknown': <{padding}}", "gray")
+  return f"{environment: <{padding}}"
 
 # Functions
 def print_help(args):
@@ -705,6 +705,24 @@ def search_mod(args):
   if not mods_list:
     raise SearchModError(f"No mod found.")
 
+  server_side_width = 0
+  client_side_width = 0
+
+  downloads_width = 0
+  follows_width = 0
+
+  for mod in mods_list:
+    server_side_width = max(server_side_width, len(mod.get("server_side", "unknown")))
+    client_side_width = max(client_side_width, len(mod.get("client_side", "unknown")))
+
+    downloads = mod.get("downloads", 0)
+    downloads_width = max(downloads_width, len(f"{pluralize('Download', downloads)}: {format_number(downloads)}"))
+
+    follows = mod.get("follows", 0)
+    follows_width = max(follows_width, len(f"{pluralize('Follow', follows)}: {format_number(follows)}"))
+
+  print(server_side_width, client_side_width, downloads_width, follows_width)
+
   total_hits = response.get("total_hits", 0)
   total_pages = f"{math.ceil(total_hits / search_limit):,}"
 
@@ -715,18 +733,22 @@ def search_mod(args):
   log.info(f"Showing {shown_mods_count:,} {pluralize('mod', shown_mods_count)} out of {total_hits:,} total {pluralize('mod', total_hits)} {skipped_message}| Page: {page:,}/{total_pages}")
 
   for index, mod in enumerate(mods_list):
-    title = color_string(mod.get("title", ""), "bold")
-    slug = mod.get("slug", "")
-    author = f"by {mod.get('author', '')}"
+    title = color_string(mod.get("title", "<No Title>"), "bold")
+    slug = mod.get("slug", "<No Slug>")
+    author = f"by {mod.get('author', '<No Author>')}"
 
     mod_header = wrap_text(f"{title} ({slug}) {color_string(author, 'gray')}", subsequent_indent=" ")
 
     downloads = mod.get("downloads", 0)
     follows = mod.get("follows", 0)
-    downloads_follows = color_string(f"[ {pluralize('Download', downloads)}: {format_number(downloads)} | {pluralize('Follow', follows)}: {format_number(follows)} ]", "gray")
 
-    server_side = color_string(f"Server: {mod_environment_color(mod['server_side'])}", "bold")
-    client_side = mod_environment_color(mod["client_side"])
+    follows_text = f"{pluralize('Follow', follows)}: {format_number(follows)}"
+    follows_text = f"{pluralize('Follow', follows)}: {format_number(follows)}"
+    downloads_follows = color_string(f"[ {downloads_text: <{downloads_width}} | {follows_text: <{follows_width}} ]", "gray")
+
+    server_side = color_string(f"Server: {mod_environment_color(mod.get('server_side', "unknown"), server_side_width)}", "bold")
+    client_side = mod_environment_color(mod.get("client_side", "unknown"), client_side_width)
+
     description = wrap_text(mod["description"], initial_indent="  ", subsequent_indent=" ")
 
     is_end_of_list = (index + 1) == shown_mods_count
