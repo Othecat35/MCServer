@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.10.12"
+__version__ = "1.10.13"
 
 import argparse
 import copy
@@ -172,7 +172,21 @@ def format_number(number, unit_type="si"):
 
   return f"{round(number, 2):g}{prefixes[iteration]}"
 
-def wrap_text(text, initial_indent="", subsequent_indent=""):
+def pluralize(singular: str, count:int = 2, plural: str = ""):
+  if count != 1:
+    if plural:
+      return plural
+
+    if singular.endswith(("ch", "sh", "x", "s", "o")):
+      return f"{singular}es"
+    elif singular.endswith("y") and singular[-2] not in "aeiou":
+      return f"{singular[:-1]}ies"
+    else:
+      return f"{singular}s"
+
+  return singular
+
+def wrap_text(text: str, initial_indent: str = "", subsequent_indent: str = ""):
   if not isinstance(initial_indent, str):
     raise ValueError(f"initial_indent must be str, not {type(initial_indent)}")
   elif not isinstance(subsequent_indent, str):
@@ -647,16 +661,16 @@ def search_mod(args):
   sort_by = args.sort_by
 
   modrinth_config = load_config("modrinth", allow_missing=True)
-  server_config = None
+  search_limit = modrinth_config["search_limit"]
 
   search_index = sort_by or modrinth_config.get("sort_by", "relevance")
+  search_offset = search_limit * (page - 1)
 
   search_filters = [["project_type:mod"]]
   search_message = f"Searching mods with '{query}' in Modrinth sorted by {search_index}..."
 
-
   if not (configs_dir / "server.json").exists():
-    log.warning("Configuration file 'server' is missing, no version filter will be applied")
+    log.warning("Configuration file for 'server' is missing, no version filter will be applied.")
   elif not no_filter:
     server_config = load_config("server")
     server_loader = server_config["loader"]
@@ -665,7 +679,7 @@ def search_mod(args):
     loader_name = server_loader["name"]
 
     if loader_name == "vanilla":
-      raise SearchModError("Vanilla Minecraft server does not support mod")
+      raise SearchModError("Vanilla Minecraft server does not support mod.")
 
     search_message = f"Searching mods with '{query}' in Modrinth for {loader_name.capitalize()}, Minecraft server {server_version} sorted by {search_index}..."
     search_filters = [
@@ -675,11 +689,7 @@ def search_mod(args):
       [f"versions:{server_version}"]
     ]
 
-  search_limit = modrinth_config["search_limit"]
-  search_offset = search_limit * (page - 1)
-
   log.info(search_message)
-
   response = json.loads(fetch_url(
     f"{modrinth_api}search",
     {
@@ -693,37 +703,38 @@ def search_mod(args):
 
   mods_list = response.get("hits", [])
   if not mods_list:
-    raise SearchModError(f"No mod found")
+    raise SearchModError(f"No mod found.")
 
-  total_hits = response.get('total_hits', 0)
+  total_hits = response.get("total_hits", 0)
   total_pages = f"{math.ceil(total_hits / search_limit):,}"
 
   response_offset = response.get("offset", 0)
   shown_mods_count = min(len(mods_list), search_limit)
 
-  skipped_message = f"(skipped {response_offset:,} mod(s)) " if response_offset > 0 else ""
-  log.info(f"Showing {shown_mods_count:,} mod(s) out of {total_hits:,} total mod(s) {skipped_message}| Page: {page:,}/{total_pages}")
+  skipped_message = f"(skipped {response_offset:,} {pluralize('mod', response_offset)}) " if response_offset > 0 else ""
+  log.info(f"Showing {shown_mods_count:,} {pluralize('mod', shown_mods_count)} out of {total_hits:,} total {pluralize('mod', total_hits)} {skipped_message}| Page: {page:,}/{total_pages}")
 
-  for mod in mods_list:
+  for index, mod in enumerate(mods_list):
     title = color_string(mod.get("title", ""), "bold")
     slug = mod.get("slug", "")
     author = f"by {mod.get('author', '')}"
 
     mod_header = wrap_text(f"{title} ({slug}) {color_string(author, 'gray')}", subsequent_indent=" ")
 
-    downloads = format_number(mod.get("downloads", 0))
-    follows = format_number(mod.get("follows", 0))
-    downloads_follows = color_string(f"[ Downloads: {downloads} | Follows: {follows} ]", "gray")
+    downloads = mod.get("downloads", 0)
+    follows = mod.get("follows", 0)
+    downloads_follows = color_string(f"[ {pluralize('Download', downloads)}: {format_number(downloads)} | {pluralize('Follow', follows)}: {format_number(follows)} ]", "gray")
 
     server_side = color_string(f"Server: {mod_environment_color(mod['server_side'])}", "bold")
     client_side = mod_environment_color(mod["client_side"])
     description = wrap_text(mod["description"], initial_indent="  ", subsequent_indent=" ")
 
-    print(f"""
-{mod_header}
+    is_end_of_list = (index + 1) == shown_mods_count
+
+    print(f"""{mod_header}
 [ {server_side} | Client: {client_side} ] {downloads_follows}
 > https://modrinth.com/mod/{slug}
-{description}""")
+{description}""", end="\n" if is_end_of_list else "\n\n")
 
 def show_mod(args):
   mods = args.mods

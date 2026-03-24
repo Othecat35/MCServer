@@ -324,3 +324,10 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 ### Changed
 - Make `search` work without `init` (no "modrinth" or "server" config)
 
+## [1.10.13] - 2026-03-24
+
+### Added
+- `plurarize` function
+
+### Changed
+- `search_mod` now use the `pluralize` function
