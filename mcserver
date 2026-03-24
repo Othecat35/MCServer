@@ -721,8 +721,6 @@ def search_mod(args):
     follows = mod.get("follows", 0)
     follows_width = max(follows_width, len(f"{pluralize('Follow', follows)}: {format_number(follows)}"))
 
-  print(server_side_width, client_side_width, downloads_width, follows_width)
-
   total_hits = response.get("total_hits", 0)
   total_pages = f"{math.ceil(total_hits / search_limit):,}"
 
@@ -742,7 +740,7 @@ def search_mod(args):
     downloads = mod.get("downloads", 0)
     follows = mod.get("follows", 0)
 
-    follows_text = f"{pluralize('Follow', follows)}: {format_number(follows)}"
+    downloads_text = f"{pluralize('Download', follows)}: {format_number(downloads)}"
     follows_text = f"{pluralize('Follow', follows)}: {format_number(follows)}"
     downloads_follows = color_string(f"[ {downloads_text: <{downloads_width}} | {follows_text: <{follows_width}} ]", "gray")
 
