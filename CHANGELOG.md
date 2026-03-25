@@ -339,3 +339,11 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Changed
 - Make the line in square brackets aligned to eachother in `search_mod`
+
+## [1.10.14] - 2026-03-026
+
+### Added
+- Check if java in PATH
+
+### Fixed
+- Correct a simicolon to double colon

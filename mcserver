@@ -813,7 +813,7 @@ def start_server(args):
   if not Path(jarfile).exists():
     raise StartServerError(f"Couldn't find server jarfile '{jarfile}'")
 
-  if not shutil.which("java");
+  if not shutil.which("java"):
     raise StartServerError("Cannot find 'java' in PATH, is Java installed correctly?")
 
   if memory_limit["min"] > memory_limit["max"]:
