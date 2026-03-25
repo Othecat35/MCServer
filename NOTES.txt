@@ -36,3 +36,6 @@ move the print_status as a callback to intergrate directly in resolve_mods
 download_url with a status indicator like how much is downloaded vs total seems great
 add init options for search because I felt like it
 Lol the data-driven backup >:(
+pid lock I guess
+java installed check smh
+be a good API citizen and implement ratelimit check >:)
