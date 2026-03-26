@@ -437,7 +437,7 @@ def resolve_mods(mods_id: list, game_version: str, loader_name: str):
       version = fetch_mod_version(mod_id, [game_version], [loader_name])
     except FetchModVersionError as error:
       if mod_type == "optional":
-        log.warning(f"An optional mod doesn't have version for {loader_name.capitalize()}, Minecraft {game_version}.") from error
+        log.warning(f"An optional mod doesn't have version for {loader_name.capitalize()}, Minecraft {game_version}.")
         resolved_mods.add(mod_id)
         continue
 
