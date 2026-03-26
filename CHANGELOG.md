@@ -358,3 +358,14 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 - `resolve_mod` now use deque instead of list for "unresolved\_mods"
 - `fetch_mod_version` now uses `pluralize` in error message
 - `fetch_mod_version` now raise a custom error message when mod doesn't exist
+
+## [1.10.17] - 2026-03-26
+
+### Added
+- A dictionary for special plural
+- "incompatible" mod list
+- Colors in `add_mod`
+
+### Changed
+- Move `expected_hash` after the hash
+- "total\_size" now only count required mods

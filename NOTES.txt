@@ -25,17 +25,19 @@ dependencies and dependents
 mod indexing
 split mod dependency resolution and download from the add_mod command: done, but just the BFS
 make it nicer (imposible)
-what am I doing making this project? my school has nothing to do with it. Me being self-deprecating and having Impostor Syndrome while coding is apparently normal? how?
+- what am I doing making this project? my school has nothing to do with it. Me being self-deprecating and having Impostor Syndrome while coding is apparently normal? how?
 paper? later.
-progress bar
+progress bar: whats that
 more efficient sha calculating directly while downloading instead if after downloading: yay
-warn client only mod because as the same suggest, it is designed for server! client already have too much attention.
+warn client only mod because as the name suggest, it is designed for server! client already have too much attention ;/
 fabric installer, be dynamic (but sadly coding is not that magical that I can command the computer easily :insert_smile_with_tears_emoji:)
 mod indexing is per mod. dependencies and depends, is a list, which contains id and type.
-move the print_status as a callback to intergrate directly in resolve_mods
-download_url with a status indicator like how much is downloaded vs total seems great
+move the print_status as a callback to intergrate directly in resolve_mods: done
+download_url with a status indicator like how much is downloaded vs total seems great: there, check it yourself
 add init options for search because I felt like it
 Lol the data-driven backup >:(
 pid lock I guess
-java installed check smh
+java installed check smh: fine, there
 be a good API citizen and implement ratelimit check >:)
+auto download sometimes, when there's no optional or incompatible mods, or the size is "reasonable"
+haha, the scope will grow even more when you implement that rdepends >:)
