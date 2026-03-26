@@ -340,10 +340,21 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 ### Changed
 - Make the line in square brackets aligned to eachother in `search_mod`
 
-## [1.10.15] - 2026-03-026
+## [1.10.15] - 2026-03-26
 
 ### Added
 - Check if java in PATH
 
 ### Fixed
 - Correct a simicolon to double colon
+
+## [1.10.16] - 2026-03-26
+
+### Added
+- `resolved_mods`'s "dependency\_data" now return "manual" flag
+
+### Changed
+- Move progress bar from `add_mod` to `resolve_mods`
+- `resolve_mod` now use deque instead of list for "unresolved\_mods"
+- `fetch_mod_version` now uses `pluralize` in error message
+- `fetch_mod_version` now raise a custom error message when mod doesn't exist

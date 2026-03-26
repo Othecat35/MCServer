@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.10.15"
+__version__ = "1.10.16"
 
 import argparse
 import copy
@@ -17,6 +17,7 @@ import urllib.request
 
 import logging as log
 from pathlib import Path
+from collections import deque
 
 # Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
@@ -257,7 +258,7 @@ def load_config(config_name, allow_missing=False):
     raise PermissionError(f"Cannot read configuration file for '{config_name}': Permission denied to read file") from error
 
 # URLs
-def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int =10):
+def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int = 10):
   if params is None: params = {}
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
@@ -266,25 +267,27 @@ def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int 
   request_url = urllib.request.Request(f"{url}{query_string}", headers=headers, method="GET")
 
   log.debug(f"Fetching URL: {request_url.full_url}")
-
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
     return response.read().decode("utf-8")
 
 def download_url(url: str, filename: str | Path, hashes: dict = None, headers: dict = None, timeout: int = 10):
   filename = Path(filename)
+
   if hashes is None: hashes = {}
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
 
-  request_url = urllib.request.Request(url, headers=headers, method="GET")
   basename = filename.name
   tempfile = tempfiles_dir / basename
+
+  request_url = urllib.request.Request(url, headers=headers, method="GET")
 
   log.debug(f"Downloading URL: {request_url.full_url}")
   log.debug(f"Temporary file: {tempfile}")
 
   hash_algorithm = None
   hash_name = None
+
   expected_hash = None
 
   if hashes.get("sha512"):
@@ -333,14 +336,18 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
 
 # Mod Versions
 def fetch_mod_version(modid: str, game_versions: list, loaders: list):
-  response = json.loads(fetch_url(f"{modrinth_api}project/{modid}/version", params={
-    "loaders": json.dumps(loaders),
-    "game_versions": json.dumps(game_versions),
-    "include_changelog": "false"
-  }))
+  try:
+    response = json.loads(fetch_url(f"{modrinth_api}project/{modid}/version", params={
+      "loaders": json.dumps(loaders),
+      "game_versions": json.dumps(game_versions),
+      "include_changelog": "false"
+    }))
+  except urllib.error.HTTPError as error:
+    if error.code == 404:
+      raise FetchModError(f"Mod '{modid}' is not found") from error
 
   if not response:
-    raise FetchModVersionError(f"No version found in mod '{modid}' for loaders {', '.join(loaders).title()}, Minecraft version {', '.join(game_versions)}")
+    raise FetchModVersionError(f"No version found in mod '{modid}' for {pluralize('loader', len(loaders))} {', '.join(loaders).title()}, Minecraft {pluralize('version', len(game_versions))} {', '.join(game_versions)}")
 
   selected_version = response[0]
 
@@ -351,7 +358,7 @@ def fetch_mod_version(modid: str, game_versions: list, loaders: list):
       break
 
   if selected_file is None:
-    raise FetchModVersionError(f"This version of the mod '{modid}' does not have any file marked primary")
+    raise FetchModVersionError(f"This version ({selected_version['version_id']}) of the mod '{modid}' does not have any file marked as primary")
 
   dependencies = []
   for dependency in selected_version["dependencies"]:
@@ -377,9 +384,9 @@ def fetch_mod_version(modid: str, game_versions: list, loaders: list):
     "dependencies": dependencies
   }
 
-def resolve_mods(mods_id: list, game_version: str, loader_name: str, update_status: callable = None):
+def resolve_mods(mods_id: list, game_version: str, loader_name: str):
   # Initialize variables
-  unresolved_mods = []
+  unresolved_mods = deque()
   resolved_mods = set()
 
   resolved_mods_data = []
@@ -389,12 +396,13 @@ def resolve_mods(mods_id: list, game_version: str, loader_name: str, update_stat
   for mod in mods_id:
     unresolved_mods.append({
       "id": mod,
-      "type": "required"
+      "type": "required",
+      "manual": True
     })
 
   # Fetch all unresolved_dependencies until empty
   while unresolved_mods:
-    mod = unresolved_mods.pop(0)
+    mod = unresolved_mods.popleft()
 
     mod_id = mod["id"]
     mod_type = mod["type"]
@@ -429,7 +437,7 @@ def resolve_mods(mods_id: list, game_version: str, loader_name: str, update_stat
       version = fetch_mod_version(mod_id, [game_version], [loader_name])
     except FetchModVersionError as error:
       if mod_type == "optional":
-        log.warning(f"An optional mod doesn't have version for {loader_name.capitalize()}, Minecraft {game_version}.")
+        log.warning(f"An optional mod doesn't have version for {loader_name.capitalize()}, Minecraft {game_version}.") from error
         resolved_mods.add(mod_id)
         continue
 
@@ -441,11 +449,12 @@ def resolve_mods(mods_id: list, game_version: str, loader_name: str, update_stat
 
     # Append mod data to dependencies_data
     version_data["type"] = mod_type
+    version_data["manual"] = mod["manual"]
     resolved_mods_data.append(version_data)
 
     # Update status
-    if update_status is not None:
-      update_status(len(resolved_mods_data), len(resolved_mods))
+    resolved_count = len(resolved_mods_data)
+    print_status("Resolving mod dependencies...", dynamic=f"Resolved {resolved_count} {pluralize('mod', resolved_count)} out of {len(resolved_mods)}")
 
     # Add dependency as resolved
     resolved_mods.update({ version_data["id"], mod_id })
@@ -458,7 +467,11 @@ def resolve_mods(mods_id: list, game_version: str, loader_name: str, update_stat
         log.debug(f"Skip adding already resolved dependency: {dependency_id}")
       else:
         log.debug(f"Adding dependency as unresolved mods: {dependency_id}")
-        unresolved_mods.append(dependency)
+        unresolved_mods.append({
+          "id": dependency_id,
+          "type": dependency["type"],
+          "manual": False
+        })
   
   return {
     "dependencies_data": resolved_mods_data,
@@ -497,8 +510,7 @@ def add_mod(args):
   if server_loader["name"] == "vanilla":
     raise AddModError("Vanilla Minecraft server does not support mod")
 
-  print()
-  resolved_dependencies = resolve_mods(mods, server_version, loader_name, lambda resolved, unresolved: print_status("Resolving mod dependencies...", dynamic=f"Resolving mod dependencies... {resolved} out of {unresolved} done"))
+  resolved_dependencies = resolve_mods(mods, server_version, loader_name)
   resolved_data = resolved_dependencies["dependencies_data"]
 
   # Get mod IDs
@@ -759,7 +771,7 @@ def search_mod(args):
 def show_mod(args):
   mods = args.mods
 
-  log.info("Getting mod(s) information...")
+  log.info(f"Getting {pluralize('mod', len(mods))} information...")
   mods_info = json.loads(fetch_url(
     f"{modrinth_api}projects",
     params={
