@@ -223,6 +223,13 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 ### Fixed
 - Remove `format_number` for mod search result message in favor of more precise thousands separator instead
 
+---
+
+More correct semantic versioning:
+1. MAJOR: When changes make older script configuration "broken"
+2. MINOR: When add new thing for the user
+3. PATCH: When changing how the script work
+
 ## [1.10.0] - 2026-03-18
 
 ### Added
@@ -374,3 +381,46 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Changed
 - "incompatible\_mods" is now just in "resolved\mods\_data"
+
+---
+
+# Semantic Versioning (MAJOR.minor._patch_):
+- MAJOR: When you introduce breaking changes (Rename a configuration file, rename directory, etc)
+- minor: When you change user interaction (Add new command, add new flag to a command, etc)
+- _patch_: When you change internal code without visible changes (Fix a typo, rework an algorithm, etc)
+
+# Changelog Structure:
+```md
+## [<semver>] - <date(yyyy/MM/dd)>
+
+### Added
+- A
+
+### Changed
+- B
+
+### Deprecating
+- C
+
+### Removed
+- D
+
+### Fixed
+- E
+
+### Security
+- F```
+
+## [1.11.0] - 202-03-27
+
+### Added
+- "skip_embedded_dependencies" optional boolean parameter to fetch_mod_version
+- "manual" tag to each entry in "resolved_data"
+
+### Changed
+- Renamed "ResolveModsDependenciesError" to "ResolveModsError"
+- Renamed "unresolved_mods" to "unresolved_entries"
+- Renamed "resolved_mods" to "processed_ids"
+- Renamed "resolved_mods_data" to "resolved_data"
+- `resolve_mods` now use the "skip_embedded_dependencies"
+- Reworked the dependency resolution logic to be "early-filtering"
