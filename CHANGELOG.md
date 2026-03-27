@@ -411,7 +411,7 @@ More correct semantic versioning:
 ### Security
 - F```
 
-## [1.11.0] - 202-03-27
+## [1.11.0] - 2026-03-27
 
 ### Added
 - "skip_embedded_dependencies" optional boolean parameter to fetch_mod_version
@@ -424,3 +424,8 @@ More correct semantic versioning:
 - Renamed "resolved_mods_data" to "resolved_data"
 - `resolve_mods` now use the "skip_embedded_dependencies"
 - Reworked the dependency resolution logic to be "early-filtering"
+
+## [1.11.1] - 2026-03-28
+
+### Fixed
+- Typo of "skip_embedded_dependecies" to "skip_embedded_dependencies"

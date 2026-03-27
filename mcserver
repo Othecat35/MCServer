@@ -342,7 +342,7 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
   shutil.move(tempfile, filename)
 
 # Mod Fetching
-def fetch_mod_version(modid: str, game_versions: list, loaders: list, skip_embedded_dependecies: bool = False):
+def fetch_mod_version(modid: str, game_versions: list, loaders: list, skip_embedded_dependencies: bool = False):
   try:
     response = json.loads(fetch_url(f"{modrinth_api}project/{modid}/version", params={
       "loaders": json.dumps(loaders),
@@ -371,7 +371,7 @@ def fetch_mod_version(modid: str, game_versions: list, loaders: list, skip_embed
   for dependency in selected_version["dependencies"]:
     dependency_type = dependency["dependency_type"]
 
-    if skip_embedded_dependecies and dependency_type == "embedded":
+    if skip_embedded_dependencies and dependency_type == "embedded":
       continue
 
     dependencies.append({
@@ -430,7 +430,7 @@ def resolve_mods(mods_id: list, game_version: str, loader_name: str):
 
     try:
       log.debug(f"Fetching mod version information of {mod_id}...")
-      version = fetch_mod_version(mod_id, [game_version], [loader_name], skip_embedded_dependecies=True)
+      version = fetch_mod_version(mod_id, [game_version], [loader_name], skip_embedded_dependencies=True)
     except FetchModVersionError as error:
       if mod_type == "optional":
         log.warning(f"An optional mod doesn't have version for {loader_name.capitalize()}, Minecraft {game_version}.")
