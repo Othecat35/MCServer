@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.10.17"
+__version__ = "1.10.18"
 
 import argparse
 import copy
@@ -351,7 +351,7 @@ def fetch_mod_version(modid: str, game_versions: list, loaders: list):
     }))
   except urllib.error.HTTPError as error:
     if error.code == 404:
-      raise FetchModError(f"Mod '{modid}' is not found") from error
+      raise FetchModVersionError(f"Mod '{modid}' is not found") from error
 
   if not response:
     raise FetchModVersionError(f"No version found in mod '{modid}' for {pluralize('loader', len(loaders))} {', '.join(loaders).title()}, Minecraft {pluralize('version', len(game_versions))} {', '.join(game_versions)}")
@@ -394,7 +394,7 @@ def resolve_mods(mods_id: list, game_version: str, loader_name: str):
   unresolved_mods = deque()
   resolved_mods = set()
 
-  resolved_mods_data = deque()
+  resolved_mods_data = []
 
   # Initial mod list
   for mod in mods_id:
@@ -423,8 +423,14 @@ def resolve_mods(mods_id: list, game_version: str, loader_name: str):
 
     # Check if mod is marked as 'incompatible'
     if mod_type == "incompatible":
-      log.warning(f"Mod is marked as 'incompatible': {mod_id}, adding to `incompatible_dependencies`")
-      incompatible_dependencies.add(mod_id)
+      log.warning(f"Mod is marked as 'incompatible': {mod_id}, not fetching version")
+      resolved_mods_data.append({
+        "id": mod_id,
+        "type": mod_type,
+        "manual": mod["manual"],
+      })
+
+      resolved_mods.add(mod_id)
       continue
 
     # Try fetch mod version
@@ -467,13 +473,8 @@ def resolve_mods(mods_id: list, game_version: str, loader_name: str):
           "manual": False
         })
 
-  while resolved_mods_data:
-
-
-
-  log.debug(f"Resolved mods data: {json.dumps  resolved_mods_data, indent=2)}")
-
-  return  resolved_mods_data
+  log.debug(f"Resolved mods data: {json.dumps(resolved_mods_data, indent=2)}")
+  return resolved_mods_data
 
 # EULA functions
 def check_eula_agreed():
@@ -527,8 +528,6 @@ def add_mod(args):
       incompatible_mod_ids.add(mod["id"])
 
     mod_ids.append(mod["id"])
-
-  mod_ids += incompatible_mod_ids
 
   response = json.loads(fetch_url(f"{modrinth_api}projects", params={
     "ids": json.dumps(mod_ids)

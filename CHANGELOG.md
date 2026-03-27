@@ -369,3 +369,8 @@ Following [Keep a changelog](https://keepachangelog.com/en/1.1.0/)
 ### Changed
 - Move `expected_hash` after the hash
 - "total\_size" now only count required mods
+
+## [1.10.18] - 2026-03-27
+
+### Changed
+- "incompatible\_mods" is now just in "resolved\mods\_data"
