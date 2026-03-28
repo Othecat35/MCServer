@@ -414,23 +414,23 @@ More correct semantic versioning:
 ## [1.11.0] - 2026-03-27
 
 ### Added
-- "skip\_embedded\_dependencies" optional boolean parameter to `fetch_mod_version`
-- "manual" tag to each entry in "resolved\_data"
+- `skip_embedded_dependencies` optional boolean parameter to `fetch_mod_version`
+- `manual` key to each entry in `resolved_data`
 
 ### Changed
-- Renamed "ResolveModsDependenciesError" to "ResolveModsError"
-- Renamed "unresolved\_mods" to "unresolved\_entries"
-- Renamed "resolved\_mods" to "processed\_ids"
-- Renamed "resolved\_mods\_data" to "resolved\_data"
-- `resolve_mods` now use the "skip\_embedded\_dependencies"
+- Renamed `ResolveModsDependenciesError` to `ResolveModsError`
+- Renamed `unresolved_mods` to `unresolved_entries`
+- Renamed `resolved_mods` to `processed_ids`
+- Renamed `resolved_mods_data` to `resolved_data`
+- `resolve_mods` now use the `skip_embedded_dependencies`
 - Reworked the dependency resolution logic to be "early-filtering"
 
 ## [1.11.1] - 2026-03-28
 
 ### Fixed
-- Typo of "skip\_embedded\_dependecies" to "skip\_embedded\_dependencies"
+- Typo of `skip_embedded_dependecies` to `skip_embedded_dependencies`
 
 ## [1.11.2] - 2026-03-28
 
 ### Fixed
-- Rename variable "resolved\_dependencies" to "resolved\_data" in `add_mod`
+- Rename variable `resolved_dependencies` to `resolved_data` in `add_mod`
