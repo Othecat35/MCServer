@@ -434,3 +434,12 @@ More correct semantic versioning:
 
 ### Fixed
 - Rename variable `resolved_dependencies` to `resolved_data` in `add_mod`
+
+## [1.11.3] - 2026-03-28
+
+### Added
+- Added `dependants` in `resolved_data`
+
+### Changed
+- Completely reworked the `resolve_mods`, again...
+- `resolve_mods` now return "dictionary" instead of "list" with the key being the mod id

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.11.2"
+__version__ = "1.11.3"
 
 import argparse
 import copy
@@ -395,38 +395,35 @@ def fetch_mod_version(modid: str, game_versions: list, loaders: list, skip_embed
   }
 
 def resolve_mods(mods_id: list, game_version: str, loader_name: str):
-  # Initialize variables
-  unresolved_entries = deque()
+  # Initial variables
+  unresolved_ids = deque()
   processed_ids = set()
 
-  resolved_data = []
-
-  # Initial mod entries
+  # Populate resolved_data
+  resolved_data = {}
   for mod_id in mods_id:
-    unresolved_entries.append({
-      "id": mod_id,
+    unresolved_ids.append(mod_id)
+    resolved_data[mod_id] = {
       "type": "required",
-      "manual": True
-    })
+      "manual": True,
+      "dependants": {}
+    }
 
-  # Fetch all unresolved_dependencies until empty
-  while unresolved_entries:
-    entry = unresolved_entries.popleft()
+  # Main logic
+  while unresolved_ids:
+    # Get current mod
+    mod_id = unresolved_ids.popleft()
+    mod = resolved_data[mod_id]
 
-    mod_id = entry["id"]
-    mod_type = entry["type"]
-    is_manual = entry["manual"]
+    mod_type = mod["type"]
+    mod_manual = mod["manual"]
 
-    # Check if mod is already processed
+    # Check mod is already processed
     if mod_id in processed_ids:
-      if is_manual:
-        raise ResolveModsError(f"Cannot satisfy requested mod dependencies: {mod_id} is marked as incompatible")
-
-      log.debug(f"Mod marked as {mod_type} is already processed: {version["id"]}")
+      log.debug(f"Mod marked as {mod_type} is already processed: {mod_id}")
       continue
 
-    # Try fetch mod version
-    version = None
+    version = {}
 
     try:
       log.debug(f"Fetching mod version information of {mod_id}...")
@@ -434,55 +431,40 @@ def resolve_mods(mods_id: list, game_version: str, loader_name: str):
     except FetchModVersionError as error:
       if mod_type == "optional":
         log.warning(f"An optional mod doesn't have version for {loader_name.capitalize()}, Minecraft {game_version}.")
-        processed_ids.add(mod_id)
         continue
-
+      
       raise ResolveModsError(f"No version found for mod '{mod_id}'") from error
 
-    if version["id"] in processed_ids:
-      if is_manual:
-        raise ResolveModsError(f"Cannot satisfy requested mod dependencies: {mod_id} is marked as incompatible")
-
-      log.debug(f"Mod marked as {mod_type} is already processed: {mod_id}")
-      continue
-
-    # Add mod metadata
-    version["type"] = mod_type
-    version["manual"] = is_manual
-
-    resolved_data.append(version)
-
-    # Add dependency as resolved
-    processed_ids.update({ version["id"], mod_id })
-
-    # Update status
-    resolved_count = len(resolved_data)
-    print_status("Resolving mod dependencies...", dynamic=f"Resolved {resolved_count} {pluralize('mod', resolved_count)} out of {len(processed_ids)}")
+    # Recheck if mod is already processed
+    version_mod_id = version["id"]
+    if version_mod_id in processed_ids:
+      log.debug(f"Mod marked as {mod_type} is already processed: {version_mod_id}")
 
     # Dependency squared
     for dependency in version["dependencies"]:
       dependency_id = dependency["id"]
       dependency_type = dependency["type"]
 
-      if dependency_id in processed_ids:
-        log.debug(f"Skip adding already resolved dependency: {dependency_id}, for now...")
+      # Add placeholder data if not exists
+      if dependency_id not in resolved_data:
+        unresolved_ids.append(dependency_id)
+        resolved_data[dependency_id] = {
+          "type": dependency_type,
+          "manual": False,
+          "dependants": {
+            mod_id: dependency_type
+          }
+        }
+      # Add itself as a dependency of other
       else:
-        if dependency_type == "incompatible":
-          log.debug(f"Mostly skipping dependency with type 'incompatible': {dependency_id}")
-          processed_ids.add(dependency_id)
-          resolved_data.append({
-            "id": dependency_id,
-            "type": "incompatible",
-            "manual": False
-          })
-        else:
-          unresolved_entries.append({
-            "id": dependency_id,
-            "type": dependency_type,
-            "manual": False
-          })
+        resolved_data[dependency_id]["dependants"][mod_id] = dependency_type
 
-  log.debug(f"Resolved data: \n{json.dumps(resolved_data, indent=2)}")
+    # Update and add mod data
+    mod.update(version)
+    processed_ids.update({ mod_id, version_mod_id })
+
+  # Return a list with the mod id as the key
+  log.debug(json.dumps(resolved_data, indent=2))
   return resolved_data
 
 # EULA functions
@@ -527,7 +509,8 @@ def add_mod(args):
   optional_mod_ids = set()
   incompatible_mod_ids = set()
 
-  for mod in resolved_data:
+  for mod in resolved_data.values():
+    if not mod.get("id"): continue
     if mod["type"] == "required":
       required_mod_ids.add(mod["id"])
       total_size += mod["file"]["size"]
@@ -593,7 +576,7 @@ def add_mod(args):
     raise AddModError("Cancelled")
 
   mods_dir.mkdir(exist_ok=True)
-  for mod in resolved_data:
+  for mod in resolved_data.values():
     if mod["type"] == "required":
       mod_file = mod["file"]
 
@@ -955,6 +938,10 @@ def main():
   parser_show = subparsers.add_parser("show", help="Show information about mod(s) from Modrinth")
   parser_show.add_argument("mods", help="Slug (or ID) of the mod(s)", nargs="+")
   parser_show.set_defaults(func=show_mod)
+
+  parser_test = subparsers.add_parser("Test", help="You aren't suppose to see this!")
+  parser_test.add_argument("input", help="Multiple input arguments", nargs="+")
+  parser_show.set_defaults(func=resolve_mods)
 
   args = parser.parse_args()
 
