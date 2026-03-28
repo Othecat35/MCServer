@@ -517,7 +517,7 @@ def add_mod(args):
   if server_loader["name"] == "vanilla":
     raise AddModError("Vanilla Minecraft server does not support mod")
 
-  resolved_dependencies = resolve_mods(mods, server_version, loader_name)
+  resolved_data = resolve_mods(mods, server_version, loader_name)
 
   # Get mod IDs
   mod_ids = []
@@ -527,7 +527,7 @@ def add_mod(args):
   optional_mod_ids = set()
   incompatible_mod_ids = set()
 
-  for mod in resolved_dependencies:
+  for mod in resolved_data:
     if mod["type"] == "required":
       required_mod_ids.add(mod["id"])
       total_size += mod["file"]["size"]
