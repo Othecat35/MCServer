@@ -443,3 +443,11 @@ More correct semantic versioning:
 ### Changed
 - Completely reworked the `resolve_mods`, again...
 - `resolve_mods` now return "dictionary" instead of "list" with the key being the mod id
+
+## [1.11.4] - 2026-03-29
+
+### Added
+- Logic to migrate slug with existing ID entry
+
+### Changed
+- Mark "incompatible" dependency mods as processed to avoid fetching data for them

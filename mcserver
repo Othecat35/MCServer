@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.11.3"
+__version__ = "1.11.4"
 
 import argparse
 import copy
@@ -440,6 +440,22 @@ def resolve_mods(mods_id: list, game_version: str, loader_name: str):
     if version_mod_id in processed_ids:
       log.debug(f"Mod marked as {mod_type} is already processed: {version_mod_id}")
 
+    # Migrate any slug with existing ID entry
+    if version_mod_id in resolved_data:
+      if mod_id != version_mod_id:
+        log.debug(f"Migrating data from '{mod_id}' to '{version_mod_id}'")
+
+        base = resolved_data.pop(mod_id)
+        target = resolved_data[version_mod_id]
+        if target["type"] == "incompatible":
+          log.debug(f"'{version_mod_id}' is marked as incompatible")
+          base["type"] = "incompatible"
+
+        base["dependants"] = target["dependants"]
+        print(json.dumps(base, indent=2))
+        target.update(base)
+        continue
+
     # Dependency squared
     for dependency in version["dependencies"]:
       dependency_id = dependency["id"]
@@ -459,12 +475,15 @@ def resolve_mods(mods_id: list, game_version: str, loader_name: str):
       else:
         resolved_data[dependency_id]["dependants"][mod_id] = dependency_type
 
+      if dependency_type == "incompatible":
+        processed_ids.add(dependency_id)
+
     # Update and add mod data
     mod.update(version)
-    processed_ids.update({ mod_id, version_mod_id })
+    processed_ids.update({ version_mod_id })
 
   # Return a list with the mod id as the key
-  log.debug(json.dumps(resolved_data, indent=2))
+  if debug_mode: print(json.dumps(resolved_data, indent=2))
   return resolved_data
 
 # EULA functions
@@ -939,9 +958,9 @@ def main():
   parser_show.add_argument("mods", help="Slug (or ID) of the mod(s)", nargs="+")
   parser_show.set_defaults(func=show_mod)
 
-  parser_test = subparsers.add_parser("Test", help="You aren't suppose to see this!")
-  parser_test.add_argument("input", help="Multiple input arguments", nargs="+")
-  parser_show.set_defaults(func=resolve_mods)
+  #parser_test = subparsers.add_parser("Test", help="You aren't suppose to see this!")
+  #parser_test.add_argument("input", help="Multiple input arguments", nargs="+")
+  #parser_show.set_defaults(func=resolve_mods)
 
   args = parser.parse_args()
 
