@@ -462,3 +462,13 @@ More correct semantic versioning:
 ### Changed
 - Renamed `loaders` to `loaders_name` in `fetch_mod_version`
 - Reworked the `resolve_mods`... again.
+
+## [1.11.6] - 2026-03-30
+
+### Changed
+- The optional dependency version not found warning message now contains mod ID
+- Make the mod dependency resolver only process required dependencies
+
+### Fixed
+- Download plural uses `follows` count instead of `downloads` count, now is fixed
+- Replace `required` to `mod_dependency_types["required"]` in the download loop of `add_mod`

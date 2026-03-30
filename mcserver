@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.11.5"
+__version__ = "1.11.6"
 
 import argparse
 import copy
@@ -422,7 +422,7 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
       version = fetch_mod_version(mod_id, game_version, loader_name, skip_embedded_dependencies=True)
     except FetchModVersionError as error:
       if mod["type"] == mod_dependency_types["optional"]:
-        log.warning(f"An optional dependency is not available for {loader_name.capitalize()}, Minecraft {game_version}.")
+        log.warning(f"An optional dependency ({mod_id}) is not available for {loader_name.capitalize()}, Minecraft {game_version}.")
         continue
 
       raise ResolveModsError(f"A required dependency is not available for {loader_name.capitalize()}, Minecraft {game_version}. Cannot satisfy mod: {mod['dependants'].keys()}") from error
@@ -430,7 +430,7 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
     version_mod_id = version["id"]
     for dependency_id, dependency_type in version["dependencies"].items():
       if dependency_id not in resolved_data:
-        if dependency_type != mod_dependency_types["incompatible"]:
+        if dependency_type == mod_dependency_types["required"]:
           unresolved_ids.append(dependency_id)
 
         log.debug(f"Adding new entry {dependency_id} by {version_mod_id} with type {dependency_type}")
@@ -584,7 +584,7 @@ def add_mod(args):
 
   mods_dir.mkdir(exist_ok=True)
   for mod in resolved_data.values():
-    if mod["type"] == "required":
+    if mod["type"] == mod_dependencies_type["required"]:
       mod_file = mod["file"]
 
       log.info(f"Downloading version {mod['name']}...")
@@ -765,7 +765,7 @@ def search_mod(args):
     downloads = mod.get("downloads", 0)
     follows = mod.get("follows", 0)
 
-    downloads_text = f"{pluralize('Download', follows)}: {format_number(downloads)}"
+    downloads_text = f"{pluralize('Download', downloads)}: {format_number(downloads)}"
     follows_text = f"{pluralize('Follow', follows)}: {format_number(follows)}"
     downloads_follows = color_string(f"[ {downloads_text: <{downloads_width}} | {follows_text: <{follows_width}} ]", "gray")
 

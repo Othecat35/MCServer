@@ -46,3 +46,4 @@ Before that, fix my data migration logic first to make every single entry uses i
 After that, also implement a conflict check pls, like if you request this mod and that mod, and they met as "incompatible", whatever. you are kinda responsible for that, not really but nice to have, and make yourself comoareable to Prism >:). by "you" I mean myself.
 And then? hahaha, the hole of the rabbithole for dependency resolution didn't end there, you have to index them. why? because I said so. nah jk, because we should know that we already have Fabric API installed so we don't redownload it again
 remove? list? update? clean? check? yep, btw clean means remove orphaned mods, and check? I guess that can be used to scan for any manual .jar added in mods/
+now make any mod that are incompatible ripples down to the source, only stopped by an optional mod -_-, wait, why I'm bother to fetch optional mods? just make it required only!
