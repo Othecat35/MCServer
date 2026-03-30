@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.11.4"
+__version__ = "1.11.5"
 
 import argparse
 import copy
@@ -38,6 +38,13 @@ read_chunk_size = 1024 * 64 # 64KiB
 
 special_plural = {
   "is": "are"
+}
+
+mod_dependency_types = {
+  "embedded": 0,
+  "optional": 1,
+  "required": 2,
+  "incompatible": 3
 }
 
 ansi_codes = {
@@ -342,10 +349,13 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
   shutil.move(tempfile, filename)
 
 # Mod Fetching
-def fetch_mod_version(modid: str, game_versions: list, loaders: list, skip_embedded_dependencies: bool = False):
+def fetch_mod_version(modid: str, game_versions: list | str, loaders_name: list | str, skip_embedded_dependencies: bool = False):
+  if isinstance(game_versions, str): game_versions = [game_versions]
+  if isinstance(loaders_name, str): loaders_name = [loaders_name]
+
   try:
     response = json.loads(fetch_url(f"{modrinth_api}project/{modid}/version", params={
-      "loaders": json.dumps(loaders),
+      "loaders": json.dumps(loaders_name),
       "game_versions": json.dumps(game_versions),
       "include_changelog": "false"
     }))
@@ -354,7 +364,7 @@ def fetch_mod_version(modid: str, game_versions: list, loaders: list, skip_embed
       raise FetchModVersionError(f"Mod '{modid}' is not found") from error
 
   if not response:
-    raise FetchModVersionError(f"No version found in mod '{modid}' for {pluralize('loader', len(loaders))} {', '.join(loaders).title()}, Minecraft {pluralize('version', len(game_versions))} {', '.join(game_versions)}")
+    raise FetchModVersionError(f"No version found in mod '{modid}' for {pluralize('loader', len(loaders_name))} {', '.join(loaders_name).title()}, Minecraft {pluralize('version', len(game_versions))} {', '.join(game_versions)}")
 
   selected_version = response[0]
 
@@ -367,17 +377,14 @@ def fetch_mod_version(modid: str, game_versions: list, loaders: list, skip_embed
   if selected_file is None:
     raise FetchModVersionError(f"This version ({selected_version['version_id']}) of the mod '{modid}' does not have any file marked as primary")
 
-  dependencies = []
+  dependencies = {}
   for dependency in selected_version["dependencies"]:
-    dependency_type = dependency["dependency_type"]
+    dependency_type = mod_dependency_types[dependency["dependency_type"]]
 
-    if skip_embedded_dependencies and dependency_type == "embedded":
+    if skip_embedded_dependencies and dependency_type == mod_dependency_types["embedded"]:
       continue
 
-    dependencies.append({
-      "id": dependency["project_id"],
-      "type": dependency_type
-    })
+    dependencies[dependency["project_id"]] = dependency_type
 
   return {
     "id": selected_version["project_id"],
@@ -394,95 +401,76 @@ def fetch_mod_version(modid: str, game_versions: list, loaders: list, skip_embed
     "dependencies": dependencies
   }
 
-def resolve_mods(mods_id: list, game_version: str, loader_name: str):
-  # Initial variables
-  unresolved_ids = deque()
-  processed_ids = set()
+def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
+  if isinstance(mods_id, str): mods_id = [mods_id]
+  unresolved_ids = deque(mods_id)
 
-  # Populate resolved_data
   resolved_data = {}
   for mod_id in mods_id:
-    unresolved_ids.append(mod_id)
     resolved_data[mod_id] = {
-      "type": "required",
+      "type": mod_dependency_types["required"],
       "manual": True,
       "dependants": {}
     }
 
-  # Main logic
   while unresolved_ids:
-    # Get current mod
     mod_id = unresolved_ids.popleft()
-    mod = resolved_data[mod_id]
-
-    mod_type = mod["type"]
-    mod_manual = mod["manual"]
-
-    # Check mod is already processed
-    if mod_id in processed_ids:
-      log.debug(f"Mod marked as {mod_type} is already processed: {mod_id}")
-      continue
-
-    version = {}
+    mod = resolved_data.pop(mod_id)
 
     try:
-      log.debug(f"Fetching mod version information of {mod_id}...")
-      version = fetch_mod_version(mod_id, [game_version], [loader_name], skip_embedded_dependencies=True)
+      log.debug(f"Fetching version for mod: {mod_id}")
+      version = fetch_mod_version(mod_id, game_version, loader_name, skip_embedded_dependencies=True)
     except FetchModVersionError as error:
-      if mod_type == "optional":
-        log.warning(f"An optional mod doesn't have version for {loader_name.capitalize()}, Minecraft {game_version}.")
+      if mod["type"] == mod_dependency_types["optional"]:
+        log.warning(f"An optional dependency is not available for {loader_name.capitalize()}, Minecraft {game_version}.")
         continue
-      
-      raise ResolveModsError(f"No version found for mod '{mod_id}'") from error
 
-    # Recheck if mod is already processed
+      raise ResolveModsError(f"A required dependency is not available for {loader_name.capitalize()}, Minecraft {game_version}. Cannot satisfy mod: {mod['dependants'].keys()}") from error
+
     version_mod_id = version["id"]
-    if version_mod_id in processed_ids:
-      log.debug(f"Mod marked as {mod_type} is already processed: {version_mod_id}")
-
-    # Migrate any slug with existing ID entry
-    if version_mod_id in resolved_data:
-      if mod_id != version_mod_id:
-        log.debug(f"Migrating data from '{mod_id}' to '{version_mod_id}'")
-
-        base = resolved_data.pop(mod_id)
-        target = resolved_data[version_mod_id]
-        if target["type"] == "incompatible":
-          log.debug(f"'{version_mod_id}' is marked as incompatible")
-          base["type"] = "incompatible"
-
-        base["dependants"] = target["dependants"]
-        print(json.dumps(base, indent=2))
-        target.update(base)
-        continue
-
-    # Dependency squared
-    for dependency in version["dependencies"]:
-      dependency_id = dependency["id"]
-      dependency_type = dependency["type"]
-
-      # Add placeholder data if not exists
+    for dependency_id, dependency_type in version["dependencies"].items():
       if dependency_id not in resolved_data:
-        unresolved_ids.append(dependency_id)
+        if dependency_type != mod_dependency_types["incompatible"]:
+          unresolved_ids.append(dependency_id)
+
+        log.debug(f"Adding new entry {dependency_id} by {version_mod_id} with type {dependency_type}")
         resolved_data[dependency_id] = {
           "type": dependency_type,
           "manual": False,
           "dependants": {
-            mod_id: dependency_type
+            version_mod_id: dependency_type
           }
         }
-      # Add itself as a dependency of other
       else:
-        resolved_data[dependency_id]["dependants"][mod_id] = dependency_type
+        log.debug(f"Adding mod {version_mod_id} as dependants of {dependency_id} with type {dependency_type}")
 
-      if dependency_type == "incompatible":
-        processed_ids.add(dependency_id)
+        dependency_data = resolved_data[dependency_id]
+        dependency_data["dependants"][version_mod_id] = dependency_type
+        dependency_data["type"] = max(dependency_data["type"], dependency_type)
 
-    # Update and add mod data
-    mod.update(version)
-    processed_ids.update({ version_mod_id })
+    if version_mod_id in resolved_data:
+      log.debug(f"Keeping existing data {version_mod_id} to {mod_id}")
+      mod["dependants"].update(resolved_data[version_mod_id]["dependants"])
 
-  # Return a list with the mod id as the key
+    highest_type = mod["type"]
+    for _, dependant_type in mod["dependants"].items():
+      highest_type = max(highest_type, dependant_type)
+
+    mod["type"] = highest_type
+    version.update(mod)
+
+    resolved_data[version_mod_id] = version
+
+  for mod_id, data in resolved_data.items():
+    if data["type"] == mod_dependency_types["incompatible"] and data["manual"]:
+      dependants_list = []
+      for dependant_id, dependant_type in data["dependants"].items():
+        if dependant_type == mod_dependency_types["incompatible"]:
+          dependants_list.append(dependant_id)
+
+      raise ResolveModsError(f"Cannot satisfy user requirement: Requested mod '{mod_id}' is incompatible with '{' '.join(dependants_list)}'")
+
+
   if debug_mode: print(json.dumps(resolved_data, indent=2))
   return resolved_data
 
@@ -530,12 +518,12 @@ def add_mod(args):
 
   for mod in resolved_data.values():
     if not mod.get("id"): continue
-    if mod["type"] == "required":
+    if mod["type"] == mod_dependency_types["required"]:
       required_mod_ids.add(mod["id"])
       total_size += mod["file"]["size"]
-    elif mod["type"] == "optional":
+    elif mod["type"] == mod_dependency_types["optional"]:
       optional_mod_ids.add(mod["id"])
-    elif mod["type"] == "incompatible":
+    elif mod["type"] == mod_dependency_types["incompatible"]:
       incompatible_mod_ids.add(mod["id"])
 
     mod_ids.append(mod["id"])

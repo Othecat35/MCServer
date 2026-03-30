@@ -451,3 +451,14 @@ More correct semantic versioning:
 
 ### Changed
 - Mark "incompatible" dependency mods as processed to avoid fetching data for them
+
+## [1.11.5] - 2026-03-30
+
+### Added
+- Error when trying to install two mods that has incompatible with one or another
+- Enum-based mod dependency types
+- String to list in `resolve_mods` and `fetch_mod_version`
+
+### Changed
+- Renamed `loaders` to `loaders_name` in `fetch_mod_version`
+- Reworked the `resolve_mods`... again.

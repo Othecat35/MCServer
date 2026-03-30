@@ -41,3 +41,8 @@ java installed check smh: fine, there
 be a good API citizen and implement ratelimit check >:)
 auto download sometimes, when there's no optional or incompatible mods, or the size is "reasonable"
 haha, the scope will grow even more when you implement that rdepends >:)
+oh hell nah, I already implemented that rdepends? how so quick? I have AI as helper, if you know rubberducking, that is exactly what I'm doing! not vibecodinf I swear.
+Before that, fix my data migration logic first to make every single entry uses id as the key and don't leave any slug left!
+After that, also implement a conflict check pls, like if you request this mod and that mod, and they met as "incompatible", whatever. you are kinda responsible for that, not really but nice to have, and make yourself comoareable to Prism >:). by "you" I mean myself.
+And then? hahaha, the hole of the rabbithole for dependency resolution didn't end there, you have to index them. why? because I said so. nah jk, because we should know that we already have Fabric API installed so we don't redownload it again
+remove? list? update? clean? check? yep, btw clean means remove orphaned mods, and check? I guess that can be used to scan for any manual .jar added in mods/
