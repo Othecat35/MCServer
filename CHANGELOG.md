@@ -472,3 +472,8 @@ More correct semantic versioning:
 ### Fixed
 - Download plural uses `follows` count instead of `downloads` count, now is fixed
 - Replace `required` to `mod_dependency_types["required"]` in the download loop of `add_mod`
+
+## [1.11.7] - 2026-03-30
+
+### Fixed
+- Typo in download loop of typing `mod_dependency_type` instead of `mod_dependency_types`, fixed

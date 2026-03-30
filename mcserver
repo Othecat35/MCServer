@@ -584,7 +584,7 @@ def add_mod(args):
 
   mods_dir.mkdir(exist_ok=True)
   for mod in resolved_data.values():
-    if mod["type"] == mod_dependencies_type["required"]:
+    if mod["type"] == mod_dependencies_types["required"]:
       mod_file = mod["file"]
 
       log.info(f"Downloading version {mod['name']}...")
