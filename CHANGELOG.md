@@ -477,3 +477,18 @@ More correct semantic versioning:
 
 ### Fixed
 - Typo in download loop of typing `mod_dependency_type` instead of `mod_dependency_types`, fixed
+
+## [1.11.8] - 2026-03-31
+
+### Added
+- `processed` key for mods that actually get processed (`resolve_mods`)
+
+### Changed
+- Moved "early-based" incompatible check to after everything is processed (`resolve_mods`)
+- Moved the "exisitng data adopting" to be before the dependency (`resolve_mods`)
+
+### Removed
+- `type` key in mods `resolved_data` (`resolve_mods`)
+
+### Fixed
+- The skip for nonexising id inside the data, now using the key of the data entry (`add_mod`)
