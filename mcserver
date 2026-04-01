@@ -89,10 +89,12 @@ default_configs = {
 
 # Paths
 current_dir = Path.cwd()
-mods_dir = current_dir / "mods"
 
+mods_dir = current_dir / "mods"
 mcserver_dir = current_dir / ".mcserver"
+
 configs_dir = mcserver_dir / "configs"
+mods_index_dir = mcserver_dir / "mods_index"
 
 tempfiles_dir = mcserver_dir / "tempfiles"
 
@@ -156,12 +158,10 @@ def merge_dict(base, update):
   for key, value in update.items():
     if key in base and isinstance(base[key], dict) and isinstance(value, dict):
       merge_dict(base[key], value)
-    elif value is None:
-      pass
     else:
       base[key] = value
 
-def format_number(number, unit_type="si"):
+def format_number(number: str, unit_type: str = "si"):
   unit_multiples = 0
   prefixes = 0
 
@@ -184,7 +184,7 @@ def format_number(number, unit_type="si"):
 
   return f"{round(number, 2):g}{prefixes[iteration]}"
 
-def pluralize(singular: str, count:int = 2, plural: str = ""):
+def pluralize(singular: str, count: int = 0, plural: str = ""):
   if count != 1:
     if plural:
       return plural
@@ -211,14 +211,11 @@ def wrap_text(text: str, initial_indent: str = "", subsequent_indent: str = ""):
   return "\n".join(textwrap.wrap(text, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
 
 # Config functions
-def generate_config(config_name, update_config=None):
-  if update_config is None:
-    update_config = {}
+def generate_config(config_name: str, update_config: dict = None):
+  if update_config is None: update_config = {}
 
   config_filename = f"{config_name}.json"
   config_path = configs_dir / config_filename
-
-  config_content = None
 
   try:
     config_content = copy.deepcopy(default_configs[config_name])
@@ -243,7 +240,7 @@ def generate_config(config_name, update_config=None):
   except PermissionError as error:
     raise PermissionError(f"Cannot create configuration file for '{config_name}': Permission denied to create file") from error
 
-def load_config(config_name, allow_missing=False):
+def load_config(config_name: str, allow_missing: bool = False):
   config_filename = f"{config_name}.json"
   config_path = configs_dir / config_filename
 
@@ -260,19 +257,20 @@ def load_config(config_name, allow_missing=False):
   except FileNotFoundError as error:
     if allow_missing:
       log.warning(f"Configuration file '{config_name}' is missing, using existing default value")
+
       try:
         return default_configs[config_name]
       except KeyError:
         raise KeyError(f"No default configuration found for '{config_name}'") from error # from the FileNotFoundError
-    else:
-      raise FileNotFoundError(f"Cannot read configuration file for '{config_name}': Configuration file does not exist") from error
+
+    raise FileNotFoundError(f"Cannot read configuration file for '{config_name}': Configuration file does not exist") from error
   except IsADirectoryError as error:
     raise IsADirectoryError(f"Cannot read configuration file for '{config_name}': Not a file (is a directory)") from error
   except PermissionError as error:
     raise PermissionError(f"Cannot read configuration file for '{config_name}': Permission denied to read file") from error
 
 # URLs
-def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int = 10):
+def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int = 10, retries: int = 3, retries_wait: int = 3):
   if params is None: params = {}
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
@@ -281,8 +279,12 @@ def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int 
   request_url = urllib.request.Request(f"{url}{query_string}", headers=headers, method="GET")
 
   log.debug(f"Fetching URL: {request_url.full_url}")
+
+  # while retries <= 0:
+  #   try:
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
     return response.read().decode("utf-8")
+    # except
 
 def download_url(url: str, filename: str | Path, hashes: dict = None, headers: dict = None, timeout: int = 10):
   filename = Path(filename)
