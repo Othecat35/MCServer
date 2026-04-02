@@ -820,6 +820,9 @@ def show_mod(args):
     license_name = color_string(mod_license.get("name", "") or "All Rights Reserved", "bold")
     license_id = color_string(mod_license.get("id", "") or "LicenseRef-All-Rights-Reserved", "bold")
 
+    mod_homepage = mod.get("slug", mod["id"])
+    homepage = color_string(f"https://modrinth.com/mod/{mod_homepage}", "bold")
+
     mod_description = mod.get('description', '<No Description>')
     description = wrap_text(f"Description: {color_string(mod_description, 'bold')}", subsequent_indent=" ")
 
@@ -832,6 +835,7 @@ Followers: {followers}
 {game_versions}
 Environment: {server_side} | Client: {client_side}
 License: {license_name} ({license_id})
+Homepage: {homepage}
 {description}""")
 
 def start_server(args):

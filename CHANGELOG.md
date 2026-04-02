@@ -485,7 +485,7 @@ More correct semantic versioning:
 
 ### Changed
 - Moved "early-based" incompatible check to after everything is processed (`resolve_mods`)
-- Moved the "exisitng data adopting" to be before the dependency (`resolve_mods`)
+- Moved the "existing data adopting" to be before the dependency (`resolve_mods`)
 
 ### Removed
 - `type` key in mods `resolved_data` (`resolve_mods`)
