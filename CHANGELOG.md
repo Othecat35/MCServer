@@ -72,4 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rename function `color_string` to `wrap_ansi`
 - `merge_dict` now don't skip `None` values
 
+### Fixed
+- Typo variable name in `add_mod`, `mod_dependencies_types` should be `mod_dependency_types`
+
 [unreleased](https://github.com/Othecat35/MCServer/compare/1.11.8...HEAD)

@@ -589,7 +589,7 @@ def add_mod(args):
 
   mods_dir.mkdir(exist_ok=True)
   for data in resolved_data.values():
-    if max(data["dependants"].values() or [0]) == mod_dependencies_types["required"] or data["manual"]:
+    if max(data["dependants"].values() or [0]) == mod_dependency_types["required"] or data["manual"]:
       mod_file = mod["file"]
 
       log.info(f"Downloading version {mod['name']}...")
