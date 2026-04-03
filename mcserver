@@ -25,7 +25,7 @@ log_level = log.DEBUG if debug_mode else log.INFO
 
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"Othecat35/MCServer {__version__}"
-modrinth_api = "https://api.modrinth.com/v2/"
+modrinth_api_base = "https://api.modrinth.com/v2/"
 last_status_message = ""
 
 loaders_list = ["fabric", "vanilla"]
@@ -117,18 +117,18 @@ def ansi(name):
     return ansi_codes.get(name, "")
   return ""
 
-def color_string(string, color_name):
+def wrap_ansi(string, color_name):
   return f"{ansi(color_name)}{string}{ansi('reset')}"
 
 def mod_environment_color(environment: str, padding: int = 0):
   if environment == "required":
-    return color_string(f"{'Required': <{padding}}", "green")
+    return wrap_ansi(f"{'Required': <{padding}}", "green")
   elif environment == "optional":
-    return color_string(f"{'Optional': <{padding}}", "yellow")
+    return wrap_ansi(f"{'Optional': <{padding}}", "yellow")
   elif environment == "unsupported":
-    return color_string(f"{'Unsupported': <{padding}}", "red")
+    return wrap_ansi(f"{'Unsupported': <{padding}}", "red")
   elif environment == "unknown":
-    return color_string(f"{'Unknown': <{padding}}", "gray")
+    return wrap_ansi(f"{'Unknown': <{padding}}", "gray")
   return f"{environment: <{padding}}"
 
 # Functions
@@ -356,7 +356,7 @@ def fetch_mod_version(modid: str, game_versions: list | str, loaders_name: list 
   if isinstance(loaders_name, str): loaders_name = [loaders_name]
 
   try:
-    response = json.loads(fetch_url(f"{modrinth_api}project/{modid}/version", params={
+    response = json.loads(fetch_url(f"{modrinth_api_base}project/{modid}/version", params={
       "loaders": json.dumps(loaders_name),
       "game_versions": json.dumps(game_versions),
       "include_changelog": "false"
@@ -533,7 +533,7 @@ def add_mod(args):
 
     mod_ids.append(mod_id)
 
-  response = json.loads(fetch_url(f"{modrinth_api}projects", params={
+  response = json.loads(fetch_url(f"{modrinth_api_base}projects", params={
     "ids": json.dumps(mod_ids)
   }))
 
@@ -554,19 +554,19 @@ def add_mod(args):
   required_mod_count = len(required_mod_ids)
 
   log.info(f"{required_mod_count} {pluralize('mod', required_mod_count)} that {pluralize('is', required_mod_count)} required:")
-  print(color_string(wrap_text(", ".join(required_modname_list), initial_indent="  ", subsequent_indent="  "), "green"), end="\n\n")
+  print(wrap_ansi(wrap_text(", ".join(required_modname_list), initial_indent="  ", subsequent_indent="  "), "green"), end="\n\n")
 
   if optional_mod_ids:
     optional_mod_count = len(optional_mod_ids)
 
     log.info(f"{optional_mod_count} {pluralize('mod', optional_mod_count)} that {pluralize('is', optional_mod_count)} optional:")
-    print(color_string(wrap_text(", ".join(optional_modname_list), initial_indent="  ", subsequent_indent="  "), "yellow"), end="\n\n")
+    print(wrap_ansi(wrap_text(", ".join(optional_modname_list), initial_indent="  ", subsequent_indent="  "), "yellow"), end="\n\n")
 
   if incompatible_mod_ids:
     incompatible_mod_count = len(incompatible_mod_ids)
 
     log.warning(f"{incompatible_mod_count} {pluralize('mod', incompatible_mod_count)} that {pluralize('is', incompatible_mod_count)} INCOMPATIBLE:")
-    print(color_string(wrap_text(", ".join(incompatible_modname_list), initial_indent=" ", subsequent_indent=" "), "red"), end="\n\n")
+    print(wrap_ansi(wrap_text(", ".join(incompatible_modname_list), initial_indent=" ", subsequent_indent=" "), "red"), end="\n\n")
 
   log.info(f"Will download {format_number(total_size, 'iec')} worth of {pluralize("mod", len(mod_ids))} file.")
 
@@ -721,7 +721,7 @@ def search_mod(args):
 
   log.info(search_message)
   response = json.loads(fetch_url(
-    f"{modrinth_api}search",
+    f"{modrinth_api_base}search",
     {
       "query": query,
       "facets": json.dumps(search_filters),
@@ -761,20 +761,20 @@ def search_mod(args):
   log.info(f"Showing {shown_mods_count:,} {pluralize('mod', shown_mods_count)} out of {total_hits:,} total {pluralize('mod', total_hits)} {skipped_message}| Page: {page:,}/{total_pages}")
 
   for index, mod in enumerate(mods_list):
-    title = color_string(mod.get("title", "<No Title>"), "bold")
+    title = wrap_ansi(mod.get("title", "<No Title>"), "bold")
     slug = mod.get("slug", "<No Slug>")
     author = f"by {mod.get('author', '<No Author>')}"
 
-    mod_header = wrap_text(f"{title} ({slug}) {color_string(author, 'gray')}", subsequent_indent=" ")
+    mod_header = wrap_text(f"{title} ({slug}) {wrap_ansi(author, 'gray')}", subsequent_indent=" ")
 
     downloads = mod.get("downloads", 0)
     follows = mod.get("follows", 0)
 
     downloads_text = f"{pluralize('Download', downloads)}: {format_number(downloads)}"
     follows_text = f"{pluralize('Follow', follows)}: {format_number(follows)}"
-    downloads_follows = color_string(f"[ {downloads_text: <{downloads_width}} | {follows_text: <{follows_width}} ]", "gray")
+    downloads_follows = wrap_ansi(f"[ {downloads_text: <{downloads_width}} | {follows_text: <{follows_width}} ]", "gray")
 
-    server_side = color_string(f"Server: {mod_environment_color(mod.get('server_side', "unknown"), server_side_width)}", "bold")
+    server_side = wrap_ansi(f"Server: {mod_environment_color(mod.get('server_side', "unknown"), server_side_width)}", "bold")
     client_side = mod_environment_color(mod.get("client_side", "unknown"), client_side_width)
 
     description = wrap_text(mod["description"], initial_indent="  ", subsequent_indent=" ")
@@ -791,40 +791,40 @@ def show_mod(args):
 
   log.info(f"Getting {pluralize('mod', len(mods))} information...")
   mods_info = json.loads(fetch_url(
-    f"{modrinth_api}projects",
+    f"{modrinth_api_base}projects",
     params={
       "ids": json.dumps(mods)
     }
   ))
 
   for mod_index, mod in enumerate(mods_info):
-    title = color_string(mod.get("title", "") or "<No Title>", "bold")
-    slug = color_string(mod.get("slug", f"<{mods[mod_index]}>"), "bold")
+    title = wrap_ansi(mod.get("title", "") or "<No Title>", "bold")
+    slug = wrap_ansi(mod.get("slug", f"<{mods[mod_index]}>"), "bold")
 
-    downloads = color_string(format_number(mod.get("downloads", 0)), "bold")
-    followers = color_string(format_number(mod.get("followers", 0)), "bold")
+    downloads = wrap_ansi(format_number(mod.get("downloads", 0)), "bold")
+    followers = wrap_ansi(format_number(mod.get("followers", 0)), "bold")
 
     mod_categories = ', '.join(mod.get('categories', ['None'])).title()
-    categories = wrap_text(f"Categories: {color_string(mod_categories, 'bold')}", subsequent_indent="  ")
+    categories = wrap_text(f"Categories: {wrap_ansi(mod_categories, 'bold')}", subsequent_indent="  ")
 
     mod_loaders = ', '.join(mod.get('loaders', ['None'])).title()
-    loaders = wrap_text(f"Loaders: {color_string(mod_loaders, 'bold')}", subsequent_indent="  ")
+    loaders = wrap_text(f"Loaders: {wrap_ansi(mod_loaders, 'bold')}", subsequent_indent="  ")
 
     mod_game_versions = ', '.join(mod.get('game_versions', ['None'])).title()
-    game_versions = wrap_text(f"Minecraft Versions: {color_string(mod_game_versions, 'bold')}", subsequent_indent=" ")
+    game_versions = wrap_text(f"Minecraft Versions: {wrap_ansi(mod_game_versions, 'bold')}", subsequent_indent=" ")
 
-    server_side = color_string(f"Server: {mod_environment_color(mod.get('server_side', '<Unknown>'))}", "bold")
+    server_side = wrap_ansi(f"Server: {mod_environment_color(mod.get('server_side', '<Unknown>'))}", "bold")
     client_side = mod_environment_color(mod.get("client_side", "<Unknown>"))
 
     mod_license = mod.get("license", {})
-    license_name = color_string(mod_license.get("name", "") or "All Rights Reserved", "bold")
-    license_id = color_string(mod_license.get("id", "") or "LicenseRef-All-Rights-Reserved", "bold")
+    license_name = wrap_ansi(mod_license.get("name", "") or "All Rights Reserved", "bold")
+    license_id = wrap_ansi(mod_license.get("id", "") or "LicenseRef-All-Rights-Reserved", "bold")
 
     mod_homepage = mod.get("slug", mod["id"])
-    homepage = color_string(f"https://modrinth.com/mod/{mod_homepage}", "bold")
+    homepage = wrap_ansi(f"https://modrinth.com/mod/{mod_homepage}", "bold")
 
     mod_description = mod.get('description', '<No Description>')
-    description = wrap_text(f"Description: {color_string(mod_description, 'bold')}", subsequent_indent=" ")
+    description = wrap_text(f"Description: {wrap_ansi(mod_description, 'bold')}", subsequent_indent=" ")
 
     if (mod_index >= 1): print()
     print(f"""Name: {title} ({slug})
@@ -856,7 +856,7 @@ def start_server(args):
   try:
     if not check_eula_agreed():
       log.warning("You need to agree to Mojang's EULA in order to run the server: https://aka.ms/MinecraftEULA")
-      log.info(f"Type {color_string(eula_agree_sentence, 'yellow')} (case-sensitive) to agree with Mojang's EULA.")
+      log.info(f"Type {wrap_ansi(eula_agree_sentence, 'yellow')} (case-sensitive) to agree with Mojang's EULA.")
       answer = input("> ")
 
       if answer == eula_agree_sentence:
@@ -880,7 +880,6 @@ def start_server(args):
   log.info("Starting Minecraft server...")
   log.debug(f"Executing command: {' '.join(java_command_argv)}")
   os.execvp("java", java_command_argv)
-
 
 # Log handler
 class ClearLineHandler(log.StreamHandler):
@@ -946,7 +945,7 @@ def main():
   parser_search.add_argument("-n", "--no-filter",  action="store_true", help="No search filter when searching")
 
   parser_search.add_argument("-p", "--page", default=1, type=int, help="Page number", metavar="N")
-  parser_search.add_argument("-s", "--sort-by", choices=["downloads", "follows", "newest", "relevance", "updated"], type=str, help="Sort the result with")
+  parser_search.add_argument("-s", "--sort-by", choices=["downloads", "follows", "newest", "relevance", "updated"], default="relevance", type=str, help="Sort the result with")
 
   parser_search.set_defaults(func=search_mod)
 
@@ -954,10 +953,6 @@ def main():
   parser_show = subparsers.add_parser("show", help="Show information about mod(s) from Modrinth")
   parser_show.add_argument("mods", help="Slug (or ID) of the mod(s)", nargs="+")
   parser_show.set_defaults(func=show_mod)
-
-  #parser_test = subparsers.add_parser("Test", help="You aren't suppose to see this!")
-  #parser_test.add_argument("input", help="Multiple input arguments", nargs="+")
-  #parser_show.set_defaults(func=resolve_mods)
 
   args = parser.parse_args()
 
