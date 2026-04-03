@@ -449,7 +449,7 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
 
             required_message = ""
             if required_dependants:
-              required_dependants = f" but required by '{', '.join(required_dependants)}'"
+              required_message = f" but required by '{', '.join(required_dependants)}'"
 
             raise ResolveModsError(f"Found incompatibility: mod is incompatible with '{', '.join(incompatible_dependants)}'{required_message}")
 
