@@ -552,7 +552,7 @@ def add_mod(args):
   resolved_data = resolve_mods(mods, server_version, loader_name)
 
   # Get mod IDs
-  mod_ids = resolved_data.keys()
+  mod_ids = []
   total_size = 0
 
   required_mod_ids = []
@@ -560,13 +560,15 @@ def add_mod(args):
   incompatible_mod_ids = []
 
   for mod_id, data in resolved_data.items():
-    if mod["type"] == mod_dependency_types["required"] or data["manual"]:
-      required_mod_ids.apped(mod_id)
+    if data["type"] == mod_dependency_types["required"] or data["manual"]:
+      required_mod_ids.append(mod_id)
       total_size += data["file"]["size"]
-    elif mod["type"] == mod_dependency_types["optional"]:
-      optional_mod_ids.apped(mod_id)
-    elif mod["type"] == mod_dependency_types["incompatible"]:
-      incompatible_mod_ids.apped(mod_id)
+    elif data["type"] == mod_dependency_types["optional"]:
+      optional_mod_ids.append(mod_id)
+    elif data["type"] == mod_dependency_types["incompatible"]:
+      incompatible_mod_ids.append(mod_id)
+
+    mod_ids.append(mod_id)
 
   response = json.loads(fetch_url(f"{modrinth_api_base}projects", params={
     "ids": json.dumps(mod_ids)
@@ -625,7 +627,7 @@ def add_mod(args):
   mods_dir.mkdir(exist_ok=True)
   for data in resolved_data.values():
     if data["type"] == mod_dependency_types["required"]:
-      mod_file = mod["file"]
+      mod_file = data["file"]
 
       log.info(f"Downloading version {mod['name']}...")
       download_url(mod_file["url"], mods_dir / mod_file["filename"], hashes=mod_file["hashes"])
