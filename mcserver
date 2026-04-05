@@ -411,9 +411,11 @@ def fetch_mod_version(modid: str, game_versions: list | str, loaders_name: list 
 def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
   if isinstance(mods_id, str): mods_id = [mods_id]
   unresolved_ids = deque(mods_id)
-
   resolved_data = {}
+
+  # Add initial entries
   for mod_id in mods_id:
+    log.debug(f"Adding initial entry for mod ID: {mod_id}")
     resolved_data[mod_id] = {
       "manual": True,
       "processed": False,
@@ -421,23 +423,39 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
       "dependants": {}
     }
 
+  # Main loop
   while unresolved_ids:
+    # Pop the data
     mod_id = unresolved_ids.popleft()
     mod = resolved_data.pop(mod_id)
 
     actual_id = mod_id
-    if mod["type"] == mod_dependency_types["required"]:
+    mod_type = mod["type"]
+
+    if mod_type != mod_dependency_types["required"]:
+      log.debug(f"Skip fetching version for mod with type {mod_type}: {mod_id}")
+    else:
       try:
         log.debug(f"Fetching version for required mod: {mod_id}")
         version = fetch_mod_version(mod_id, game_version, loader_name, skip_embedded_dependencies=True)
 
+        # Updating actual_id with Modrinth internal project ID
         actual_id = version["id"]
+
+        """The reason that this work without we checking if mod_id (which could be slug or internal ID)
+        is because we are popping the mod entry. And when we did that, of course the entry that is always
+        internal ID doesn't exists at the moment. But, if we're processing a slug, there can be another
+        entry with the internal ID (eg, from adding new entry), and with this, we can get that entry's
+        data, merge it with this one, and later put it back as internal ID. Did this clear any confusing?
+        for me (which is rubberducking this right now), it is. I wrote this just for future-me doesn't get
+        confused again ;)"""
         if actual_id in resolved_data:
           existing_data = resolved_data[actual_id]
-          log.debug(f"Keeping existing data entry '{actual_id}'")
+          log.debug(f"Keeping existing data entry '{actual_id}' for '{mod_id}'")
 
+          # Checking if mod is conflicting with type
           mod["dependants"].update(existing_data["dependants"])
-          if mod["manual"] and existing_data["type"] == mod_dependency_types["incompatible"]:
+          if mod_type == mod_dependency_types["required"] and existing_data["type"] == mod_dependency_types["incompatible"]:
             required_dependants = []
             incompatible_dependants = []
 
@@ -455,6 +473,7 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
 
           mod["type"] = max(mod["type"], existing_data["type"])
 
+        # Add mod metadata
         mod["dependencies"] = version["dependencies"]
 
         mod["file"] = version["file"]
@@ -464,10 +483,12 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
         mod["version_number"] = version["version_number"]
         mod["version_type"] = version["version_type"]
 
+        # Add more mods
         for dependency_id, dependency_type in version["dependencies"].items():
           if dependency_id not in resolved_data:
-            log.debug(f"Adding new entry {dependency_id} by {actual_id} with type {dependency_type} as unresolved")
+            log.debug(f"Adding new entry '{dependency_id}' by '{actual_id}' with type '{dependency_type}' as unresolved")
 
+            # Append new mod entry
             unresolved_ids.append(dependency_id)
             resolved_data[dependency_id] = {
               "manual": False,
@@ -479,6 +500,8 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
             }
           else:
             dependency_data = resolved_data[dependency_id]
+
+            # Checking mod conflict
             if dependency_data["type"] == mod_dependency_types["incompatible"] and dependency_type == mod_dependency_types["required"]:
               incompatible_dependants = []
               for dependant_id, dependant_type in dependency_data["dependants"].items():
@@ -500,14 +523,18 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
 
             log.debug(f"Adding mod {actual_id} as dependants of {dependency_id} with type {dependency_type}")
 
+            # Append dependants
             dependency_data["dependants"][actual_id] = dependency_type
             dependency_data["type"] = max(dependency_data["type"], dependency_type)
       except FetchModVersionError as error:
-        dependants_id = mod["dependants"].keys()
-        satisfy_message = ""
+        required_dependants = []
+        for dependant_id, dependant_type in mod["dependants"].items():
+          if dependant_type == mod_dependency_types["required"]:
+            required_dependants.append(dependant_id)
 
-        if dependants_id:
-          satisfy_message = f" Cannot satisfy {pluralize('mod', len(dependants_id))}: {', '.join(dependants_id)}"
+        satisfy_message = ""
+        if required_dependants:
+          satisfy_message = f" Cannot satisfy {pluralize('mod', len(required_dependants))}: '{', '.join(required_dependants)}'"
 
         raise ResolveModsError(f"A mod is not available for {loader_name.capitalize()}, Minecraft {game_version}.{satisfy_message}") from error
 
