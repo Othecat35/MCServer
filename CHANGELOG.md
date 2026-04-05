@@ -67,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Variable `mod_index_dir`
+- Variable `mod_index_dir` for future mods indexing feature
 - Type hinting to functions parameter
 - Homepage to `show` output
 - `search`'s `--sort-by (-s)` default to `relevance`
@@ -78,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rename variable `modrinth_api` to `modrinth_api_base`
 - Rename function `color_string` to `wrap_ansi`
 - `merge_dict` now don't skip `None` values
-- Change the `User-Agent` to `Othecat35/MCServer/{__version__}` (like what Modrinth suggest)
+- Change value of variable `user_agent` to `Othecat35/MCServer/{__version__}` (like what Modrinth suggest)
 - Move the response data to `text` as dictionary for `headers` in `fetch_url`
 - Rename variable `request_url` to `request` in `fetch_url`
 - Updated `fetch_url` debug message

@@ -629,7 +629,7 @@ def add_mod(args):
     if data["type"] == mod_dependency_types["required"]:
       mod_file = data["file"]
 
-      log.info(f"Downloading version {mod['name']}...")
+      log.info(f"Downloading version {data['name']}...")
       download_url(mod_file["url"], mods_dir / mod_file["filename"], hashes=mod_file["hashes"])
 
 def initialize_server(args):
