@@ -156,11 +156,14 @@ def hahaha_yes():
   sys.exit(0)
 
 def merge_dict(base: dict, update: dict):
+  base = copy.deepcopy(base)
   for key, value in update.items():
     if key in base and isinstance(base[key], dict) and isinstance(value, dict):
       merge_dict(base[key], value)
     else:
       base[key] = value
+
+  return base
 
 def format_number(number: str, unit_type: str = "si"):
   unit_multiples = 0
@@ -223,12 +226,12 @@ def generate_config(config_name: str, update_config: dict = None):
   except KeyError as error:
     raise ValueError(f"Failed to generate configuration file for '{config_name}': No default configuration available") from error
 
-  merge_dict(config_content, update_config)
+  config_data = merge_dict(config_content, update_config)
 
   try:
     with open(config_path, mode="xt") as config_file:
       json.dump(
-        config_content,
+        config_data,
         config_file,
         indent=2
       )
@@ -269,6 +272,28 @@ def load_config(config_name: str, allow_missing: bool = False):
     raise IsADirectoryError(f"Cannot read configuration file for '{config_name}': Not a file (is a directory)") from error
   except PermissionError as error:
     raise PermissionError(f"Cannot read configuration file for '{config_name}': Permission denied to read file") from error
+
+# Mod indexing
+def write_mod_index(mod_id: str, data: dict):
+  with open(mods_index_dir / f"{mod_id}.json", mode="w") as file:
+    json.dump(data, file, indent=2)
+
+def read_mod_index(mod_id: str):
+  with open(mods_index_dir / f"{mod_id}.json") as file:
+    return json.load(file)
+
+def create_mod_index(mod_id: str, data: dict):
+  if (mods_index_dir / f"{mod_id}.json").exists():
+    raise FileExistsError(f"Mod index file for '{mod_id}' already exists")
+  else:
+    write_mod_index(mod_id, data)
+
+def update_mod_index(mod_id: str, new_data: dict):
+  if not (mods_index_dir / f"{mod_id}.json").exists():
+    raise FileNotFoundError(f"Mod index file for '{mod_id}' does not exist")
+  else:
+    updated_index_data = merge_dict(read_mod_index(mod_id), new_data)
+    write_mod_index(mod_id, updated_index_data)
 
 # URLs
 def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int = 10):
@@ -587,7 +612,7 @@ def add_mod(args):
   incompatible_mod_ids = []
 
   for mod_id, data in resolved_data.items():
-    if data["type"] == mod_dependency_types["required"] or data["manual"]:
+    if data["type"] == mod_dependency_types["required"]:
       required_mod_ids.append(mod_id)
       total_size += data["file"]["size"]
     elif data["type"] == mod_dependency_types["optional"]:
@@ -652,12 +677,25 @@ def add_mod(args):
     raise AddModError("Cancelled")
 
   mods_dir.mkdir(exist_ok=True)
-  for data in resolved_data.values():
-    if data["type"] == mod_dependency_types["required"]:
-      mod_file = data["file"]
 
-      log.info(f"Downloading version {data['name']}...")
-      download_url(mod_file["url"], mods_dir / mod_file["filename"], hashes=mod_file["hashes"])
+  while required_mod_ids:
+    mod_id = required_mod_ids.pop(0)
+
+    mod = resolved_data[mod_id]
+    mod_file = mod["file"]
+
+    log.info(f"Downloading version {mod['name']}...")
+    download_url(mod_file["url"], mods_dir / mod_file["filename"], hashes=mod_file["hashes"])
+
+    if not (mods_index_dir / f"{mod_id}.json").exists():
+      create_mod_index(mod_id, mod)
+    else:
+      mod_index_data = read_mod_index(mod_id)
+
+      # Ensure it doesn't lose the 'manual' ta
+      if mod_index_data["manual"]: mod["manual"] = True
+
+      update_mod_index(mod_id, mod)
 
 def initialize_server(args):
   mc_version = args.mc_version

@@ -66,4 +66,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Mod indexing functions
+- `add_mod` index downloaded mod(s)
+
+### Changed
+- `merge_dict` now return new dictionary instead of modifying the input directly
+- `add_mod` now uses `while required_mod_ids` and `required_mod_ids.pop` for a bit of efficiency
+
+### Removed
+- Redundant "or mod is manual" in mod id type bucket filtering in function `add_mod`
+
 [unreleased] : https://github.com/Othecat35/MCServer/compare/1.11.9...HEAD
