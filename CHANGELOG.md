@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `merge_dict` now return a new dictionary instead of modifying the input
 - `add_mod` now use `while required_mod_id`
+- Rename output data of `fetch_mod_version`
+- Rewrite some code in `resolve_mods`
+- `resolve_mods` now compare to the past
 
 ### Removed
 - Redundant "or mod is manual" in `resolve_mods` because manual mod is always start wity "required" type
