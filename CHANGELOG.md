@@ -8,15 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - New directory mods_index under .mcserver
-- Mod indexing related function (write, read, create, update)
+- Mod indexing related function (check, write, read, create, update)
 - `add_mod` now write mod index
+- New error classes for `resolve_mods`
 
 ### Changed
 - `merge_dict` now return a new dictionary instead of modifying the input
 - `add_mod` now use `while required_mod_id`
 - Rename output data of `fetch_mod_version`
 - Rewrite some code in `resolve_mods`
-- `resolve_mods` now compare to the past
+- Rewrite `resolve_mods` with more efficient and better early-validation for conflicts
 
 ### Removed
 - Redundant "or mod is manual" in `resolve_mods` because manual mod is always start wity "required" type
