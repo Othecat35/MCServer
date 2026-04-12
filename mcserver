@@ -325,8 +325,9 @@ def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int 
   query_string = f"?{urllib.parse.urlencode(params)}" if params else ""
   request = urllib.request.Request(f"{url}{query_string}", headers=headers, method="GET")
 
+  log.debug(f"Fetching URL: {request.full_url}")
   with urllib.request.urlopen(request, timeout=timeout) as response:
-    log.debug(f"Fetched '{request.get_full_url()}' with status {response.status} {response.reason}")
+    log.debug(f"Fetched with status {response.status} {response.reason}")
 
     response_headers = {}
     for key, value in response.getheaders():
@@ -473,7 +474,10 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
 
   while unresolved_ids:
     mod_id = unresolved_ids.popleft()
-    mod_entry = resolved_data.pop(mod_id)
+    mod_data = resolved_data.pop(mod_id)
+
+    mod_type = mod_data["type"]
+    mod_manual = mod_data["manual"]
 
     log.debug(f"Fetching version for mod: {mod_id}")
     try:
@@ -501,16 +505,56 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
           raise ResolveModsConflictsError(f"Conflicting mods: '{mod_id}' is incompatible with '{', '.join(incompatible_dependants)}'{required_message}", mod_id, incompatible_dependants, required_dependants)
 
         log.debug(f"Keeping existing data from entry '{mod_id}'")
-        mod_entry["dependants"].update(existing_entry["dependants"])
+        mod_data["dependants"].update(existing_entry["dependants"])
 
-      mod_entry["version_id"] = version["version_id"]
-      mod_entry["version_name"] = version["version_name"]
-      mod_entry["version_number"] = version["version_number"]
+      if mod_index_exists(mod_id):
+        mod_index_data = read_mod_index(mod_id)
+        mod_index_type = mod_index_data["type"]
 
-      mod_entry["dependencies"] = version["dependencies"]
-      mod_entry["file"] = version["primary_file"]
+        if mod_type == mod_dependency_types["required"] and mod_index_type == mod_dependency_types["incompatible"]:
+          incompatible_dependants = mod_index_data["dependants"].keys()
+          required_dependants = []
 
-      for dependency_id, dependency_type in mod_entry["dependencies"].items():
+          for dependant_id, dependant_type in mod_data["dependants"].items():
+            if dependant_type == mod_dependency_types["required"]:
+              required_dependants.append(dependant_id)
+
+          required_message = ", but requested by user"
+          if required_dependants:
+            required_message = f", but required by '{', '.join(required_dependants)}'"
+
+          raise ResolveModsConflictsError(f"Conflicting mods: '{mod_id}' is incompatible with '{', '.join(incompatible_dependants)}'{required_message}", mod_id, incompatible_dependants, required_dependants)
+
+        if mod_index_data["manual"]:
+          mod_manual = True
+
+      mod_data["version_id"] = version["version_id"]
+      mod_data["version_name"] = version["version_name"]
+      mod_data["version_number"] = version["version_number"]
+
+      mod_data["dependencies"] = version["dependencies"]
+      mod_data["file"] = version["primary_file"]
+
+      for dependency_id, dependency_type in mod_data["dependencies"].items():
+        if mod_index_exists(dependency_id):
+          mod_index_data = read_mod_index(dependency_id)
+          mod_index_type = mod_index_data["type"]
+
+          if dependency_type == mod_dependency_types["required"] and mod_index_type == mod_dependency_types["incompatible"]:
+            incompatible_dependants = []
+            for dependant_id, dependant_type in mod_index_data["dependants"].items():
+              if dependant_type == mod_dependency_types["incompatible"]:
+                incompatible_dependants.append(dependant_id)
+
+            raise ResolveModsConflictsError(f"Conflicting mods: {dependency_id} (already installed) is incompatible with '{', '.join(incompatible_dependants)}', but required by '{mod_id}'", dependency_id, incompatible_dependants, mod_id)
+          elif mod_index_type == mod_dependency_types["required"] and dependency_type == mod_dependency_types["incompatible"]:
+            required_dependants = []
+            for dependant_id, dependant_type in mod_index_data["dependants"].items():
+              if dependant_type == mod_dependency_types["required"]:
+                required_dependants.append(dependant_id)
+
+            raise ResolveModsConflictsError(f"Conflicting mods: {dependency_id} (already installed) is incompatible with '{mod_id}', but required by '{', '.join(required_dependants)}'", dependency_id, mod_id, required_dependants)
+
         if dependency_id in resolved_data:
           dependency_data = resolved_data[dependency_id]
 
@@ -522,7 +566,7 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
               unresolved_ids.append(dependency_id)
           elif dependency_type == mod_dependency_types["incompatible"] and dependency_data["type"] == mod_dependency_types["required"]:
             required_dependants = dependency_data["dependants"].keys()
-            
+
             required_message = ", but requested by user"
             if required_dependants:
               required_message = f", but required by '{', '.join(required_dependants)}'"
@@ -544,14 +588,20 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
           if dependency_type == mod_dependency_types["required"]:
             unresolved_ids.append(dependency_id)
 
-      resolved_data[mod_id] = mod_entry
+      resolved_data[mod_id] = mod_data
     except FetchModVersionMissingError as error:
-      required_dependants = mod_entry["dependants"].keys()
+      required_dependants = mod_data["dependants"].keys()
 
       satisfy_required_message = ", Cannot satisfy user request"
       if required_dependants:
         satisfy_required_message = f", Cannot satisfy dependants: {', '.join(required_dependants)}"
       raise ResolveModsError(f"Mod doesn't have any version for {loader_name.capitalize()}, Minecraft {game_version}{satisfy_required_message}", mod_id, required_dependants)
+
+  for mod_id, mod_data in resolved_data.items():
+    mod_type = mod_data["type"]
+    if mod_type in (mod_dependency_types["required"], mod_dependency_types["incompatible"]):
+      log.debug(f"Making new index for mod '{mod_id}' with type {mod_type} and manual {mod_data['manual']}")
+      create_mod_index(mod_id, mod_data)
 
   if debug_mode: print(json.dumps(resolved_data, indent=2))
   return resolved_data
@@ -673,16 +723,6 @@ def add_mod(args):
 
     log.info(f"Downloading version {mod['version_name']}...")
     download_url(mod_file["url"], mods_dir / mod_file["filename"], hashes=mod_file["hashes"])
-
-    if not (mods_index_dir / f"{mod_id}.json").exists():
-      create_mod_index(mod_id, mod)
-    else:
-      mod_index_data = read_mod_index(mod_id)
-
-      # Ensure it doesn't lose the 'manual' tag
-      if mod_index_data["manual"]: mod["manual"] = True
-
-      update_mod_index(mod_id, mod)
 
 def initialize_server(args):
   mc_version = args.mc_version
