@@ -105,3 +105,5 @@ And then? hahaha, the hole of the rabbithole for dependency resolution didn't en
 remove? list? update? clean? check? yep, btw clean means remove orphaned mods, and check? I guess that can be used to scan for any manual .jar added in mods/
 now make any mod that are incompatible ripples down to the source, only stopped by an optional mod -_-, wait, why I'm bother to fetch optional mods? just make it required only!
 You screwed up the add command lol
+mod indexing, don't forget!
+Gemini suggest adding "status" command and get ran usage info, sure but not noe
