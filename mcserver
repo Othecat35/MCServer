@@ -25,7 +25,7 @@ log_level = log.DEBUG if debug_mode else log.INFO
 
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"Othecat35/MCServer/{__version__}"
-modrinth_api_base = "https://api.modrinth.com/v2/"
+modrinth_api_base = "http://127.0.0.1:1104/"#""https://api.modrinth.com/v2/"
 last_status_message = ""
 
 loaders_list = ["fabric", "vanilla"]
@@ -505,7 +505,7 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
       # Check if existing entry is marked as incompatible
       if existing_entry["type"] == mod_dependency_types["incompatible"]:
         incompatible_dependants = filter_dependencies_type(existing_entry["dependants"], "incompatible")
-        raise ResolveModsConflictsError(f"Conflicting mods: '{mod_id}' is incompatible with '{', '.join(incompatible_dependants)}', but requested by user", mod_id, incompatible_dependants, required_dependants)
+        raise ResolveModsConflictsError(f"Conflicting mods: '{mod_id}' is incompatible with '{', '.join(incompatible_dependants)}', but requested by user", mod_id, incompatible_dependants)
 
       log.debug(f"Keeping existing data from entry '{mod_id}'")
       mod_data["dependants"].update(existing_entry["dependants"])
