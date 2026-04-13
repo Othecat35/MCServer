@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `add_mod` now write mod index
 - New error classes for `resolve_mods`
 - Re-added message when fetching an URL
+- New function `filter_dependencies_type`
+- Comments in `resolved_mods`
 
 ### Changed
 - `merge_dict` now return a new dictionary instead of modifying the input
