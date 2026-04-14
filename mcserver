@@ -1,21 +1,10 @@
 #!/usr/bin/env python3
-__version__ = "1.11.9"
+__version__ = "1.12.0"
 
-import argparse
-import copy
-import hashlib
-import json
-import math
-import os
-import shutil
-import sys
-import textwrap
-import time
-
-import urllib.parse
-import urllib.request
-
+import argparse, copy, hashlib, json, math, os, shutil, sys, textwrap, time
+import urllib.parse, urllib.request
 import logging as log
+
 from pathlib import Path
 from collections import deque
 
@@ -25,8 +14,7 @@ log_level = log.DEBUG if debug_mode else log.INFO
 
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"Othecat35/MCServer/{__version__}"
-modrinth_api_base = "https://api.modrinth.com/v2/"
-last_status_message = ""
+modrinth_api_base = "http://127.0.0.1:1104/"#"https://api.modrinth.com/v2/"
 
 loaders_list = ["fabric", "vanilla"]
 eula_agree_sentence = "I agree"
@@ -131,13 +119,13 @@ class ResolveModsConflictsError(Exception):
     self.required_dependants = required_dependants or []
 
 # Color functions
-def ansi(name):
+def ansi(name: str):
   if isatty:
     return ansi_codes.get(name, "")
   return ""
 
-def wrap_ansi(string, color_name):
-  return f"{ansi(color_name)}{string}{ansi('reset')}"
+def wrap_ansi(string: str, ansi_name: str):
+  return f"{ansi(ansi_name)}{string}{ansi('reset')}"
 
 def mod_environment_color(environment: str, padding: int = 0):
   if environment == "required":
@@ -157,6 +145,7 @@ def print_help(args: argparse.ArgumentParser):
   parser.print_help()
   sys.exit(0)
 
+last_status_message = ""
 def print_status(message: str, dynamic: str = None):
   if dynamic is None: dynamic = ""
   global last_status_message
@@ -223,13 +212,13 @@ def pluralize(singular: str, count: int = 0, plural: str = ""):
 
   return singular
 
-def wrap_text(text: str, initial_indent: str = "", subsequent_indent: str = ""):
+def wrap_text(text: str, initial_indent: str = "", subsequent_indent: str = "", width: int = 80):
   if not isinstance(initial_indent, str):
     raise ValueError(f"initial_indent must be str, not {type(initial_indent)}")
   elif not isinstance(subsequent_indent, str):
     raise ValueError(f"subsequent_indent must be str, not {type(subsequent_indent)}")
 
-  terminal_width = shutil.get_terminal_size().columns
+  terminal_width = width or shutil.get_terminal_size().columns
   return "\n".join(textwrap.wrap(text, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
 
 # Config functions
@@ -483,6 +472,7 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
 
   # Process all required mods until its done
   while unresolved_ids:
+    print_status("Resolving mods...", f"Resolving mods... {len(unresolved_ids)} left")
     mod_id = unresolved_ids.popleft()
     mod_data = resolved_data.pop(mod_id)
 
@@ -595,7 +585,7 @@ def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
     mod_type = mod_data["type"]
     if mod_type in (mod_dependency_types["required"], mod_dependency_types["incompatible"]):
       log.debug(f"Indexing mod '{mod_id}' with type {mod_type} and manual {mod_data['manual']}")
-      create_mod_index(mod_id, mod_data)
+      write_mod_index(mod_id, mod_data)
 
   if debug_mode: print(json.dumps(resolved_data, indent=2))
   return resolved_data
@@ -644,6 +634,12 @@ def add_mod(args):
 
   for mod_id, data in resolved_data.items():
     if data["type"] == mod_dependency_types["required"]:
+      if mod_index_exists(mod_id):
+        mod_index_data = read_mod_index(mod_id)
+        if (mods_dir / mod_index_data["file"]["filename"]).exists():
+          log.info(f"{mod_index_data['version_name']} already been downloaded")
+          continue
+
       required_mod_ids.append(mod_id)
       total_size += data["file"]["size"]
     elif data["type"] == mod_dependency_types["optional"]:
