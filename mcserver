@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.12.1"
+__version__ = "1.12.2"
 
 import argparse, copy, hashlib, json, math, os, shutil, sys, textwrap, time
 import urllib.parse, urllib.request
@@ -14,7 +14,7 @@ log_level = log.DEBUG if debug_mode else log.INFO
 
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"Othecat35/MCServer/{__version__}"
-modrinth_api_base = "http://127.0.0.1:1104/"#"https://api.modrinth.com/v2/"
+modrinth_api_base = "https://api.modrinth.com/v2/"
 
 loaders_list = ["fabric", "vanilla"]
 eula_agree_sentence = "I agree"
