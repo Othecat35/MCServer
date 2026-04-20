@@ -29,7 +29,7 @@ special_plural = {
   "this": "these"
 }
 
-mod_dependency_types = {
+project_dependency_types = {
   "embedded": 0,
   "optional": 1,
   "required": 2,
@@ -84,9 +84,11 @@ mcserver_dir = current_dir / ".mcserver"
 
 configs_dir = mcserver_dir / "configs"
 project_index_dir = mcserver_dir / "projects_index"
-slug_id_path = project_index_dir / ".slug_id.json"
 
+caches_dir = mcserver_dir / "caches"
 tempfiles_dir = mcserver_dir / "tempfiles"
+
+slug_id_path = caches_dir / "slug_id.json"
 
 # Error classes
 class AddModError(Exception): pass
@@ -100,7 +102,7 @@ class EULAAgreementError(Exception): pass
 class FetchModVersionMissingError(Exception): pass
 class DownloadURLError(Exception): pass
 
-class ResolveModsError(Exception):
+class ResolveProjectsError(Exception):
   def __init__(self, message: str, mod_id: str, dependants: list | str = None):
     if isinstance(dependants, str): dependants = [dependants]
     super().__init__(message)
@@ -108,13 +110,15 @@ class ResolveModsError(Exception):
     self.mod_id = mod_id
     self.dependants = dependants or []
 
-class ResolveModsConflictsError(Exception):
-  def __init__(self, message: str, mod_id: str, incompatible_dependants: list | str, required_dependants: list | str = None):
+class ResolveProjectsConflictsError(Exception):
+  def __init__(self, project_id: str, incompatible_dependants: list | str, required_dependants: list | str = None):
     if isinstance(incompatible_dependants, str): incompatible_dependants = [incompatible_dependants]
     if isinstance(required_dependants, str): required_dependants = [required_dependants]
 
-    super().__init__(message)
-    self.mod_id = mod_id
+    required_message = f" but required by '{'\', \''.join(required_dependants)}'" if required_dependants else " but it is requested"
+    super().__init__(f"Project '{project_id}' is incompatible with '{'\', \''.join(incompatible_dependants)}'{required_message}", )
+
+    self.project_id = project_id
 
     self.incompatible_dependants = incompatible_dependants
     self.required_dependants = required_dependants or []
@@ -282,29 +286,29 @@ def load_config(config_name: str, allow_missing: bool = False):
     raise PermissionError(f"Cannot read configuration file for '{config_name}': Permission denied to read file") from error
 
 # Mod indexing
-def mod_index_exists(mod_id: str):
-  return (project_index_dir / f"{mod_id}.json").exists()
+def project_index_exists(project_id: str):
+  return (project_index_dir / f"{project_id}.json").exists()
 
-def write_mod_index(mod_id: str, data: dict):
-  with open(project_index_dir / f"{mod_id}.json", mode="w") as file:
-    json.dump(data, file, indent=2)
+def write_project_index(project_id: str, project_data: dict):
+  with open(project_index_dir / f"{project_id}.json", mode="w") as project_index_file:
+    json.dump(project_data, project_index_file, indent=2)
 
-def read_mod_index(mod_id: str):
-  with open(project_index_dir / f"{mod_id}.json") as file:
+def read_project_index(project_id: str):
+  with open(project_index_dir / f"{project_id}.json") as file:
     return json.load(file)
 
-def create_mod_index(mod_id: str, data: dict):
-  if (project_index_dir / f"{mod_id}.json").exists():
-    raise FileExistsError(f"Mod index file for '{mod_id}' already exists")
+def create_project_index(project_id: str, project_data: dict):
+  if (project_index_dir / f"{project_id}.json").exists():
+    raise FileExistsError(f"Project index file for '{project_id}' already exists")
   else:
-    write_mod_index(mod_id, data)
+    write_project_index(project_id, project_data)
 
-def update_mod_index(mod_id: str, new_data: dict):
-  if not (project_index_dir / f"{mod_id}.json").exists():
-    raise FileNotFoundError(f"Mod index file for '{mod_id}' does not exist")
+def update_project_index(project_id: str, new_project_data: dict):
+  if not project_index_exists(project_id):
+    raise FileNotFoundError(f"Project index file for '{project_id}' does not exist")
   else:
-    updated_index_data = merge_dict(read_mod_index(mod_id), new_data)
-    write_mod_index(mod_id, updated_index_data)
+    updated_index_data = merge_dict(read_project_index(project_id), new_project_data)
+    write_project_index(project_id, updated_index_data)
 
 # URLs
 def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int = 10):
@@ -423,9 +427,9 @@ def fetch_mod_version(modid: str, game_versions: list | str, loaders_name: list 
 
   dependencies = {}
   for dependency in selected_version["dependencies"]:
-    dependency_type = mod_dependency_types[dependency["dependency_type"]]
+    dependency_type = project_dependency_types[dependency["dependency_type"]]
 
-    if skip_embedded_dependencies and dependency_type == mod_dependency_types["embedded"]:
+    if skip_embedded_dependencies and dependency_type == project_dependency_types["embedded"]:
       continue
 
     dependencies[dependency["project_id"]] = dependency_type
@@ -452,126 +456,124 @@ def fetch_mod_version(modid: str, game_versions: list | str, loaders_name: list 
 def filter_dependencies_type(dependencies: dict, filter_type: str):
   dependencies_list = []
   for dependency_id, dependency_type in dependencies.items():
-    if dependency_type == mod_dependency_types[filter_type]:
+    if dependency_type == project_dependency_types[filter_type]:
       dependencies_list.append(dependency_id)
 
   return dependencies_list
 
 def resolve_projects(projects_id: list | str, game_version: str, loader_name: str) -> dict:
   if isinstance(projects_id, str): projects_id = [projects_id]
-  unresolved_ids = deque(projects_id)
+  unresolved_ids  = deque()
   resolved_data = {}
-
-  for project_id in projects_id:
-    log.debug(f"Adding entry for requested mod '{project_id}'")
-    resolved_data[project_id] = {
-      "manual": True,
-      "type": mod_dependency_types["required"],
-      "dependants": {}
-    }
 
   slug_id = {}
   with open(slug_id_path) as slug_id_file:
     slug_id = json.load(slug_id_file)
 
-    while unresolved_ids:
-      project_id = unresolved_ids.popleft()
-      project_data = resolved_data.pop(project_id)
-
-      log.debug(f"Processing project '{project_id}'")
-
-      skip_fetch_version = False
-
+    for project_id in projects_id:
       if project_id in slug_id:
-        project_id = slug_id[project_id]["id"]
-        log.debug(f"Found actual ID '{project_id}'")
+        actual_id  = slug_id[project_id]["id"]
 
-        # project_index_data = read_mod_index(project_id)
-        # project_index_type = project_index_data["type"]
+        log.debug(f"Replacing project slug '{project_id}' with ID '{actual_id}'")
+        project_id = actual_id
 
-        # if project_index_type == mod_dependency_types["incompatible"]:
-        #   incompatible_dependants = filter_dependencies_type(project_index_data["dependants"], "incompatible")
-        #   raise ResolveModsConflictsError(f"Project '{project_id}' is incompatible with '{'\', \''.join(incompatible_dependants)}'", project_id, incompatible_dependants)
-        # elif project_index_type == mod_dependency_types["required"]:
-        #   log.debug("Reusing existing index data")
-        #   project_data = project_index_data
-        #   skip_fetch_version = True
+      log.debug(f"Adding project '{project_id}' as unresolved")
+      unresolved_ids.append(project_id)
+      resolved_data[project_id] = {
+        "manual": True,
+        "type": project_dependency_types["required"],
+        "dependants": {}
+      }
 
-      if not skip_fetch_version:
-        try:
-          log.debug("Fetching projecr version")
-          version = fetch_mod_version(project_id, game_version, loader_name, True)
-        except FetchModVersionMissingError:
-          raise ResolveModsError(f"Project '{project_id}' not found", project_id)
+  while unresolved_ids:
+    project_id = unresolved_ids.popleft()
+    project_data = resolved_data.pop(project_id)
 
-        actual_id = version["project_id"]
-        if project_id != actual_id:
-          slug_id[project_id] = {
-            "id": actual_id
-          }
+    log.debug(f"Processing project '{project_id}'")
 
-          project_id = actual_id
+    skip_fetch_version = False
 
-        project_data["version_id"] = version["version_id"]
-        project_data["version_name"] = version["version_name"]
-        project_data["version_number"] = version["version_number"]
+    if project_index_exists(project_id):
+      log.debug("Project index exists")
+      project_index_data = read_project_index(project_id)
+      project_index_type = project_index_data["type"]
 
-        project_data["dependencies"] = version["dependencies"]
-        project_data["file"] = version["primary_file"]
+      if project_index_type == project_dependency_types["required"]:
+        project_index_data["dependants"].update(project_data["dependants"])
+        if project_data["manual"]:
+          project_index_data["manual"] = True
 
-      # If entry with the actual id (since we popped the slug version)
+        project_data = project_index_data
+        skip_fetch_version = True
+      elif project_index_type == project_dependency_types["incompatible"]:
+        project_index_dependants = project_index_data["dependants"]
+
+        incompatible_dependants = filter_dependencies_type(project_index_dependants, "incompatible")
+        required_dependants = filter_dependencies_type(project_index_dependants, "required")
+        raise ResolveProjectsConflictsError(project_id, incompatible_dependants, required_dependants)
+
+    if not skip_fetch_version:
+      try:
+        version = fetch_mod_version(project_id, game_version, loader_name, True)
+      except FetchProjectVersionMissingError:
+        raise ResolveProjectsError(f"Project '{project_id}' not found", project_id)
+      
+      actual_id = version["project_id"]
+      if project_id != actual_id:
+        log.debug(f"Adding slug '{project_id} to ID '{actual_id}' to cache")
+        slug_id[project_id] = {
+          "id": actual_id
+        }
+
+        project_id = actual_id
+
+        if project_index_exists(project_id):
+          project_index_data = read_project_index(project_id)
+
+          if project_index_data["type"] == project_dependency_types["incompatible"]:
+            project_index_dependants = project_index_data["dependants"]
+
+            incompatible_dependants = filter_dependencies_type(project_index_dependants, "incompatible")
+            required_dependants = filter_dependencies_type(project_index_dependants, "required")
+            raise ResolveProjectsConflictsError(project_id, incompatible_dependants, required_dependants)
+
+      project_data["version_id"] = version["version_id"]
+      project_data["version_name"] = version["version_name"]
+      project_data["version_number"] = version["version_number"]
+
+      project_data["dependencies"] = version["dependencies"]
+      project_data["file"] = version["primary_file"]
+
+      # Check if entry with project ID still exists (meaning we're still using slug)
       if project_id in resolved_data:
         existing_entry = resolved_data.pop(project_id)
 
-        if existing_entry["type"] == mod_dependency_types["incompatible"]:
+        # Check if existing entry is marked as incompatible
+        if existing_entry["type"] == project_dependency_types["incompatible"]:
           incompatible_dependants = filter_dependencies_type(existing_entry["dependants"], "incompatible")
-          raise ResolveModsConflictsError(f"Project '{project_id}' is incompatible with '{'\', \''.join(incompatible_dependants)}'", mod_id, incompatible_dependants)
+          raise ResolveProjectConflictsError(project_id, incompatible_dependants)
 
         log.debug(f"Keeping existing data from entry '{project_id}'")
         project_data["dependants"].update(existing_entry["dependants"])
 
     for dependency_id, dependency_type in project_data["dependencies"].items():
-      if mod_index_exists(dependency_id):
-        dependency_index_data = read_mod_index(dependency_id)
-        dependency_index_type = mod_index_data["type"]
-
-        if dependency_type == mod_dependency_types["required"] and dependency_index_type == mod_dependency_types["incompatible"]:
-          incompatible_dependants = filter_dependencies_type(project_index_data["dependants"], "incompatible")
-          raise ResolveModsConflictsError(f"Project '{dependency_id}' (already indexed) is incompatible with '{'\', \''.join(incompatible_dependants)}', but required by '{project_id}'", dependency_id, incompatible_dependants, project_id)
-        elif project_index_type == mod_dependency_types["required"] and dependency_type == mod_dependency_types["incompatible"]:
-          required_dependants = filter_dependencies_type(project_index_data["dependants"], "required")
-          raise ResolveModsConflictsError(f"Project '{dependency_id}' (already indexed) is incompatible with '{project_id}', but required by '{'\', \''.join(required_dependants)}'", dependency_id, project_id, required_dependants)
-
-        if project_index_type == mod_dependency_types["required"]:
-          project_index_data["dependants"].update({
-            project_id: mod_dependency_types["required"]
-          })
-
-          resolved_data[dependency_id] = project_index_data
-          continue
-
       if dependency_id in resolved_data:
         dependency_data = resolved_data[dependency_id]
+        dependency_data_type = dependency_data["type"]
+        dependency_data_dependants = dependency_data["dependants"]
 
-        if dependency_type == mod_dependency_types["required"]:
-          # Check if dependency is already marked as incompatible
-          if dependency_data["type"] == mod_dependency_types["incompatible"]:
-            incompatible_dependants = filter_dependencies_type(dependency_data["dependants"], "incompatible")
-            raise ResolveModsConflictsError(f"Conflicting mods: {dependency_id} is incompatible with '{', '.join(incompatible_dependants)}', but required by '{mod_id}'", dependency_id, incompatible_dependants, mod_id)
-          # Promote optional to required
-          elif dependency_data["type"] == mod_dependency_types["optional"]:
+        if dependency_type == project_dependency_types["required"]:
+          if dependency_data_type == project_dependency_types["incompatible"]:
+            incompatible_dependants = filter_dependencies_type(dependency_data_dependants, "incompatible")
+            raise ResolveProjectsConflictsError(dependency_id, incompatible_dependants, project_id)
+          elif dependency_data_type == project_dependency_types["optional"]:
+            log.debug(f"Adding initially optional dependency '{project_id}' to unresolved")
             unresolved_ids.append(dependency_id)
-        # Check if dependency is marked as incompatible but it is required
-        elif dependency_type == mod_dependency_types["incompatible"] and dependency_data["type"] == mod_dependency_types["required"]:
-          required_dependants = filter_dependencies_type(dependency_data["dependants"], "required")
+        elif dependency_type == project_dependency_types["incompatible"] and dependency_data_type == project_dependency_types["required"]:
+          required_dependants = filter_dependencies_type(dependency_data_dependants, "required")
+          raise ResolveProjectsConflictsError(dependency_id, project_id, required_dependants)
 
-          required_message = ", but requested by user"
-          if required_dependants:
-            required_message = f", but required by '{', '.join(required_dependants)}'"
-
-          raise ResolveModsConflictsError(f"Conflicting mods: {dependency_id} is incompatible with '{mod_id}'{required_message}", dependency_id, mod_id, required_dependants)
-
-        dependency_data["dependants"][mod_id] = dependency_type
+        dependency_data["dependants"][project_id] = dependency_type
         dependency_data["type"] = max(dependency_data["type"], dependency_type)
       else:
         log.debug(f"Adding new mod entry for dependency: {dependency_id}")
@@ -584,150 +586,24 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
         }
 
         # Only process required mods
-        if dependency_type == mod_dependency_types["required"]:
+        if dependency_type == project_dependency_types["required"]:
           unresolved_ids.append(dependency_id)
 
-      resolved_data[project_id] = project_data
+    resolved_data[project_id] = project_data
 
+  # Update with new slug to ID data
   with open(slug_id_path, mode="w") as slug_id_file:
     json.dump(slug_id, slug_id_file, indent=2)
 
+  # Write project index
+  for project_id, project_data in resolved_data.items():
+    project_type = project_data["type"]
+    if project_type in (project_dependency_types["required"], project_dependency_types["incompatible"]):
+      log.debug(f"Indexing project '{project_id}' with type {project_type} and manual {project_data['manual']}")
+      write_project_index(project_id, project_data)
+
   if debug_mode: print(json.dumps(resolved_data, indent=2))
   return resolved_data
-
-# def resolve_mods(mods_id: list | str, game_version: str, loader_name: str):
-#   if isinstance(mods_id, str): mods_id = [mods_id]
-#   unresolved_ids = deque(mods_id) # Initialize with requested mods' ID
-#   resolved_data = {}
-
-#   # Add initial mod entries
-#   for mod_id in mods_id:
-#     log.debug(f"Adding entry for requested mod '{mod_id}'")
-#     resolved_data[mod_id] = {
-#       "manual": True,
-#       "type": mod_dependency_types["required"],
-#       "dependants": {}
-#     }
-
-#   # Process all required mods until its done
-#   while unresolved_ids:
-#     print_status("Resolving mods...", f"Resolving mods... {len(unresolved_ids)} left")
-#     mod_id = unresolved_ids.popleft()
-#     mod_data = resolved_data.pop(mod_id)
-
-#     mod_type = mod_data["type"]
-#     mod_manual = mod_data["manual"]
-
-#     log.debug(f"Processing mod '{mod_id}'")
-
-#     try:
-#       log.debug(f"Fetching mod's version")
-#       version = fetch_mod_version(mod_id, game_version, loader_name, skip_embedded_dependencies=True)
-#     except FetchModVersionMissingError as error:
-#       raise ResolveModsError(f"Mod '{mod_id}' does not have any version for {loader_name.capitalize()}, Minecraft {game_version}. Cannot satisfy user request", mod_id)
-
-#     mod_id = version["mod_id"]
-
-#     if mod_id in resolved_data:
-#       existing_entry = resolved_data.pop(mod_id)
-
-#       # Check if existing entry is marked as incompatible
-#       if existing_entry["type"] == mod_dependency_types["incompatible"]:
-#         incompatible_dependants = filter_dependencies_type(existing_entry["dependants"], "incompatible")
-#         raise ResolveModsConflictsError(f"Conflicting mods: '{mod_id}' is incompatible with '{', '.join(incompatible_dependants)}', but requested by user", mod_id, incompatible_dependants)
-
-#       log.debug(f"Keeping existing data from entry '{mod_id}'")
-#       mod_data["dependants"].update(existing_entry["dependants"])
-
-#     if mod_index_exists(mod_id):
-#       mod_index_data = read_mod_index(mod_id)
-#       mod_index_type = mod_index_data["type"]
-
-#       # Check if mod index is marked as incompatible
-#       if mod_index_type == mod_dependency_types["incompatible"]:
-#         incompatible_dependants = filter_dependencies_type(mod_index_data["dependants"], "incompatible")
-#         required_dependants = filter_dependencies_type(mod_data["dependants"], "required")
-
-#         required_message = ", but requested by user"
-#         if required_dependants:
-#           required_message = f", but required by '{', '.join(required_dependants)}'"
-
-#         raise ResolveModsConflictsError(f"Conflicting mods: '{mod_id}' is incompatible with '{', '.join(incompatible_dependants)}'{required_message}", mod_id, incompatible_dependants, required_dependants)
-
-#       if mod_index_data["manual"]:
-#         mod_manual = True
-
-#     # Add version data
-#     mod_data["version_id"] = version["version_id"]
-#     mod_data["version_name"] = version["version_name"]
-#     mod_data["version_number"] = version["version_number"]
-
-#     mod_data["dependencies"] = version["dependencies"]
-#     mod_data["file"] = version["primary_file"]
-
-#     # Add dependencies
-#     for dependency_id, dependency_type in mod_data["dependencies"].items():
-#       if mod_index_exists(dependency_id):
-#         mod_index_data = read_mod_index(dependency_id)
-#         mod_index_type = mod_index_data["type"]
-
-#         # Check if mod index of dependency is marked as incompatible
-#         if dependency_type == mod_dependency_types["required"] and mod_index_type == mod_dependency_types["incompatible"]:
-#           incompatible_dependants = filter_dependencies_type(mod_index_data["dependants"], "incompatible")
-#           raise ResolveModsConflictsError(f"Conflicting mods: {dependency_id} (already indexed) is incompatible with '{', '.join(incompatible_dependants)}', but required by '{mod_id}'", dependency_id, incompatible_dependants, mod_id)
-#         elif mod_index_type == mod_dependency_types["required"] and dependency_type == mod_dependency_types["incompatible"]:
-#           required_dependants = filter_dependencies_type(mod_data["dependants"], "required")
-#           raise ResolveModsConflictsError(f"Conflicting mods: {dependency_id} (already indexed) is incompatible with '{mod_id}', but required by '{', '.join(required_dependants)}'", dependency_id, mod_id, required_dependants)
-
-#       if dependency_id in resolved_data:
-#         dependency_data = resolved_data[dependency_id]
-
-#         if dependency_type == mod_dependency_types["required"]:
-#           # Check if dependency is already marked as incompatible
-#           if dependency_data["type"] == mod_dependency_types["incompatible"]:
-#             incompatible_dependants = filter_dependencies_type(dependency_data["dependants"], "incompatible")
-#             raise ResolveModsConflictsError(f"Conflicting mods: {dependency_id} is incompatible with '{', '.join(incompatible_dependants)}', but required by '{mod_id}'", dependency_id, incompatible_dependants, mod_id)
-#           # Promote optional to required
-#           elif dependency_data["type"] == mod_dependency_types["optional"]:
-#             unresolved_ids.append(dependency_id)
-#         # Check if dependency is marked as incompatible but it is required
-#         elif dependency_type == mod_dependency_types["incompatible"] and dependency_data["type"] == mod_dependency_types["required"]:
-#           required_dependants = filter_dependencies_type(dependency_data["dependants"], "required")
-
-#           required_message = ", but requested by user"
-#           if required_dependants:
-#             required_message = f", but required by '{', '.join(required_dependants)}'"
-
-#           raise ResolveModsConflictsError(f"Conflicting mods: {dependency_id} is incompatible with '{mod_id}'{required_message}", dependency_id, mod_id, required_dependants)
-
-#         dependency_data["dependants"][mod_id] = dependency_type
-#         dependency_data["type"] = max(dependency_data["type"], dependency_type)
-#       else:
-#         log.debug(f"Adding new mod entry for dependency: {dependency_id}")
-#         resolved_data[dependency_id] = {
-#           "manual": False,
-#           "type": dependency_type,
-#           "dependants": {
-#             mod_id: dependency_type
-#           }
-#         }
-
-#         # Only process required mods
-#         if dependency_type == mod_dependency_types["required"]:
-#           unresolved_ids.append(dependency_id)
-
-#     # Put back processed mod
-#     resolved_data[mod_id] = mod_data
-
-#   # Write mod index
-#   for mod_id, mod_data in resolved_data.items():
-#     mod_type = mod_data["type"]
-#     if mod_type in (mod_dependency_types["required"], mod_dependency_types["incompatible"]):
-#       log.debug(f"Indexing mod '{mod_id}' with type {mod_type} and manual {mod_data['manual']}")
-#       write_mod_index(mod_id, mod_data)
-
-#   if debug_mode: print(json.dumps(resolved_data, indent=2))
-#   return resolved_data
 
 # EULA functions
 def check_eula_agreed():
@@ -772,8 +648,8 @@ def add_mod(args):
   incompatible_mod_ids = []
 
   for mod_id, data in resolved_data.items():
-    if data["type"] == mod_dependency_types["required"]:
-      if mod_index_exists(mod_id):
+    if data["type"] == project_dependency_types["required"]:
+      if project_index_exists(mod_id):
         mod_index_data = read_mod_index(mod_id)
         if (mods_dir / mod_index_data["file"]["filename"]).exists():
           log.info(f"{mod_index_data['version_name']} already been downloaded")
@@ -781,9 +657,9 @@ def add_mod(args):
 
       required_mod_ids.append(mod_id)
       total_size += data["file"]["size"]
-    elif data["type"] == mod_dependency_types["optional"]:
+    elif data["type"] == project_dependency_types["optional"]:
       optional_mod_ids.append(mod_id)
-    elif data["type"] == mod_dependency_types["incompatible"]:
+    elif data["type"] == project_dependency_types["incompatible"]:
       incompatible_mod_ids.append(mod_id)
 
     mod_ids.append(mod_id)
