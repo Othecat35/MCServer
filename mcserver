@@ -17,7 +17,7 @@ user_agent = f"Othecat35/MCServer/{__version__}"
 modrinth_api_base = "http://127.0.01:1104/"#"https://api.modrinth.com/v2/"
 
 loaders_list = ["fabric", "vanilla"]
-eula_agree_sentence = "I agree"
+eula_agree_sentence = "Yes, I agree."
 
 si_prefixes = ["", "K", "M", "B", "T"]
 iec_prefixes = ["B", "KiB", "MiB", "GiB", "TiB"]
@@ -176,6 +176,26 @@ def merge_dict(base: dict, update: dict):
       base[key] = value
 
   return base
+
+def confirmation_prompt(prompt: str, default_option: bool = False):
+  accepted_value = "y/n"
+  if default_option:
+    accepted_value = "Y/n"
+  elif not default_value:
+    acceptex_value = "y/N"
+
+  try:
+    answer = input(f"{prompt.capitalize()} [{acepted_value}]: ")
+  except KeyboardError:
+    return False
+
+  match answer.lower():
+    case "y" | "yes":
+      return True
+    case "n" | "no" | _:
+      return False
+    case "":
+      return default_option
 
 def format_number(number: str, unit_type: str = "si"):
   unit_multiples = 0
@@ -592,19 +612,20 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
 
     resolved_data[project_id] = project_data
 
-  # Populate slug_id with more undiscovered slugs
-  missing_slugs = []
-  for project_id in resolved_data:
-    if project_id not in slug_id.values():
-      missing_slugs.append(project_id)
+  # Populate resolved_data with even more data
+  projects = json.loads(fetch_url(f"{modrinth_api_base}projects", params={
+    "ids": json.dumps(resolved_data.keys())
+  }))["text"]
 
-  if missing_slugs:
-    projects = json.loads(fetch_url(f"{modrinth_api_base}projects", params={
-      "ids": json.dumps(missing_slugs)
-    }))["text"]
+  for project in projects:
+    slug_id[project["slug"]] = project["id"]
+    project_data = resolved_data[project["id"]]
 
-    for project in projects:
-      slug_id[project["slug"]] = project["id"]
+    project_data["project_slug"] = project["slug"]
+    project_data["project_title"] = project["title"]
+    project_data["project_description"] = project["description"]
+    project_data["license"] = project["license"]
+    project_data["loaders"] = projects["loaders"]
 
   # Update with new slug to ID data
   with open(slug_id_path, mode="w") as slug_id_file:
@@ -640,8 +661,8 @@ def eula_agree():
 eula=true""")
 
 # Command functions
-def add_mod(args):
-  mods = args.mods
+def add_projects(args):
+  projects = args.projects
 
   server_config = load_config("server")
   server_loader = server_config["loader"]
@@ -650,12 +671,11 @@ def add_mod(args):
   server_version = server_config["version"]
 
   if server_loader["name"] == "vanilla":
-    raise AddModError("Vanilla Minecraft server does not support mod")
+    raise AddProjectsError("Vanilla Minecraft server does not support mod")
 
-  resolved_data = resolve_projects(mods, server_version, loader_name)
+  resolved_data = resolve_projects(projects, server_version, loader_name)
 
   # Get mod IDs
-  mod_ids = []
   total_size = 0
 
   required_mod_ids = []
@@ -764,6 +784,11 @@ def initialize_server(args):
   project_index_dir.mkdir(exist_ok=True)
 
   tempfiles_dir.mkdir(exist_ok=True)
+  caches_dir.mkdir(exists_ok=True)
+
+  if not slug_id_path.exists():
+    with open(slug_id_path, "#") as slug_id_file:
+      json.dump({}, slug_id_path, indent=2)
 
   if mc_version is None:
     log.info("Getting Mojang game version manifest...")
