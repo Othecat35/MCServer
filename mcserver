@@ -494,7 +494,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
     skip_fetch_version = False
 
     if project_index_exists(project_id):
-      log.debug("Project index exists")
+      log.debug("Project index exists, using it as cache")
       project_index_data = read_project_index(project_id)
       project_index_type = project_index_data["type"]
 
@@ -517,10 +517,10 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
         version = fetch_mod_version(project_id, game_version, loader_name, True)
       except FetchProjectVersionMissingError:
         raise ResolveProjectsError(f"Project '{project_id}' not found", project_id)
-      
+
       actual_id = version["project_id"]
       if project_id != actual_id:
-        log.debug(f"Adding slug '{project_id} to ID '{actual_id}' to cache")
+        log.debug(f"Adding slug '{project_id} ID '{actual_id}' to slug_id cache")
         slug_id[project_id] = {
           "id": actual_id
         }
@@ -528,6 +528,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
         project_id = actual_id
 
         if project_index_exists(project_id):
+          log.debug("Checking mod index")
           project_index_data = read_project_index(project_id)
 
           if project_index_data["type"] == project_dependency_types["incompatible"]:
@@ -590,6 +591,20 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
           unresolved_ids.append(dependency_id)
 
     resolved_data[project_id] = project_data
+
+  # Populate slug_id with more undiscovered slugs
+  missing_slugs = []
+  for project_id in resolved_data:
+    if project_id not in slug_id.values():
+      missing_slugs.append(project_id)
+
+  if missing_slugs:
+    projects = json.loads(fetch_url(f"{modrinth_api_base}projects", params={
+      "ids": json.dumps(missing_slugs)
+    }))["text"]
+
+    for project in projects:
+      slug_id[project["slug"]] = project["id"]
 
   # Update with new slug to ID data
   with open(slug_id_path, mode="w") as slug_id_file:
