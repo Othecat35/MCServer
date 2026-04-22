@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.12.2"
+__version__ = "1.13.0"
 
 import argparse, copy, hashlib, json, math, os, shutil, sys, textwrap, time
 import urllib.parse, urllib.request
@@ -16,7 +16,10 @@ isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"Othecat35/MCServer/{__version__}"
 modrinth_api_base = "http://127.0.01:1104/"#"https://api.modrinth.com/v2/"
 
-loaders_list = ["fabric", "vanilla"]
+mods_loader = ["fabric"]
+plugins_loader = ["paper"]
+loaders_list = ["vanilla"] + mods_loader + plugins_loader
+
 eula_agree_sentence = "Yes, I agree."
 
 si_prefixes = ["", "K", "M", "B", "T"]
@@ -91,15 +94,15 @@ tempfiles_dir = mcserver_dir / "tempfiles"
 slug_id_path = caches_dir / "slug_id.json"
 
 # Error classes
-class AddModError(Exception): pass
+class AddProjectsError(Exception): pass
 class InitializeServerError(Exception): pass
 class InstallServerError(Exception): pass
-class SearchModError(Exception): pass
-class ShowModError(Exception): pass
+class SearchProjectsError(Exception): pass
+class ShowProjectsError(Exception): pass
 class StartServerError(Exception): pass
 
 class EULAAgreementError(Exception): pass
-class FetchModVersionMissingError(Exception): pass
+class FetchProjectVersionMissingError(Exception): pass
 class DownloadURLError(Exception): pass
 
 class ResolveProjectsError(Exception):
