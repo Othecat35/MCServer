@@ -83,15 +83,15 @@ default_configs = {
 current_dir = Path.cwd()
 
 mods_dir = current_dir / "mods"
+plugins_dir = current_dir / "plugins"
+
 mcserver_dir = current_dir / ".mcserver"
-
 configs_dir = mcserver_dir / "configs"
-project_index_dir = mcserver_dir / "projects_index"
 
-caches_dir = mcserver_dir / "caches"
+projects_index_dir = mcserver_dir / "projects_index"
+slug_id_file = projects_index_dir / ".slug_id.json"
+
 tempfiles_dir = mcserver_dir / "tempfiles"
-
-slug_id_path = caches_dir / "slug_id.json"
 
 # Error classes
 class AddProjectsError(Exception): pass
@@ -311,19 +311,17 @@ def load_config(config_name: str, allow_missing: bool = False):
     raise PermissionError(f"Cannot read configuration file for '{config_name}': Permission denied to read file") from error
 
 # Mod indexing
-def project_index_exists(project_id: str):
-  return (project_index_dir / f"{project_id}.json").exists()
+def project_index_exists(project_id: str) -> bool:
+  return (projects_index_dir / f"{project_id}.json").exists()
 
-def write_project_index(project_id: str, project_data: dict):
-  with open(project_index_dir / f"{project_id}.json", mode="w") as project_index_file:
-    json.dump(project_data, project_index_file, indent=2)
+def write_project_index(project_id: str, project_data: dict) -> None:
+  (projects_index_dir / f"{project_id}.json").write_text(json.dumps(project_data, indent=2))
 
-def read_project_index(project_id: str):
-  with open(project_index_dir / f"{project_id}.json") as file:
-    return json.load(file)
+def read_project_index(project_id: str) -> dict:
+  return json.loads((projects_index_dir / f"{project_id}.json").read_text())
 
-def create_project_index(project_id: str, project_data: dict):
-  if (project_index_dir / f"{project_id}.json").exists():
+def create_project_index(project_id: str, project_data: dict) -> None:
+  if project_index_exists(project_id):
     raise FileExistsError(f"Project index file for '{project_id}' already exists")
   else:
     write_project_index(project_id, project_data)
@@ -488,27 +486,24 @@ def filter_dependencies_type(dependencies: dict, filter_type: str):
 
 def resolve_projects(projects_id: list | str, game_version: str, loader_name: str) -> dict:
   if isinstance(projects_id, str): projects_id = [projects_id]
-  unresolved_ids  = deque()
+  unresolved_ids = deque()
   resolved_data = {}
 
-  slug_id = {}
-  with open(slug_id_path) as slug_id_file:
-    slug_id = json.load(slug_id_file)
+  slug_id = json.loads(slug_id_file.read_text())
+  for project_id in projects_id:
+    if project_id in slug_id:
+      actual_id  = slug_id[project_id]["id"]
 
-    for project_id in projects_id:
-      if project_id in slug_id:
-        actual_id  = slug_id[project_id]["id"]
+      log.debug(f"Replacing project slug '{project_id}' with ID '{actual_id}'")
+      project_id = actual_id
 
-        log.debug(f"Replacing project slug '{project_id}' with ID '{actual_id}'")
-        project_id = actual_id
-
-      log.debug(f"Adding project '{project_id}' as unresolved")
-      unresolved_ids.append(project_id)
-      resolved_data[project_id] = {
-        "manual": True,
-        "type": project_dependency_types["required"],
-        "dependants": {}
-      }
+    log.debug(f"Adding project '{project_id}' as unresolved")
+    unresolved_ids.append(project_id)
+    resolved_data[project_id] = {
+      "manual": True,
+      "type": project_dependency_types["required"],
+      "dependants": {}
+    }
 
   while unresolved_ids:
     project_id = unresolved_ids.popleft()
@@ -552,16 +547,17 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
 
         project_id = actual_id
 
-        if project_index_exists(project_id):
-          log.debug("Checking mod index")
-          project_index_data = read_project_index(project_id)
+        # Check if entry with project ID still exists (meaning we're still using slug)
+        if project_id in resolved_data:
+          existing_entry = resolved_data.pop(project_id)
 
-          if project_index_data["type"] == project_dependency_types["incompatible"]:
-            project_index_dependants = project_index_data["dependants"]
+          # Check if existing entry is marked as incompatible
+          if existing_entry["type"] == project_dependency_types["incompatible"]:
+            incompatible_dependants = filter_dependencies_type(existing_entry["dependants"], "incompatible")
+            raise ResolveProjectConflictsError(project_id, incompatible_dependants)
 
-            incompatible_dependants = filter_dependencies_type(project_index_dependants, "incompatible")
-            required_dependants = filter_dependencies_type(project_index_dependants, "required")
-            raise ResolveProjectsConflictsError(project_id, incompatible_dependants, required_dependants)
+          log.debug(f"Keeping existing data from entry '{project_id}'")
+          project_data["dependants"].update(existing_entry["dependants"])
 
       project_data["version_id"] = version["version_id"]
       project_data["version_name"] = version["version_name"]
@@ -569,18 +565,6 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
 
       project_data["dependencies"] = version["dependencies"]
       project_data["file"] = version["primary_file"]
-
-      # Check if entry with project ID still exists (meaning we're still using slug)
-      if project_id in resolved_data:
-        existing_entry = resolved_data.pop(project_id)
-
-        # Check if existing entry is marked as incompatible
-        if existing_entry["type"] == project_dependency_types["incompatible"]:
-          incompatible_dependants = filter_dependencies_type(existing_entry["dependants"], "incompatible")
-          raise ResolveProjectConflictsError(project_id, incompatible_dependants)
-
-        log.debug(f"Keeping existing data from entry '{project_id}'")
-        project_data["dependants"].update(existing_entry["dependants"])
 
     for dependency_id, dependency_type in project_data["dependencies"].items():
       if dependency_id in resolved_data:
@@ -630,11 +614,10 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
     project_data["project_title"] = project["title"]
     project_data["project_description"] = project["description"]
     project_data["license"] = project["license"]
-    project_data["loaders"] = projects["loaders"]
+    project_data["loaders"] = project["loaders"]
 
   # Update with new slug to ID data
-  with open(slug_id_path, mode="w") as slug_id_file:
-    json.dump(slug_id, slug_id_file, indent=2)
+  slug_id_file.write_text(json.dump(slug_id, slug_id_file, indent=2))
 
   # Write project index
   for project_id, project_data in resolved_data.items():
@@ -1117,7 +1100,7 @@ def main():
   #Mod management
   # 'add' command
   parser_add = subparsers.add_parser("add", help="Add mod(s) from Modrinth")
-  parser_add.add_argument("mods", nargs="+", help="Slug (or ID) of the mod(s)")
+  parser_add.add_argument("projects", nargs="+", help="Slug (or ID) of the mod(s)")
   parser_add.set_defaults(func=add_projects)
 
   # 'search' command
