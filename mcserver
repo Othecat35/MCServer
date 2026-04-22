@@ -14,7 +14,7 @@ log_level = log.DEBUG if debug_mode else log.INFO
 
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"Othecat35/MCServer/{__version__}"
-modrinth_api_base = "http://127.0.01:1104/"#"https://api.modrinth.com/v2/"
+modrinth_api_base = "https://api.modrinth.com/v2/"
 
 mods_loader = ["fabric"]
 plugins_loader = ["paper"]
@@ -180,7 +180,7 @@ def merge_dict(base: dict, update: dict):
 
   return base
 
-def confirmation_prompt(prompt: str, default_option: bool = False):
+def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
   accepted_value = "y/n"
   if default_option:
     accepted_value = "Y/n"
@@ -195,10 +195,12 @@ def confirmation_prompt(prompt: str, default_option: bool = False):
   match answer.lower():
     case "y" | "yes":
       return True
-    case "n" | "no" | _:
+    case "n" | "no":
       return False
     case "":
       return default_option
+    case _:
+      return False
 
 def format_number(number: str, unit_type: str = "si"):
   unit_multiples = 0
@@ -1116,7 +1118,7 @@ def main():
   # 'add' command
   parser_add = subparsers.add_parser("add", help="Add mod(s) from Modrinth")
   parser_add.add_argument("mods", nargs="+", help="Slug (or ID) of the mod(s)")
-  parser_add.set_defaults(func=add_mod)
+  parser_add.set_defaults(func=add_projects)
 
   # 'search' command
   parser_search = subparsers.add_parser("search", help="Search mods in Modrinth")
