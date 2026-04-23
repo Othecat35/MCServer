@@ -518,39 +518,41 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
       project_index_data = read_project_index(project_id)
       project_index_type = project_index_data["type"]
 
-     if project_index_type == project_dependency_types["incompatible"]:
+      if project_index_type == project_dependency_types["incompatible"]:
         project_index_dependants = project_index_data["dependants"]
 
         incompatible_dependants = filter_dependencies_type(project_index_dependants, "incompatible")
         required_dependants = filter_dependencies_type(project_index_dependants, "required")
         raise ResolveProjectsConflictsError(project_id, incompatible_dependants, required_dependants)
 
+      project_index_data["dependants"].update(project_data["dependants"])
+      if project_data["manual"]:
+        project_index_data["manual"] = True
+
+      project_data = project_index_data
+      skip_fetch_version = True
+
     if not skip_fetch_version:
+      log.debug("Fetching project version")
       try:
         version = fetch_mod_version(project_id, game_version, loader_name, True)
       except FetchProjectVersionMissingError:
         raise ResolveProjectsError(f"Project '{project_id}' not found", project_id)
 
-      actual_id = version["project_id"]
-      if project_id != actual_id:
-        log.debug(f"Adding slug '{project_id} ID '{actual_id}' to slug_id cache")
-        slug_id[project_id] = {
-          "id": actual_id
-        }
+      project_id = version["project_id"]
 
-        project_id = actual_id
+      # Check if entry with project ID still exists (meaning we're still using slug)
+      if project_id in resolved_data:
+        log.debug(f"Found existing data with ID {project_id}")
+        existing_entry = resolved_data.pop(project_id)
 
-        # Check if entry with project ID still exists (meaning we're still using slug)
-        if project_id in resolved_data:
-          existing_entry = resolved_data.pop(project_id)
+        # Check if existing entry is marked as incompatible
+        if existing_entry["type"] == project_dependency_types["incompatible"]:
+          incompatible_dependants = filter_dependencies_type(existing_entry["dependants"], "incompatible")
+          raise ResolveProjectsConflictsError(project_id, incompatible_dependants)
 
-          # Check if existing entry is marked as incompatible
-          if existing_entry["type"] == project_dependency_types["incompatible"]:
-            incompatible_dependants = filter_dependencies_type(existing_entry["dependants"], "incompatible")
-            raise ResolveProjectConflictsError(project_id, incompatible_dependants)
-
-          log.debug(f"Keeping existing data from entry '{project_id}'")
-          project_data["dependants"].update(existing_entry["dependants"])
+        log.debug(f"Keeping existing data")
+        project_data["dependants"].update(existing_entry["dependants"])
 
       project_data["version_id"] = version["version_id"]
       project_data["version_name"] = version["version_name"]
@@ -576,10 +578,11 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
           required_dependants = filter_dependencies_type(dependency_data_dependants, "required")
           raise ResolveProjectsConflictsError(dependency_id, project_id, required_dependants)
 
+        log.debug(f"Updating project data '{dependency_id}' with new '{dependency_type}' type dependant")
         dependency_data["dependants"][project_id] = dependency_type
         dependency_data["type"] = max(dependency_data["type"], dependency_type)
       else:
-        log.debug(f"Adding new mod entry for dependency: {dependency_id}")
+        log.debug(f"Adding new project entry for dependency: {dependency_id}")
         resolved_data[dependency_id] = {
           "manual": False,
           "type": dependency_type,
@@ -595,8 +598,13 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
     resolved_data[project_id] = project_data
 
   # Populate resolved_data with even more data
+  fetch_ids = []
+  for project_id, project_data in resolved_data.keys():
+    #If project data doesn't have slug, fetch it
+    if not project_data.get("slug"): fetch_ids.append(project_id)
+
   projects = json.loads(fetch_url(f"{modrinth_api_base}projects", params={
-    "ids": json.dumps(resolved_data.keys())
+    "ids": json.dumps(fetch_ids)
   }))["text"]
 
   for project in projects:
@@ -610,7 +618,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
     project_data["loaders"] = project["loaders"]
 
   # Update with new slug to ID data
-  slug_id_file.write_text(json.dump(slug_id, slug_id_file, indent=2))
+  slug_id_file.write_text(json.dumps(slug_id, indent=2))
 
   # Write project index
   for project_id, project_data in resolved_data.items():
