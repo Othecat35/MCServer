@@ -599,7 +599,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
 
   # Populate resolved_data with even more data
   fetch_ids = []
-  for project_id, project_data in resolved_data.keys():
+  for project_id, project_data in resolved_data.items():
     #If project data doesn't have slug, fetch it
     if not project_data.get("slug"): fetch_ids.append(project_id)
 
