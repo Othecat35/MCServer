@@ -518,14 +518,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
       project_index_data = read_project_index(project_id)
       project_index_type = project_index_data["type"]
 
-      if project_index_type == project_dependency_types["required"]:
-        project_index_data["dependants"].update(project_data["dependants"])
-        if project_data["manual"]:
-          project_index_data["manual"] = True
-
-        project_data = project_index_data
-        skip_fetch_version = True
-      elif project_index_type == project_dependency_types["incompatible"]:
+     if project_index_type == project_dependency_types["incompatible"]:
         project_index_dependants = project_index_data["dependants"]
 
         incompatible_dependants = filter_dependencies_type(project_index_dependants, "incompatible")
