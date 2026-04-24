@@ -6,21 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-04-24
+
 ### Added
-- Rename `mod` to `project` for future support with plugins
+- Preparing to support plugins
 - Slug to ID cache, reducing API call
 
-## [1.12.2]
+### Changed
+- EULA agreement sentence
+- Improved confirmation prompt
+
+## [1.12.2] - 2026-04-14
 
 ### Fixed
 - Revert Modrinth API URL back to normal
 
-## [1.12.1]
+## [1.12.1] - 2026-04-14
 
 ### Added
 - Create `mods_index` directory when running `init`
 
-## [1.12.0]
+## [1.12.0] - 2026-04-14
 
 ### Added
 - Mod indexing functionality
@@ -29,7 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased] : https://github.com/Othecat35/MCServer/compare/1.11.9...HEAD
-[1.12.0] : https://github.com/Othecat35/MCServer/compare/1.11.8...1.12.0
-[1.12.1] : https://github.com/Othecat35/MCServer/compare/1.12.0...1.12.1
+[unreleased] : https://github.com/Othecat35/MCServer/compare/1.13.0...HEAD
+[1.13.0] : https://github.com/Othecat35/MCServer/compare/1.12.2...1.13.0
 [1.12.2] : https://github.com/Othecat35/MCServer/compare/1.12.1...1.12.2
+[1.12.1] : https://github.com/Othecat35/MCServer/compare/1.12.0...1.12.1
+[1.12.0] : https://github.com/Othecat35/MCServer/compare/1.11.8...1.12.0

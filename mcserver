@@ -118,8 +118,11 @@ class ResolveProjectsConflictsError(Exception):
     if isinstance(incompatible_dependants, str): incompatible_dependants = [incompatible_dependants]
     if isinstance(required_dependants, str): required_dependants = [required_dependants]
 
-    required_message = f" but required by '{'\', \''.join(required_dependants)}'" if required_dependants else " but it is requested"
-    super().__init__(f"Project '{project_id}' is incompatible with '{'\', \''.join(incompatible_dependants)}'{required_message}", )
+    required_join = "', '".join(required_dependants)
+    required_message = f" but required by '{required_join}'" if required_dependants else " but it is requested"
+
+    incompatible_join = "', '".join(incompatible_dependants)
+    super().__init__(f"Project '{project_id}' is incompatible with '{incompatible_join}'{required_message}")
 
     self.project_id = project_id
 
@@ -171,7 +174,6 @@ def hahaha_yes():
   sys.exit(0)
 
 def merge_dict(base: dict, update: dict):
-  base = copy.deepcopy(base)
   for key, value in update.items():
     if key in base and isinstance(base[key], dict) and isinstance(value, dict):
       merge_dict(base[key], value)
@@ -184,12 +186,13 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
   accepted_value = "y/n"
   if default_option:
     accepted_value = "Y/n"
-  elif not default_value:
-    acceptex_value = "y/N"
+  else:
+    accepted_value = "y/N"
 
   try:
-    answer = input(f"{prompt.capitalize()} [{acepted_value}]: ")
-  except KeyboardError:
+    answer = input(f"{prompt} [{accepted_value}]: ")
+  except KeyboardInterrupt:
+    print() # To avoid weird no newline when Ctrl+C
     return False
 
   match answer.lower():
@@ -310,6 +313,23 @@ def load_config(config_name: str, allow_missing: bool = False):
   except PermissionError as error:
     raise PermissionError(f"Cannot read configuration file for '{config_name}': Permission denied to read file") from error
 
+project_label = None
+project_dir = None
+
+def update_project_label(loader_name: str):
+  global project_label
+  global project_dir
+
+  if project_label is None:
+    if loader_name in mods_loader:
+      project_label = "mod"
+      project_dir = mods_dir
+    elif loader_name in plugins_loader:
+      project_label = "plugin"
+      project_dir = plugins_dir
+    else:
+      project_label = "project"
+
 # Mod indexing
 def project_index_exists(project_id: str) -> bool:
   return (projects_index_dir / f"{project_id}.json").exists()
@@ -325,13 +345,6 @@ def create_project_index(project_id: str, project_data: dict) -> None:
     raise FileExistsError(f"Project index file for '{project_id}' already exists")
   else:
     write_project_index(project_id, project_data)
-
-def update_project_index(project_id: str, new_project_data: dict):
-  if not project_index_exists(project_id):
-    raise FileNotFoundError(f"Project index file for '{project_id}' does not exist")
-  else:
-    updated_index_data = merge_dict(read_project_index(project_id), new_project_data)
-    write_project_index(project_id, updated_index_data)
 
 # URLs
 def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int = 10):
@@ -420,22 +433,22 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
   shutil.move(tempfile, filename)
 
 # Mod Fetching
-def fetch_mod_version(modid: str, game_versions: list | str, loaders_name: list | str, skip_embedded_dependencies: bool = False):
+def fetch_mod_version(project_id: str, game_versions: list | str, loaders_name: list | str, skip_embedded_dependencies: bool = False):
   if isinstance(game_versions, str): game_versions = [game_versions]
   if isinstance(loaders_name, str): loaders_name = [loaders_name]
 
   try:
-    response = json.loads(fetch_url(f"{modrinth_api_base}project/{modid}/version", params={
+    response = json.loads(fetch_url(f"{modrinth_api_base}project/{project_id}/version", params={
       "loaders": json.dumps(loaders_name),
       "game_versions": json.dumps(game_versions),
       "include_changelog": "false"
     })["text"])
   except urllib.error.HTTPError as error:
     if error.code == 404:
-      raise FetchModVersionMissingError(f"Mod '{modid}' is not found") from error
+      raise FetchModVersionMissingError(f"Project '{project_id}' is not found") from error
 
   if not response:
-    raise FetchModVersionError(f"No version found in mod '{modid}' for {pluralize('loader', len(loaders_name))} {', '.join(loaders_name).title()}, Minecraft {pluralize('version', len(game_versions))} {', '.join(game_versions)}")
+    raise FetchModVersionError(f"No version found in project '{project_id}' for {pluralize('loader', len(loaders_name))} {', '.join(loaders_name).title()}, Minecraft {pluralize('version', len(game_versions))} {', '.join(game_versions)}")
 
   selected_version = response[0]
 
@@ -446,7 +459,7 @@ def fetch_mod_version(modid: str, game_versions: list | str, loaders_name: list 
       break
 
   if selected_file is None:
-    raise FetchModVersionError(f"This version ({selected_version['version_id']}) of the mod '{modid}' does not have any file marked as primary")
+    raise FetchModVersionError(f"This version ({selected_version['version_id']}) of the project '{project_id}' does not have any file marked as primary")
 
   dependencies = {}
   for dependency in selected_version["dependencies"]:
@@ -514,7 +527,6 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
     skip_fetch_version = False
 
     if project_index_exists(project_id):
-      log.debug("Project index exists, using it as cache")
       project_index_data = read_project_index(project_id)
       project_index_type = project_index_data["type"]
 
@@ -525,6 +537,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
         required_dependants = filter_dependencies_type(project_index_dependants, "required")
         raise ResolveProjectsConflictsError(project_id, incompatible_dependants, required_dependants)
 
+      log.debug("Project index exists, using it as cache")
       project_index_data["dependants"].update(project_data["dependants"])
       if project_data["manual"]:
         project_index_data["manual"] = True
@@ -605,16 +618,19 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
 
   projects = json.loads(fetch_url(f"{modrinth_api_base}projects", params={
     "ids": json.dumps(fetch_ids)
-  }))["text"]
+  })["text"])
 
   for project in projects:
-    slug_id[project["slug"]] = project["id"]
+    slug_id[project["slug"]] = {
+      "id": project["id"]
+    }
+
     project_data = resolved_data[project["id"]]
 
     project_data["project_slug"] = project["slug"]
     project_data["project_title"] = project["title"]
     project_data["project_description"] = project["description"]
-    project_data["license"] = project["license"]
+    project_data["project_license"] = project["license"]
     project_data["loaders"] = project["loaders"]
 
   # Update with new slug to ID data
@@ -662,96 +678,58 @@ def add_projects(args):
   if server_loader["name"] == "vanilla":
     raise AddProjectsError("Vanilla Minecraft server does not support mod")
 
+  update_project_label(loader_name)
+
   resolved_data = resolve_projects(projects, server_version, loader_name)
 
-  # Get mod IDs
+  # Get project IDs
   total_size = 0
 
-  required_mod_ids = []
-  optional_mod_ids = []
-  incompatible_mod_ids = []
+  required_project_name = []
+  optional_project_name = []
+  incompatible_project_name = []
 
-  for mod_id, data in resolved_data.items():
-    if data["type"] == project_dependency_types["required"]:
-      if project_index_exists(mod_id):
-        mod_index_data = read_mod_index(mod_id)
-        if (mods_dir / mod_index_data["file"]["filename"]).exists():
-          log.info(f"{mod_index_data['version_name']} already been downloaded")
-          continue
+  for project in resolved_data.values():
+    project_type = project["type"]
+    if project_type == project_dependency_types["required"]:
+      project_file = project["file"]
+      if (project_dir / project_file["filename"]).exists(): continue
 
-      required_mod_ids.append(mod_id)
-      total_size += data["file"]["size"]
-    elif data["type"] == project_dependency_types["optional"]:
-      optional_mod_ids.append(mod_id)
-    elif data["type"] == project_dependency_types["incompatible"]:
-      incompatible_mod_ids.append(mod_id)
+      total_size += project_file["size"]
+      required_project_name.append(f"{project['project_title']} ({project['project_slug']})")
+    elif project_type == project_dependency_types["optional"]:
+      optional_project_name.append(f"{project['project_title']} ({project['project_slug']})")
+    elif project_type == project_dependency_types["incompatible"]:
+      incompatible_project_name.append(f"{project['project_title']} ({project['project_slug']})")
 
-    mod_ids.append(mod_id)
+  required_project_count = len(required_project_name)
+  log.info(f"{required_project_count} {pluralize(project_label, required_project_count)} that {pluralize('is', required_project_count)} going to be downloaded:")
+  print(wrap_ansi(wrap_text(", ".join(required_project_name), initial_indent="  ", subsequent_indent="  "), "green"), end="\n\n")
 
-  response = json.loads(fetch_url(f"{modrinth_api_base}projects", params={
-    "ids": json.dumps(mod_ids)
-  })["text"])
+  if optional_project_name:
+    optional_project_count = len(optional_project_name)
+    log.info(f"{optional_project_count} {pluralize(project_label, optional_project_count)} that {pluralize('is', optional_project_count)} optional:")
+    print(wrap_ansi(wrap_text(", ".join(optional_project_name), initial_indent="  ", subsequent_indent="  "), "yellow"), end="\n\n")
 
-  required_modname_list = []
-  optional_modname_list = []
-  incompatible_modname_list = []
+  if incompatible_project_name:
+    incompatible_project_count = len(incompatible_project_name)
+    log.warning(f"{incompatible_project_count} {pluralize(project_label, incompatible_project_count)} that {pluralize('is', incompatible_project_count)} INCOMPATIBLE:")
+    print(wrap_ansi(wrap_text(", ".join(incompatible_project_name), initial_indent=" ", subsequent_indent=" "), "red"), end="\n\n")
 
-  for mod in response:
-    mod_id = mod["id"]
+  project_count = len(resolved_data)
+  log.info(f"Will download {format_number(total_size, 'iec')} worth of {pluralize(project_label, project_count)} {pluralize("file", project_count)}.")
 
-    if mod_id in required_mod_ids:
-      required_modname_list.append(f"{mod['title']} ({mod['slug']})")
-    elif mod_id in optional_mod_ids:
-      optional_modname_list.append(f"{mod['title']} ({mod['slug']})")
-    elif mod_id in incompatible_mod_ids:
-      incompatible_modname_list.append(f"{mod['title']} ({mod['slug']})")
+  answer = confirmation_prompt("Do you want to continue?", True)
+  if not answer:
+    raise AddProjectsError("Cancelled")
 
-  required_mod_count = len(required_mod_ids)
+  for project in resolved_data.values():
+    if project["type"] == project_dependency_types["required"]:
+      project_file = project["file"]
+      if (project_dir / project_file["filename"]).exists(): continue
 
-  log.info(f"{required_mod_count} {pluralize('mod', required_mod_count)} that {pluralize('is', required_mod_count)} required:")
-  print(wrap_ansi(wrap_text(", ".join(required_modname_list), initial_indent="  ", subsequent_indent="  "), "green"), end="\n\n")
-
-  if optional_mod_ids:
-    optional_mod_count = len(optional_mod_ids)
-
-    log.info(f"{optional_mod_count} {pluralize('mod', optional_mod_count)} that {pluralize('is', optional_mod_count)} optional:")
-    print(wrap_ansi(wrap_text(", ".join(optional_modname_list), initial_indent="  ", subsequent_indent="  "), "yellow"), end="\n\n")
-
-  if incompatible_mod_ids:
-    incompatible_mod_count = len(incompatible_mod_ids)
-
-    log.warning(f"{incompatible_mod_count} {pluralize('mod', incompatible_mod_count)} that {pluralize('is', incompatible_mod_count)} INCOMPATIBLE:")
-    print(wrap_ansi(wrap_text(", ".join(incompatible_modname_list), initial_indent=" ", subsequent_indent=" "), "red"), end="\n\n")
-
-  log.info(f"Will download {format_number(total_size, 'iec')} worth of {pluralize("mod", len(mod_ids))} file.")
-
-  continue_action = True
-  answer = " "
-
-  try:
-    answer = input("Do you want to continue? [Y/n] ")
-  except KeyboardInterrupt:
-    continue_action = False
-
-  match answer.lower():
-    case "y" | "yes" | "":
-      pass
-    case "n" | "no" | _:
-      continue_action = False
-
-  if not continue_action:
-    raise AddModError("Cancelled")
-
-  mods_dir.mkdir(exist_ok=True)
-
-  while required_mod_ids:
-    mod_id = required_mod_ids.pop(0)
-
-    mod = resolved_data[mod_id]
-    mod_file = mod["file"]
-
-    log.info(f"Downloading version {mod['version_name']}...")
-    download_url(mod_file["url"], mods_dir / mod_file["filename"], hashes=mod_file["hashes"])
+      log.info(f"Downloading version {project['version_name']}...")
+      download_url(project_file["url"], project_dir / project_file["filename"], hashes=project_file["hashes"])
 
 def initialize_server(args):
   mc_version = args.mc_version
@@ -767,17 +745,18 @@ def initialize_server(args):
   else:
     log.info(f"Reinitializing server configuration...")
 
+  update_project_label(loader)
+
   mcserver_dir.mkdir(exist_ok=True)
+  project_dir.mkdir(exist_ok=True)
 
   configs_dir.mkdir(exist_ok=True)
-  project_index_dir.mkdir(exist_ok=True)
+  projects_index_dir.mkdir(exist_ok=True)
 
   tempfiles_dir.mkdir(exist_ok=True)
-  caches_dir.mkdir(exists_ok=True)
 
-  if not slug_id_path.exists():
-    with open(slug_id_path, "#") as slug_id_file:
-      json.dump({}, slug_id_path, indent=2)
+  if not slug_id_file.exists():
+    slug_id_file.write_text(json.dumps({}, indent=2))
 
   if mc_version is None:
     log.info("Getting Mojang game version manifest...")
@@ -786,11 +765,10 @@ def initialize_server(args):
     log.info(f"'--mc-version' was not specified, setting it to {latest_version} (the latest release version)")
     mc_version = latest_version
 
-  if (loader != "vanilla") and not loader_version:
+  if loader != "vanilla" and not loader_version:
     raise InitializeServerError("--loader and --loader-version must be set together")
 
   for config in default_configs.keys():
-    update_values = {}
     if config == "launcher":
       update_values = {
         "ram": {
@@ -848,7 +826,7 @@ def install_server(args):
 
   log.info("Server installation is complete.")
 
-def search_mod(args):
+def search_projects(args):
   query = " ".join(args.query)
   no_filter = args.no_filter
 
@@ -861,11 +839,11 @@ def search_mod(args):
   search_index = sort_by or modrinth_config.get("sort_by", "relevance")
   search_offset = search_limit * (page - 1)
 
-  search_filters = [["project_type:mod"]]
-  search_message = f"Searching mods with '{query}' in Modrinth sorted by {search_index}..."
-
   if not (configs_dir / "server.json").exists():
     log.warning("Configuration file for 'server' is missing, no version filter will be applied.")
+
+    search_filters = []
+    search_message = f"Searching projects with '{query}' in Modrinth sorted by {search_index}..."
   elif not no_filter:
     server_config = load_config("server")
     server_loader = server_config["loader"]
@@ -873,12 +851,14 @@ def search_mod(args):
     server_version = server_config["version"]
     loader_name = server_loader["name"]
 
+    update_project_label(loader_name)
+
     if loader_name == "vanilla":
       raise SearchModError("Vanilla Minecraft server does not support mod.")
 
-    search_message = f"Searching mods with '{query}' in Modrinth for {loader_name.capitalize()}, Minecraft server {server_version} sorted by {search_index}..."
+    search_message = f"Searching {pluralize(project_label)} with '{query}' in Modrinth for {loader_name.capitalize()}, Minecraft server {server_version} sorted by {search_index}..."
     search_filters = [
-      ["project_type:mod"],
+      [f"project_type:{project_label}"],
       ["server_side!=unsupported"],
       [f"categories:{loader_name}"],
       [f"versions:{server_version}"]
@@ -896,8 +876,8 @@ def search_mod(args):
     }
   )["text"])
 
-  mods_list = response.get("hits", [])
-  if not mods_list:
+  projects_list = response.get("hits", [])
+  if not projects_list:
     raise SearchModError(f"No mod found.")
 
   server_side_width = 0
@@ -906,92 +886,94 @@ def search_mod(args):
   downloads_width = 0
   follows_width = 0
 
-  for mod in mods_list:
-    server_side_width = max(server_side_width, len(mod.get("server_side", "unknown")))
-    client_side_width = max(client_side_width, len(mod.get("client_side", "unknown")))
+  for project in projects_list:
+    server_side_width = max(server_side_width, len(project.get("server_side", "unknown")))
+    client_side_width = max(client_side_width, len(project.get("client_side", "unknown")))
 
-    downloads = mod.get("downloads", 0)
+    downloads = project.get("downloads", 0)
     downloads_width = max(downloads_width, len(f"{pluralize('Download', downloads)}: {format_number(downloads)}"))
 
-    follows = mod.get("follows", 0)
+    follows = project.get("follows", 0)
     follows_width = max(follows_width, len(f"{pluralize('Follow', follows)}: {format_number(follows)}"))
 
   total_hits = response.get("total_hits", 0)
   total_pages = f"{math.ceil(total_hits / search_limit):,}"
 
   response_offset = response.get("offset", 0)
-  shown_mods_count = min(len(mods_list), search_limit)
+  shown_projects_count = min(len(projects_list), search_limit)
 
-  skipped_message = f"(skipped {response_offset:,} {pluralize('mod', response_offset)}) " if response_offset > 0 else ""
-  log.info(f"Showing {shown_mods_count:,} {pluralize('mod', shown_mods_count)} out of {total_hits:,} total {pluralize('mod', total_hits)} {skipped_message}| Page: {page:,}/{total_pages}")
+  skipped_message = f"(skipped {response_offset:,} {pluralize(project_label, response_offset)}) " if response_offset > 0 else ""
+  log.info(f"Showing {shown_projects_count:,} {pluralize(project_label, shown_projects_count)} out of {total_hits:,} total {pluralize(project_label, total_hits)} {skipped_message}| Page: {page:,}/{total_pages}")
 
-  for index, mod in enumerate(mods_list):
-    title = wrap_ansi(mod.get("title", "<No Title>"), "bold")
-    slug = mod.get("slug", "<No Slug>")
-    author = f"by {mod.get('author', '<No Author>')}"
+  for index, project in enumerate(projects_list):
+    title = wrap_ansi(project.get("title", "<No Title>"), "bold")
+    slug = project.get("slug", "<No Slug>")
+    author = f"by {project.get('author', '<No Author>')}"
 
-    mod_header = wrap_text(f"{title} ({slug}) {wrap_ansi(author, 'gray')}", subsequent_indent=" ")
+    project_header = wrap_text(f"{title} ({slug}) {wrap_ansi(author, 'gray')}", subsequent_indent=" ")
 
-    downloads = mod.get("downloads", 0)
-    follows = mod.get("follows", 0)
+    downloads = project.get("downloads", 0)
+    follows = project.get("follows", 0)
 
     downloads_text = f"{pluralize('Download', downloads)}: {format_number(downloads)}"
     follows_text = f"{pluralize('Follow', follows)}: {format_number(follows)}"
     downloads_follows = wrap_ansi(f"[ {downloads_text: <{downloads_width}} | {follows_text: <{follows_width}} ]", "gray")
 
-    server_side = wrap_ansi(f"Server: {mod_environment_color(mod.get('server_side', "unknown"), server_side_width)}", "bold")
-    client_side = mod_environment_color(mod.get("client_side", "unknown"), client_side_width)
+    server_side = wrap_ansi(f"Server: {mod_environment_color(project.get('server_side', "unknown"), server_side_width)}", "bold")
+    client_side = mod_environment_color(project.get("client_side", "unknown"), client_side_width)
 
-    description = wrap_text(mod["description"], initial_indent="  ", subsequent_indent=" ")
+    description = wrap_text(project["description"], initial_indent="  ", subsequent_indent=" ")
 
-    is_end_of_list = (index + 1) == shown_mods_count
+    is_end_of_list = (index + 1) == shown_projects_count
 
-    print(f"""{mod_header}
+    print(f"""{project_header}
 [ {server_side} | Client: {client_side} ] {downloads_follows}
 > https://modrinth.com/mod/{slug}
 {description}""", end="\n" if is_end_of_list else "\n\n")
 
-def show_mod(args):
-  mods = args.mods
+def show_projects(args):
+  projects = args.projects
 
-  log.info(f"Getting {pluralize('mod', len(mods))} information...")
-  mods_info = json.loads(fetch_url(
+  update_project_label(load_config("server", allow_missing=True))
+
+  log.info(f"Getting {pluralize(project_label, len(projects))} information...")
+  projects_info = json.loads(fetch_url(
     f"{modrinth_api_base}projects",
     params={
-      "ids": json.dumps(mods)
+      "ids": json.dumps(projects)
     }
   )["text"])
 
-  for mod_index, mod in enumerate(mods_info):
-    title = wrap_ansi(mod.get("title", "") or "<No Title>", "bold")
-    slug = wrap_ansi(mod.get("slug", f"<{mods[mod_index]}>"), "bold")
+  for project_index, project in enumerate(projects_info):
+    title = wrap_ansi(project.get("title", "") or "<No Title>", "bold")
+    slug = wrap_ansi(project.get("slug", f"<{projects[project_index]}>"), "bold")
 
-    downloads = wrap_ansi(format_number(mod.get("downloads", 0)), "bold")
-    followers = wrap_ansi(format_number(mod.get("followers", 0)), "bold")
+    downloads = wrap_ansi(format_number(project.get("downloads", 0)), "bold")
+    followers = wrap_ansi(format_number(project.get("followers", 0)), "bold")
 
-    mod_categories = ', '.join(mod.get('categories', ['None'])).title()
-    categories = wrap_text(f"Categories: {wrap_ansi(mod_categories, 'bold')}", subsequent_indent="  ")
+    project_categories = ', '.join(project.get('categories', ['None'])).title()
+    categories = wrap_text(f"Categories: {wrap_ansi(project_categories, 'bold')}", subsequent_indent=" ")
 
-    mod_loaders = ', '.join(mod.get('loaders', ['None'])).title()
-    loaders = wrap_text(f"Loaders: {wrap_ansi(mod_loaders, 'bold')}", subsequent_indent="  ")
+    project_loaders = ', '.join(project.get('loaders', ['None'])).title()
+    loaders = wrap_text(f"Loaders: {wrap_ansi(project_loaders, 'bold')}", subsequent_indent=" ")
 
-    mod_game_versions = ', '.join(mod.get('game_versions', ['None'])).title()
-    game_versions = wrap_text(f"Minecraft Versions: {wrap_ansi(mod_game_versions, 'bold')}", subsequent_indent=" ")
+    project_game_versions = ', '.join(project.get('game_versions', ['None'])).title()
+    game_versions = wrap_text(f"Minecraft Versions: {wrap_ansi(project_game_versions, 'bold')}", subsequent_indent=" ")
 
-    server_side = wrap_ansi(f"Server: {mod_environment_color(mod.get('server_side', '<Unknown>'))}", "bold")
-    client_side = mod_environment_color(mod.get("client_side", "<Unknown>"))
+    server_side = wrap_ansi(f"Server: {mod_environment_color(project.get('server_side', '<Unknown>'))}", "bold")
+    client_side = mod_environment_color(project.get("client_side", "<Unknown>"))
 
-    mod_license = mod.get("license", {})
-    license_name = wrap_ansi(mod_license.get("name", "") or "All Rights Reserved", "bold")
-    license_id = wrap_ansi(mod_license.get("id", "") or "LicenseRef-All-Rights-Reserved", "bold")
+    project_license = project.get("license", {})
+    license_name = wrap_ansi(project_license.get("name", "") or "All Rights Reserved", "bold")
+    license_id = wrap_ansi(project_license.get("id", "") or "LicenseRef-All-Rights-Reserved", "bold")
 
-    mod_homepage = mod.get("slug", mod["id"])
-    homepage = wrap_ansi(f"https://modrinth.com/mod/{mod_homepage}", "bold")
+    project_homepage = project.get("slug", project["id"])
+    homepage = wrap_ansi(f"https://modrinth.com/mod/{project_homepage}", "bold")
 
-    mod_description = mod.get('description', '<No Description>')
-    description = wrap_text(f"Description: {wrap_ansi(mod_description, 'bold')}", subsequent_indent=" ")
+    project_description = project.get('description', '<No Description>')
+    description = wrap_text(f"Description: {wrap_ansi(project_description, 'bold')}", subsequent_indent=" ")
 
-    if (mod_index >= 1): print()
+    if (project_index >= 1): print()
     print(f"""Name: {title} ({slug})
 Downloads: {downloads}
 Followers: {followers}
@@ -1100,24 +1082,24 @@ def main():
 
   #Mod management
   # 'add' command
-  parser_add = subparsers.add_parser("add", help="Add mod(s) from Modrinth")
-  parser_add.add_argument("projects", nargs="+", help="Slug (or ID) of the mod(s)")
+  parser_add = subparsers.add_parser("add", help="Add project(s) from Modrinth")
+  parser_add.add_argument("projects", nargs="+", help="Slug (or ID) of the project(s)")
   parser_add.set_defaults(func=add_projects)
 
   # 'search' command
-  parser_search = subparsers.add_parser("search", help="Search  in Modrinth")
+  parser_search = subparsers.add_parser("search", help="Search projects in Modrinth")
   parser_search.add_argument("query", nargs="*", help="Query to search")
   parser_search.add_argument("-n", "--no-filter",  action="store_true", help="No search filter when searching")
 
   parser_search.add_argument("-p", "--page", default=1, type=int, help="Page number", metavar="N")
   parser_search.add_argument("-s", "--sort-by", choices=["downloads", "follows", "newest", "relevance", "updated"], default="relevance", type=str, help="Sort the result with")
 
-  parser_search.set_defaults(func=search_mod)
+  parser_search.set_defaults(func=search_projects)
 
   # 'show' command
   parser_show = subparsers.add_parser("show", help="Show information about project(s) in Modrinth")
-  parser_show.add_argument("project", help="Slug (or ID) of the project(s)", nargs="+")
-  parser_show.set_defaults(func=show_mod)
+  parser_show.add_argument("projects", help="Slug (or ID) of the project(s)", nargs="+")
+  parser_show.set_defaults(func=show_projects)
 
   args = parser.parse_args()
 
