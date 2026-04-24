@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.4] - 2026-04-25
+
+### Fixed
+- Why so many bug fixes?
+
 ## [1.13.3] - 2026-04-25
 
 ### Fixed
@@ -50,7 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased] : https://github.com/Othecat35/MCServer/compare/1.13.3...HEAD
+[unreleased] : https://github.com/Othecat35/MCServer/compare/1.13.4...HEAD
+[1.13.4] : https://github.com/Othecat35/MCServer/compare/1.13.3...1.13.4
 [1.13.3] : https://github.com/Othecat35/MCServer/compare/1.13.2...1.13.3
 [1.13.2] : https://github.com/Othecat35/MCServer/compare/1.13.1...1.13.2
 [1.13.1] : https://github.com/Othecat35/MCServer/compare/1.13.0...1.13.1

@@ -107,6 +107,7 @@ class DownloadURLError(Exception): pass
 
 class ResolveProjectsError(Exception):
   def __init__(self, message: str, mod_id: str, dependants: list | str = None):
+    if required_dependants is None: required_dependants = []
     if isinstance(dependants, str): dependants = [dependants]
     super().__init__(message)
 
@@ -115,8 +116,9 @@ class ResolveProjectsError(Exception):
 
 class ResolveProjectsConflictsError(Exception):
   def __init__(self, project_id: str, incompatible_dependants: list | str, required_dependants: list | str = None):
-    if isinstance(incompatible_dependants, str): incompatible_dependants = [incompatible_dependants]
+    if required_dependants is None: required_dependants = []
     if isinstance(required_dependants, str): required_dependants = [required_dependants]
+    if isinstance(incompatible_dependants, str): incompatible_dependants = [incompatible_dependants]
 
     required_join = "', '".join(required_dependants)
     required_message = f" but required by '{required_join}'" if required_dependants else " but it is requested"
@@ -127,7 +129,7 @@ class ResolveProjectsConflictsError(Exception):
     self.project_id = project_id
 
     self.incompatible_dependants = incompatible_dependants
-    self.required_dependants = required_dependants or []
+    self.required_dependants = required_dependants
 
 # Color functions
 def ansi(name: str):
@@ -767,7 +769,7 @@ def initialize_server(args):
   if loader != "vanilla" and not loader_version:
     raise InitializeServerError("--loader and --loader-version must be set together")
 
-  if loader != "vanilla":
+  if project_dir is not None:
     project_dir.mkdir(exist_ok=True)
 
   for config in default_configs.keys():
