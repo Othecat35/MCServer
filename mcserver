@@ -102,7 +102,7 @@ class ShowProjectsError(Exception): pass
 class StartServerError(Exception): pass
 
 class EULAAgreementError(Exception): pass
-class FetchProjectVersionMissingError(Exception): pass
+class FetchProjectVersionError(Exception): pass
 class DownloadURLError(Exception): pass
 
 class ResolveProjectsError(Exception):
@@ -445,7 +445,7 @@ def fetch_mod_version(project_id: str, game_versions: list | str, loaders_name: 
     })["text"])
   except urllib.error.HTTPError as error:
     if error.code == 404:
-      raise FetchProjectVersionMissingError(f"Project '{project_id}' is not found") from error
+      raise FetchProjectVersionError(f"Project '{project_id}' is not found") from error
 
   if not response:
     raise FetchProjectVersionError(f"No version found in project '{project_id}' for {pluralize('loader', len(loaders_name))} {', '.join(loaders_name).title()}, Minecraft {pluralize('version', len(game_versions))} {', '.join(game_versions)}")
@@ -549,7 +549,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
       log.debug("Fetching project version")
       try:
         version = fetch_mod_version(project_id, game_version, loader_name, True)
-      except FetchProjectVersionMissingError:
+      except FetchProjectVersionError:
         raise ResolveProjectsError(f"Project '{project_id}' not found", project_id)
 
       project_id = version["project_id"]
