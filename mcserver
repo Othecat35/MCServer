@@ -445,10 +445,10 @@ def fetch_mod_version(project_id: str, game_versions: list | str, loaders_name: 
     })["text"])
   except urllib.error.HTTPError as error:
     if error.code == 404:
-      raise FetchModVersionMissingError(f"Project '{project_id}' is not found") from error
+      raise FetchProjectVersionMissingError(f"Project '{project_id}' is not found") from error
 
   if not response:
-    raise FetchModVersionError(f"No version found in project '{project_id}' for {pluralize('loader', len(loaders_name))} {', '.join(loaders_name).title()}, Minecraft {pluralize('version', len(game_versions))} {', '.join(game_versions)}")
+    raise FetchProjectVersionError(f"No version found in project '{project_id}' for {pluralize('loader', len(loaders_name))} {', '.join(loaders_name).title()}, Minecraft {pluralize('version', len(game_versions))} {', '.join(game_versions)}")
 
   selected_version = response[0]
 
@@ -459,7 +459,7 @@ def fetch_mod_version(project_id: str, game_versions: list | str, loaders_name: 
       break
 
   if selected_file is None:
-    raise FetchModVersionError(f"This version ({selected_version['version_id']}) of the project '{project_id}' does not have any file marked as primary")
+    raise FetchProjectVersionError(f"This version ({selected_version['version_id']}) of the project '{project_id}' does not have any file marked as primary")
 
   dependencies = {}
   for dependency in selected_version["dependencies"]:

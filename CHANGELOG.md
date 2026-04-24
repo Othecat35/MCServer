@@ -6,7 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.13.1] - 2026-04-24
+## [1.13.2] - 2026-04-25
+
+### Fixed
+- Error name not reflecting changes
+
+## [1.13.1] - 2026-04-25
 
 ### Fixed
 - It now doesn't try to make mods/ or projects/ directory for "vanilla" server
@@ -40,7 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased] : https://github.com/Othecat35/MCServer/compare/1.13.1...HEAD
+[unreleased] : https://github.com/Othecat35/MCServer/compare/1.13.2...HEAD
+[1.13.2] : https://github.com/Othecat35/MCServer/compare/1.13.1...1.13.2
 [1.13.1] : https://github.com/Othecat35/MCServer/compare/1.13.0...1.13.1
 [1.13.0] : https://github.com/Othecat35/MCServer/compare/1.12.2...1.13.0
 [1.12.2] : https://github.com/Othecat35/MCServer/compare/1.12.1...1.12.2
