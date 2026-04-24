@@ -1105,7 +1105,7 @@ def main():
   parser_add.set_defaults(func=add_projects)
 
   # 'search' command
-  parser_search = subparsers.add_parser("search", help="Search mods in Modrinth")
+  parser_search = subparsers.add_parser("search", help="Search  in Modrinth")
   parser_search.add_argument("query", nargs="*", help="Query to search")
   parser_search.add_argument("-n", "--no-filter",  action="store_true", help="No search filter when searching")
 
@@ -1115,8 +1115,8 @@ def main():
   parser_search.set_defaults(func=search_mod)
 
   # 'show' command
-  parser_show = subparsers.add_parser("show", help="Show information about mod(s) from Modrinth")
-  parser_show.add_argument("mods", help="Slug (or ID) of the mod(s)", nargs="+")
+  parser_show = subparsers.add_parser("show", help="Show information about project(s) in Modrinth")
+  parser_show.add_argument("project", help="Slug (or ID) of the project(s)", nargs="+")
   parser_show.set_defaults(func=show_mod)
 
   args = parser.parse_args()
