@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.1] - 2026-04-24
+
+### Fixed
+- It now doesn't try to make mods/ or projects/ directory for "vanilla" server
+
 ## [1.13.0] - 2026-04-24
 
 ### Added

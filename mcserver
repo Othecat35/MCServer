@@ -748,7 +748,6 @@ def initialize_server(args):
   update_project_label(loader)
 
   mcserver_dir.mkdir(exist_ok=True)
-  project_dir.mkdir(exist_ok=True)
 
   configs_dir.mkdir(exist_ok=True)
   projects_index_dir.mkdir(exist_ok=True)
@@ -767,6 +766,9 @@ def initialize_server(args):
 
   if loader != "vanilla" and not loader_version:
     raise InitializeServerError("--loader and --loader-version must be set together")
+
+  if loader != "vanilla":
+    project_dir.mkdir(exist_ok=True)
 
   for config in default_configs.keys():
     if config == "launcher":
