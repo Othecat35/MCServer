@@ -315,22 +315,19 @@ def load_config(config_name: str, allow_missing: bool = False):
   except PermissionError as error:
     raise PermissionError(f"Cannot read configuration file for '{config_name}': Permission denied to read file") from error
 
-project_label = None
+project_label = "project"
 project_dir = None
 
 def update_project_label(loader_name: str):
   global project_label
   global project_dir
 
-  if project_label is None:
-    if loader_name in mods_loader:
-      project_label = "mod"
-      project_dir = mods_dir
-    elif loader_name in plugins_loader:
-      project_label = "plugin"
-      project_dir = plugins_dir
-    else:
-      project_label = "project"
+  if loader_name in mods_loader:
+    project_label = "mod"
+    project_dir = mods_dir
+  elif loader_name in plugins_loader:
+    project_label = "plugin"
+    project_dir = plugins_dir
 
 # Mod indexing
 def project_index_exists(project_id: str) -> bool:
