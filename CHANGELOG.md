@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.13.6] - 2026-04-26
+## [1.13.6] - 2026-04-27
 
 ### Added
 - Check to make sure only adding slug -> id for required and incompatible only
