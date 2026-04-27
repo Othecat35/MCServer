@@ -3,11 +3,11 @@
 A Python script CLI tool that is created for helping with managing self-hosted Minecraft: Java Edition server with Modrinth intergration.
 
 ## Windows
-I'm not sure if this script would work in Windows, because of my environment is just Linux. But as an alternative, try using WSL.
+This project is not designed with Windows in mind, try use WSL.
 
 ## Requirements
 - Python 3.12 or later
-- JRE (depends on Minecraft version): (currently not supporting multiple JRE selection nor check if they even exists or work with the server version)
+- JRE (depends on Minecraft version): (currently not supporting multiple JRE selection or work with the server version)
   - MC 1.0 - 1.16.5 : JRE 8
   - MC 1.17 - 1.17.1 : JRE 16
   - MC 1.18 - 1.20.4 : JRE 17
@@ -32,7 +32,8 @@ I'm not sure if this script would work in Windows, because of my environment is 
 - Install the server: `mcserver install`
 - Search mods from Modrinth: `mcserver search [<query>] [options]`
 - Show mods information from Modrinth: `mcserver show <mods>`
+- Add mods (and its dependencies): `mcserver add <mods>`
 - Start the server: `mcserver start`
 
 ## Note
-This project is just a personal project, don't take this seriously! But, I do want to make this much functional for those self-hoster nerds.
+This project is a personal project, but it might be useful for you. (selfhoster nerd!)
