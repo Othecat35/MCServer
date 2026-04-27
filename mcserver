@@ -107,7 +107,7 @@ class DownloadURLError(Exception): pass
 
 class ResolveProjectsError(Exception):
   def __init__(self, message: str, mod_id: str, dependants: list | str = None):
-    if required_dependants is None: required_dependants = []
+    if dependants is None: dependants = []
     if isinstance(dependants, str): dependants = [dependants]
     super().__init__(message)
 
@@ -620,9 +620,10 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
   })["text"])
 
   for project in projects:
-    slug_id[project["slug"]] = {
-      "id": project["id"]
-    }
+    if resolved_data[project["id"]]["type"] in (project_dependency_types["required"], project_dependency_types["incompatible"]):
+      slug_id[project["slug"]] = {
+        "id": project["id"]
+      }
 
     project_data = resolved_data[project["id"]]
 
@@ -756,15 +757,15 @@ def initialize_server(args):
   if not slug_id_file.exists():
     slug_id_file.write_text(json.dumps({}, indent=2))
 
-  if mc_version is None:
+  if mc_version == "latest":
     log.info("Getting Mojang game version manifest...")
     latest_version = json.loads(fetch_url("https://launchermeta.mojang.com/mc/game/version_manifest.json")["text"])["latest"]["release"]
-
-    log.info(f"'--mc-version' was not specified, setting it to {latest_version} (the latest release version)")
     mc_version = latest_version
 
-  if loader != "vanilla" and not loader_version:
-    raise InitializeServerError("--loader and --loader-version must be set together")
+  if loader == "vanilla":
+    loader_version = None
+
+  # TODO: add the "latest" for loader version too
 
   if project_dir is not None:
     project_dir.mkdir(exist_ok=True)
@@ -1049,57 +1050,60 @@ def main():
   )
 
   # Parser
-  parser = argparse.ArgumentParser(prog="mcserver",
-    description="A CLI tool to help managing Minecraft: Java Edition server.",
-    epilog="Not created for Windows.")
+  parser = argparse.ArgumentParser(
+    prog="mcserver",
+    description="A CLI tool for managing a Minecraft: Java Edition server.",
+    epilog="Not created for Windows.",
+    allow_abbrev=False)
 
-  parser.add_argument("--version",
+  parser.set_defaults(func=print_help, parser=parser)
+  parser.add_argument(
+    "-v", "--version",
     action="version",
     version="%(prog)s " + __version__)
 
-  parser.set_defaults(func=print_help, parser=parser)
   subparsers = parser.add_subparsers(title="Commands")
 
   #Setup
   # 'init' command
-  parser_init = subparsers.add_parser("init", help="Initialize server configuration")
+  parser_init = subparsers.add_parser("init", help="Initialize the server configurations")
 
-  parser_init.add_argument("--mc-version", help="Version of the Minecraft server", metavar="version") # Auto fetch latest when None (or not specified)
+  parser_init.add_argument("--mc-version", default="latest", type=str, help="Minecraft version of the server", metavar="version")
 
-  parser_init.add_argument("--loader", choices=loaders_list, default="vanilla", help="Mod loader for the server (vanilla for unmodded server)")
-  parser_init.add_argument("--loader-version", help="Version of the server's mod loader (not checked if exists)", metavar="version")
+  parser_init.add_argument("--loader", default="vanilla", type=str, choices=loaders_list, help="Loader for the server (vanilla for unmodded server)")
+  parser_init.add_argument("--loader-version", default="latest", type=str, help="Version of the loader", metavar="version")
 
-  parser_init.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for server (in Mebibyte)", metavar="size")
-  parser_init.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for server (in Mebibyte)", metavar="size")
+  parser_init.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for the server (in Mebibyte)", metavar="size")
+  parser_init.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibyte)", metavar="size")
   parser_init.set_defaults(func=initialize_server)
 
   # 'install' command
-  parser_install = subparsers.add_parser("install", help="Install the server")
+  parser_install = subparsers.add_parser("install", description="Install the server", help="Install the server")
   parser_install.set_defaults(func=install_server)
 
   # 'start' command
-  parser_start = subparsers.add_parser("start", help="Start the server")
+  parser_start = subparsers.add_parser("start", description="Start the server", help="Start the server")
   parser_start.set_defaults(func=start_server)
 
   #Mod management
   # 'add' command
-  parser_add = subparsers.add_parser("add", help="Add project(s) from Modrinth")
-  parser_add.add_argument("projects", nargs="+", help="Slug (or ID) of the project(s)")
+  parser_add = subparsers.add_parser("add", description="Add project(s) from Modrinth", help="Add project(s) from Modrinth")
+  parser_add.add_argument("projects", nargs="+", type=str, help="Slug (or ID) of the project(s)")
   parser_add.set_defaults(func=add_projects)
 
   # 'search' command
-  parser_search = subparsers.add_parser("search", help="Search projects in Modrinth")
-  parser_search.add_argument("query", nargs="*", help="Query to search")
-  parser_search.add_argument("-n", "--no-filter",  action="store_true", help="No search filter when searching")
+  parser_search = subparsers.add_parser("search", description="Search projects in Modrinth", help="Search projects in Modrinth")
+  parser_search.add_argument("query", nargs="*", type=str, help="Query to search")
+
+  parser_search.add_argument("-n", "--no-filter", action="store_true", help="No search filter from server configuration")
 
   parser_search.add_argument("-p", "--page", default=1, type=int, help="Page number", metavar="N")
-  parser_search.add_argument("-s", "--sort-by", choices=["downloads", "follows", "newest", "relevance", "updated"], default="relevance", type=str, help="Sort the result with")
-
+  parser_search.add_argument("-s", "--sort-by", default="relevance", type=str, choices=["downloads", "follows", "newest", "relevance", "updated"], help="Sort the search result")
   parser_search.set_defaults(func=search_projects)
 
   # 'show' command
-  parser_show = subparsers.add_parser("show", help="Show information about project(s) in Modrinth")
-  parser_show.add_argument("projects", help="Slug (or ID) of the project(s)", nargs="+")
+  parser_show = subparsers.add_parser("show", description="Show information about project(s) in Modrinth", help="Show information about project(s) in Modrinth")
+  parser_show.add_argument("projects", nargs="+", type=str, help="Slug (or ID) of the project(s)")
   parser_show.set_defaults(func=show_projects)
 
   args = parser.parse_args()

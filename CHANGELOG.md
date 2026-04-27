@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.6] - 2026-04-26
+
+### Added
+- Check to make sure only adding slug -> id for required and incompatible only
+
+### Changed
+- Some commands description in help
+
+### Fixed
+- Remove unused data in an error message
+
 ## [1.13.5] - 2026-04-25
 
 ### Fixed
@@ -60,7 +71,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased] : https://github.com/Othecat35/MCServer/compare/1.13.5...HEAD
+[unreleased] : https://github.com/Othecat35/MCServer/compare/1.13.6...HEAD
+[1.13.6] : https://github.com/Othecat35/MCServer/compare/1.13.5...1.13.6
 [1.13.5] : https://github.com/Othecat35/MCServer/compare/1.13.4...1.13.5
 [1.13.4] : https://github.com/Othecat35/MCServer/compare/1.13.3...1.13.4
 [1.13.3] : https://github.com/Othecat35/MCServer/compare/1.13.2...1.13.3
