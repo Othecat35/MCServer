@@ -7,6 +7,7 @@ import logging as log
 
 from pathlib import Path
 from collections import deque
+from typing import TypedDict, Required
 
 # Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
@@ -92,6 +93,30 @@ projects_index_dir = mcserver_dir / "projects_index"
 slug_id_file = projects_index_dir / ".slug_id.json"
 
 tempfiles_dir = mcserver_dir / "tempfiles"
+
+# TypedDict
+    # project_versions.append({
+    #   "version_name": version["name"],
+    #   "version_number": version["version_number"],
+    #   "changelog": version["changelog"],
+    #   "dependencies": dependencies,
+    #   "game_versions": version["game_versions"],
+    #   "version_type": version["version_type"],
+    #   "loader_names": version["loaders"],
+    #   "featured": version["featured"],
+    #   "version_status": version["status"],
+    #   "requested_status": version["requested_status"],
+    #   "version_id": version["id"],
+    #   "project_id": version["project_id"],
+    #   "author_id": version["author_id"],
+    #   "date_published": version["date_published"],
+    #   "downloads_count": version["downloads"],
+    #   "changelog_url": version["changelog_url"],
+    #   "files": version["files"]
+    # })
+class ProjectVersion(TypedDict):
+  version_name: str
+
 
 # Error classes
 class AddProjectsError(Exception): pass
@@ -430,6 +455,53 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
         raise DownloadURLError(f"Downloaded file '{tempfile.relative_to(current_dir)}' hash does not match with the expected {hash_name} hash")
 
   shutil.move(tempfile, filename)
+
+# Modrinth API
+def modrinth_fetch_project_versions(project_id: str, game_versions: list = None, loader_names: list = None, featured_only: bool = False, include_changelog: bool = False) -> list:
+  if game_versions is None: game_versions = []
+  if loader_names is None: loader_names = []
+
+  query_parameters = {
+    "loaders": json.dumps(loader_names),
+    "game_versions": json.dumps(game_versions),
+    "featured": json.dumps(featured_only),
+    "include_changelog": json.dumps(include_changelog)
+  }
+
+  versions = json.loads(fetch_url(f"{modrinth_api_base}v2/project/{project_id}/version", params=query_parameters)["text"])
+
+  project_versions = []
+  for version in versions:
+    dependencies = []
+    for dependency in version["dependencies"]:
+      dependencies.append({
+        "version_id": dependency["version_id"],
+        "project_id": dependency["project_id"],
+        "filename": dependency["file_name"],
+        "dependency_type": dependency["dependency_type"]
+      })
+
+    project_versions.append({
+      "version_name": version["name"],
+      "version_number": version["version_number"],
+      "changelog": version["changelog"],
+      "dependencies": dependencies,
+      "game_versions": version["game_versions"],
+      "version_type": version["version_type"],
+      "loader_names": version["loaders"],
+      "featured": version["featured"],
+      "version_status": version["status"],
+      "requested_status": version["requested_status"],
+      "version_id": version["id"],
+      "project_id": version["project_id"],
+      "author_id": version["author_id"],
+      "date_published": version["date_published"],
+      "downloads_count": version["downloads"],
+      "changelog_url": version["changelog_url"],
+      "files": version["files"]
+    })
+
+  return project_versions
 
 # Mod Fetching
 def fetch_mod_version(project_id: str, game_versions: list | str, loaders_name: list | str, skip_embedded_dependencies: bool = False):
