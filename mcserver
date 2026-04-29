@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "1.13.6"
+__version__ = "1.13.7"
 
 import argparse, copy, hashlib, json, math, os, shutil, sys, textwrap, time
 import urllib.parse, urllib.request
@@ -7,7 +7,7 @@ import logging as log
 
 from pathlib import Path
 from collections import deque
-from typing import TypedDict, Required
+from typing import TypedDict, NotRequired
 
 # Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
@@ -15,7 +15,7 @@ log_level = log.DEBUG if debug_mode else log.INFO
 
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"Othecat35/MCServer/{__version__}"
-modrinth_api_base = "https://api.modrinth.com/v2/"
+modrinth_api_base = "http://127.0.0.1:1104/api.modrinth.com/v2/"#"https://api.modrinth.com/v2/"
 
 mods_loader = ["fabric"]
 plugins_loader = ["paper"]
@@ -33,7 +33,7 @@ special_plural = {
   "this": "these"
 }
 
-project_dependency_types = {
+version_dependency_type = {
   "embedded": 0,
   "optional": 1,
   "required": 2,
@@ -95,28 +95,42 @@ slug_id_file = projects_index_dir / ".slug_id.json"
 tempfiles_dir = mcserver_dir / "tempfiles"
 
 # TypedDict
-    # project_versions.append({
-    #   "version_name": version["name"],
-    #   "version_number": version["version_number"],
-    #   "changelog": version["changelog"],
-    #   "dependencies": dependencies,
-    #   "game_versions": version["game_versions"],
-    #   "version_type": version["version_type"],
-    #   "loader_names": version["loaders"],
-    #   "featured": version["featured"],
-    #   "version_status": version["status"],
-    #   "requested_status": version["requested_status"],
-    #   "version_id": version["id"],
-    #   "project_id": version["project_id"],
-    #   "author_id": version["author_id"],
-    #   "date_published": version["date_published"],
-    #   "downloads_count": version["downloads"],
-    #   "changelog_url": version["changelog_url"],
-    #   "files": version["files"]
-    # })
+#Project Version
+class ProjectVersionDependency(TypedDict):
+  project_id: str | None
+  dependency_type: int
+  version_id: str | None
+  filename: str | None
+
+class ProjectVersionFileHashes(TypedDict):
+  sha512: str
+  sha1: str
+
+class ProjectVersionFile(TypedDict):
+  url: str
+  filename: str
+  hashes: ProjectVersionFileHashes
+  file_size: int
+  file_type: str | None
+
 class ProjectVersion(TypedDict):
   version_name: str
-
+  version_number: str
+  changelog: NotRequired[str | None]
+  dependencies: list[ProjectVersionDependency]
+  game_versions: list[str]
+  version_type: str
+  loader_names: list[str]
+  featured: bool
+  version_status: str
+  requested_status: str | None
+  version_id: str
+  project_id: str
+  author_id: str
+  date_published: str
+  download_count: int
+  files: list[ProjectVersionFile]
+  primary_file: ProjectVersionFile
 
 # Error classes
 class AddProjectsError(Exception): pass
@@ -272,7 +286,7 @@ def pluralize(singular: str, count: int = 0, plural: str = ""):
 
   return singular
 
-def wrap_text(text: str, initial_indent: str = "", subsequent_indent: str = "", width: int = 80):
+def wrap_text(text: str, initial_indent: str = "", subsequent_indent: str = "", width: int = None):
   if not isinstance(initial_indent, str):
     raise ValueError(f"initial_indent must be str, not {type(initial_indent)}")
   elif not isinstance(subsequent_indent, str):
@@ -457,34 +471,60 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
   shutil.move(tempfile, filename)
 
 # Modrinth API
-def modrinth_fetch_project_versions(project_id: str, game_versions: list = None, loader_names: list = None, featured_only: bool = False, include_changelog: bool = False) -> list:
-  if game_versions is None: game_versions = []
-  if loader_names is None: loader_names = []
+def fetch_project_versions(project_id: str, game_versions: list | str = None, loader_names: list | str = None, include_changelog: bool = False)-> list[ProjectVersion]:
+  if isinstance(game_versions, str): game_versions = [game_versions]
+  if isinstance(loader_names, str): loader_names = [loader_names]
+
+  # NOTE: 'featured' query parameter can't be determined what it changed of the data, so it isn't used for now
+  # function parameter that is related: featured_only: bool = False (before include_changelog and after loader_names)
 
   query_parameters = {
     "loaders": json.dumps(loader_names),
     "game_versions": json.dumps(game_versions),
-    "featured": json.dumps(featured_only),
+    #"featured": json.dumps(featured_only),
     "include_changelog": json.dumps(include_changelog)
   }
 
-  versions = json.loads(fetch_url(f"{modrinth_api_base}v2/project/{project_id}/version", params=query_parameters)["text"])
+  fetched_versions = json.loads(fetch_url(f"{modrinth_api_base}project/{project_id}/version", params=query_parameters)["text"])
 
   project_versions = []
-  for version in versions:
+  for version in fetched_versions:
+    # Dependency converter
     dependencies = []
     for dependency in version["dependencies"]:
       dependencies.append({
-        "version_id": dependency["version_id"],
         "project_id": dependency["project_id"],
-        "filename": dependency["file_name"],
-        "dependency_type": dependency["dependency_type"]
+        "dependency_type": version_dependency_type[dependency["dependency_type"]],
+        "version_id": dependency["version_id"],
+        "filename": dependency["file_name"]
       })
 
+    # File filter
+    files = []
+    primary_file = {}
+
+    for file in version["files"]:
+      file_data = {
+        "url": file["url"],
+        "filename": file["filename"],
+        "hashes": file["hashes"],
+        "file_size": file["size"],
+        "file_type": file["file_type"],
+      }
+
+      if file["primary"]:
+        primary_file = file_data
+      else:
+        files.append(file_data)
+
+    if not primary_file:
+      primary_file = files[0]
+
+    # Reconstruction
     project_versions.append({
       "version_name": version["name"],
       "version_number": version["version_number"],
-      "changelog": version["changelog"],
+      "changelog": version.get("changelog"),
       "dependencies": dependencies,
       "game_versions": version["game_versions"],
       "version_type": version["version_type"],
@@ -496,74 +536,26 @@ def modrinth_fetch_project_versions(project_id: str, game_versions: list = None,
       "project_id": version["project_id"],
       "author_id": version["author_id"],
       "date_published": version["date_published"],
-      "downloads_count": version["downloads"],
-      "changelog_url": version["changelog_url"],
-      "files": version["files"]
+      "download_count": version["downloads"],
+      "files": files,
+      "primary_file": primary_file
     })
 
   return project_versions
 
-# Mod Fetching
-def fetch_mod_version(project_id: str, game_versions: list | str, loaders_name: list | str, skip_embedded_dependencies: bool = False):
-  if isinstance(game_versions, str): game_versions = [game_versions]
-  if isinstance(loaders_name, str): loaders_name = [loaders_name]
+# Resolve prejects dependencies
+def adapt_dependencies_data(dependencies: List[ProjectVersionDependency]) -> dict:
+  dependencies_data = {}
+  for dependency in dependencies:
+    if dependency["project_id"] is not None and dependency["dependency_type"] != version_dependency_type["embedded"]:
+      dependencies_data[dependency["project_id"]] = dependency["dependency_type"]
 
-  try:
-    response = json.loads(fetch_url(f"{modrinth_api_base}project/{project_id}/version", params={
-      "loaders": json.dumps(loaders_name),
-      "game_versions": json.dumps(game_versions),
-      "include_changelog": "false"
-    })["text"])
-  except urllib.error.HTTPError as error:
-    if error.code == 404:
-      raise FetchProjectVersionError(f"Project '{project_id}' is not found") from error
-
-  if not response:
-    raise FetchProjectVersionError(f"No version found in project '{project_id}' for {pluralize('loader', len(loaders_name))} {', '.join(loaders_name).title()}, Minecraft {pluralize('version', len(game_versions))} {', '.join(game_versions)}")
-
-  selected_version = response[0]
-
-  selected_file = None
-  for file in selected_version["files"]:
-    if file["primary"]:
-      selected_file = file
-      break
-
-  if selected_file is None:
-    raise FetchProjectVersionError(f"This version ({selected_version['version_id']}) of the project '{project_id}' does not have any file marked as primary")
-
-  dependencies = {}
-  for dependency in selected_version["dependencies"]:
-    dependency_type = project_dependency_types[dependency["dependency_type"]]
-
-    if skip_embedded_dependencies and dependency_type == project_dependency_types["embedded"]:
-      continue
-
-    dependencies[dependency["project_id"]] = dependency_type
-
-  return {
-    "version_id": selected_version["id"],
-    "version_name": selected_version["name"],
-    "version_number": selected_version["version_number"],
-    "version_type": selected_version["version_type"],
-
-    "project_id": selected_version["project_id"],
-    "released_date": selected_version["date_published"],
-    "download_count": selected_version["downloads"],
-
-    "dependencies": dependencies,
-    "primary_file": {
-      "url": selected_file["url"],
-      "filename": selected_file["filename"],
-      "size": selected_file["size"],
-      "hashes": selected_file["hashes"]
-    }
-  }
+  return dependencies_data
 
 def filter_dependencies_type(dependencies: dict, filter_type: str):
   dependencies_list = []
   for dependency_id, dependency_type in dependencies.items():
-    if dependency_type == project_dependency_types[filter_type]:
+    if dependency_type == version_dependency_type[filter_type]:
       dependencies_list.append(dependency_id)
 
   return dependencies_list
@@ -573,6 +565,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
   unresolved_ids = deque()
   resolved_data = {}
 
+  # Initial seeding
   slug_id = json.loads(slug_id_file.read_text())
   for project_id in projects_id:
     if project_id in slug_id:
@@ -585,10 +578,11 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
     unresolved_ids.append(project_id)
     resolved_data[project_id] = {
       "manual": True,
-      "type": project_dependency_types["required"],
+      "type": version_dependency_type["required"],
       "dependants": {}
     }
 
+  # Main code
   while unresolved_ids:
     project_id = unresolved_ids.popleft()
     project_data = resolved_data.pop(project_id)
@@ -601,7 +595,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
       project_index_data = read_project_index(project_id)
       project_index_type = project_index_data["type"]
 
-      if project_index_type == project_dependency_types["incompatible"]:
+      if project_index_type == version_dependency_type["incompatible"]:
         project_index_dependants = project_index_data["dependants"]
 
         incompatible_dependants = filter_dependencies_type(project_index_dependants, "incompatible")
@@ -618,11 +612,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
 
     if not skip_fetch_version:
       log.debug("Fetching project version")
-      try:
-        version = fetch_mod_version(project_id, game_version, loader_name, True)
-      except FetchProjectVersionError:
-        raise ResolveProjectsError(f"Project '{project_id}' not found", project_id)
-
+      version = fetch_project_versions(project_id, game_version, loader_name)[0]
       project_id = version["project_id"]
 
       # Check if entry with project ID still exists (meaning we're still using slug)
@@ -631,7 +621,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
         existing_entry = resolved_data.pop(project_id)
 
         # Check if existing entry is marked as incompatible
-        if existing_entry["type"] == project_dependency_types["incompatible"]:
+        if existing_entry["type"] == version_dependency_type["incompatible"]:
           incompatible_dependants = filter_dependencies_type(existing_entry["dependants"], "incompatible")
           raise ResolveProjectsConflictsError(project_id, incompatible_dependants)
 
@@ -642,7 +632,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
       project_data["version_name"] = version["version_name"]
       project_data["version_number"] = version["version_number"]
 
-      project_data["dependencies"] = version["dependencies"]
+      project_data["dependencies"] = adapt_dependencies_data(version["dependencies"])
       project_data["file"] = version["primary_file"]
 
     for dependency_id, dependency_type in project_data["dependencies"].items():
@@ -651,14 +641,14 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
         dependency_data_type = dependency_data["type"]
         dependency_data_dependants = dependency_data["dependants"]
 
-        if dependency_type == project_dependency_types["required"]:
-          if dependency_data_type == project_dependency_types["incompatible"]:
+        if dependency_type == version_dependency_type["required"]:
+          if dependency_data_type == version_dependency_type["incompatible"]:
             incompatible_dependants = filter_dependencies_type(dependency_data_dependants, "incompatible")
             raise ResolveProjectsConflictsError(dependency_id, incompatible_dependants, project_id)
-          elif dependency_data_type == project_dependency_types["optional"]:
+          elif dependency_data_type == version_dependency_type["optional"]:
             log.debug(f"Adding initially optional dependency '{project_id}' to unresolved")
             unresolved_ids.append(dependency_id)
-        elif dependency_type == project_dependency_types["incompatible"] and dependency_data_type == project_dependency_types["required"]:
+        elif dependency_type == version_dependency_type["incompatible"] and dependency_data_type == version_dependency_type["required"]:
           required_dependants = filter_dependencies_type(dependency_data_dependants, "required")
           raise ResolveProjectsConflictsError(dependency_id, project_id, required_dependants)
 
@@ -676,7 +666,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
         }
 
         # Only process required mods
-        if dependency_type == project_dependency_types["required"]:
+        if dependency_type == version_dependency_type["required"]:
           unresolved_ids.append(dependency_id)
 
     resolved_data[project_id] = project_data
@@ -692,7 +682,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
   })["text"])
 
   for project in projects:
-    if resolved_data[project["id"]]["type"] in (project_dependency_types["required"], project_dependency_types["incompatible"]):
+    if resolved_data[project["id"]]["type"] in (version_dependency_type["required"], version_dependency_type["incompatible"]):
       slug_id[project["slug"]] = {
         "id": project["id"]
       }
@@ -711,7 +701,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
   # Write project index
   for project_id, project_data in resolved_data.items():
     project_type = project_data["type"]
-    if project_type in (project_dependency_types["required"], project_dependency_types["incompatible"]):
+    if project_type in (version_dependency_type["required"], version_dependency_type["incompatible"]):
       log.debug(f"Indexing project '{project_id}' with type {project_type} and manual {project_data['manual']}")
       write_project_index(project_id, project_data)
 
@@ -763,15 +753,15 @@ def add_projects(args):
 
   for project in resolved_data.values():
     project_type = project["type"]
-    if project_type == project_dependency_types["required"]:
+    if project_type == version_dependency_type["required"]:
       project_file = project["file"]
       if (project_dir / project_file["filename"]).exists(): continue
 
       total_size += project_file["size"]
       required_project_name.append(f"{project['project_title']} ({project['project_slug']})")
-    elif project_type == project_dependency_types["optional"]:
+    elif project_type == version_dependency_type["optional"]:
       optional_project_name.append(f"{project['project_title']} ({project['project_slug']})")
-    elif project_type == project_dependency_types["incompatible"]:
+    elif project_type == version_dependency_type["incompatible"]:
       incompatible_project_name.append(f"{project['project_title']} ({project['project_slug']})")
 
   required_project_count = len(required_project_name)
@@ -796,7 +786,7 @@ def add_projects(args):
     raise AddProjectsError("Cancelled")
 
   for project in resolved_data.values():
-    if project["type"] == project_dependency_types["required"]:
+    if project["type"] == version_dependency_type["required"]:
       project_file = project["file"]
       if (project_dir / project_file["filename"]).exists(): continue
 

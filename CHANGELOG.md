@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.7] - 2026-04-29
+
+### Added
+- Code type hinting
+- `fetch_project_versions` is more close to Mdorinth docs
+
+### Fixed
+- The width of the wrapped text always be 80, now it is terminal width
+
 ## [1.13.6] - 2026-04-27
 
 ### Added
