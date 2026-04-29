@@ -15,7 +15,7 @@ log_level = log.DEBUG if debug_mode else log.INFO
 
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"Othecat35/MCServer/{__version__}"
-modrinth_api_base = "http://127.0.0.1:1104/api.modrinth.com/v2/"#"https://api.modrinth.com/v2/"
+modrinth_api_base = "https://api.modrinth.com/v2/"
 
 mods_loader = ["fabric"]
 plugins_loader = ["paper"]

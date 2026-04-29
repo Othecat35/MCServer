@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.8] - 2026-04-29
+
+### Fixed
+- Revert Modrinth API base URL
+
 ## [1.13.7] - 2026-04-29
 
 ### Added
