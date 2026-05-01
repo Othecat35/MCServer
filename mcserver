@@ -13,6 +13,7 @@ from typing import TypedDict, NotRequired
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
 log_level = log.DEBUG if debug_mode else log.INFO
 
+color_output_mode = "auto" # 'never', 'auto', 'always'
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 user_agent = f"Othecat35/MCServer/{__version__}"
 modrinth_api_base = "https://api.modrinth.com/v2/"
@@ -33,7 +34,8 @@ special_plural = {
   "this": "these"
 }
 
-version_dependency_type = {
+# Severity levels
+version_dependency_types = {
   "embedded": 0,
   "optional": 1,
   "required": 2,
@@ -172,9 +174,18 @@ class ResolveProjectsConflictsError(Exception):
 
 # Color functions
 def ansi(name: str):
-  if isatty:
-    return ansi_codes.get(name, "")
-  return ""
+  match color_output_mode:
+    case "always":
+      return ansi_codes.get(name, "")
+    case "never":
+      return ""
+    case "auto":
+      if isatty:
+        return ansi_codes.get(name, "")
+
+      return ""
+    case _:
+      raise ValueError(f"Invalid string '{color_output_mode}' of variable color_output_mode")
 
 def wrap_ansi(string: str, ansi_name: str):
   return f"{ansi(ansi_name)}{string}{ansi('reset')}"
@@ -494,7 +505,7 @@ def fetch_project_versions(project_id: str, game_versions: list | str = None, lo
     for dependency in version["dependencies"]:
       dependencies.append({
         "project_id": dependency["project_id"],
-        "dependency_type": version_dependency_type[dependency["dependency_type"]],
+        "dependency_type": version_dependency_types[dependency["dependency_type"]],
         "version_id": dependency["version_id"],
         "filename": dependency["file_name"]
       })
@@ -547,7 +558,7 @@ def fetch_project_versions(project_id: str, game_versions: list | str = None, lo
 def adapt_dependencies_data(dependencies: List[ProjectVersionDependency]) -> dict:
   dependencies_data = {}
   for dependency in dependencies:
-    if dependency["project_id"] is not None and dependency["dependency_type"] != version_dependency_type["embedded"]:
+    if dependency["project_id"] is not None and dependency["dependency_type"] != version_dependency_types["embedded"]:
       dependencies_data[dependency["project_id"]] = dependency["dependency_type"]
 
   return dependencies_data
@@ -555,7 +566,7 @@ def adapt_dependencies_data(dependencies: List[ProjectVersionDependency]) -> dic
 def filter_dependencies_type(dependencies: dict, filter_type: str):
   dependencies_list = []
   for dependency_id, dependency_type in dependencies.items():
-    if dependency_type == version_dependency_type[filter_type]:
+    if dependency_type == version_dependency_types[filter_type]:
       dependencies_list.append(dependency_id)
 
   return dependencies_list
@@ -578,7 +589,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
     unresolved_ids.append(project_id)
     resolved_data[project_id] = {
       "manual": True,
-      "type": version_dependency_type["required"],
+      "type": version_dependency_types["required"],
       "dependants": {}
     }
 
@@ -595,7 +606,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
       project_index_data = read_project_index(project_id)
       project_index_type = project_index_data["type"]
 
-      if project_index_type == version_dependency_type["incompatible"]:
+      if project_index_type == version_dependency_types["incompatible"]:
         project_index_dependants = project_index_data["dependants"]
 
         incompatible_dependants = filter_dependencies_type(project_index_dependants, "incompatible")
@@ -621,7 +632,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
         existing_entry = resolved_data.pop(project_id)
 
         # Check if existing entry is marked as incompatible
-        if existing_entry["type"] == version_dependency_type["incompatible"]:
+        if existing_entry["type"] == version_dependency_types["incompatible"]:
           incompatible_dependants = filter_dependencies_type(existing_entry["dependants"], "incompatible")
           raise ResolveProjectsConflictsError(project_id, incompatible_dependants)
 
@@ -641,14 +652,14 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
         dependency_data_type = dependency_data["type"]
         dependency_data_dependants = dependency_data["dependants"]
 
-        if dependency_type == version_dependency_type["required"]:
-          if dependency_data_type == version_dependency_type["incompatible"]:
+        if dependency_type == version_dependency_types["required"]:
+          if dependency_data_type == version_dependency_types["incompatible"]:
             incompatible_dependants = filter_dependencies_type(dependency_data_dependants, "incompatible")
             raise ResolveProjectsConflictsError(dependency_id, incompatible_dependants, project_id)
-          elif dependency_data_type == version_dependency_type["optional"]:
+          elif dependency_data_type == version_dependency_types["optional"]:
             log.debug(f"Adding initially optional dependency '{project_id}' to unresolved")
             unresolved_ids.append(dependency_id)
-        elif dependency_type == version_dependency_type["incompatible"] and dependency_data_type == version_dependency_type["required"]:
+        elif dependency_type == version_dependency_types["incompatible"] and dependency_data_type == version_dependency_types["required"]:
           required_dependants = filter_dependencies_type(dependency_data_dependants, "required")
           raise ResolveProjectsConflictsError(dependency_id, project_id, required_dependants)
 
@@ -666,7 +677,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
         }
 
         # Only process required mods
-        if dependency_type == version_dependency_type["required"]:
+        if dependency_type == version_dependency_types["required"]:
           unresolved_ids.append(dependency_id)
 
     resolved_data[project_id] = project_data
@@ -682,7 +693,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
   })["text"])
 
   for project in projects:
-    if resolved_data[project["id"]]["type"] in (version_dependency_type["required"], version_dependency_type["incompatible"]):
+    if resolved_data[project["id"]]["type"] in (version_dependency_types["required"], version_dependency_types["incompatible"]):
       slug_id[project["slug"]] = {
         "id": project["id"]
       }
@@ -701,7 +712,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
   # Write project index
   for project_id, project_data in resolved_data.items():
     project_type = project_data["type"]
-    if project_type in (version_dependency_type["required"], version_dependency_type["incompatible"]):
+    if project_type in (version_dependency_types["required"], version_dependency_types["incompatible"]):
       log.debug(f"Indexing project '{project_id}' with type {project_type} and manual {project_data['manual']}")
       write_project_index(project_id, project_data)
 
@@ -753,15 +764,15 @@ def add_projects(args):
 
   for project in resolved_data.values():
     project_type = project["type"]
-    if project_type == version_dependency_type["required"]:
+    if project_type == version_dependency_types["required"]:
       project_file = project["file"]
       if (project_dir / project_file["filename"]).exists(): continue
 
       total_size += project_file["size"]
       required_project_name.append(f"{project['project_title']} ({project['project_slug']})")
-    elif project_type == version_dependency_type["optional"]:
+    elif project_type == version_dependency_types["optional"]:
       optional_project_name.append(f"{project['project_title']} ({project['project_slug']})")
-    elif project_type == version_dependency_type["incompatible"]:
+    elif project_type == version_dependency_types["incompatible"]:
       incompatible_project_name.append(f"{project['project_title']} ({project['project_slug']})")
 
   required_project_count = len(required_project_name)
@@ -786,7 +797,7 @@ def add_projects(args):
     raise AddProjectsError("Cancelled")
 
   for project in resolved_data.values():
-    if project["type"] == version_dependency_type["required"]:
+    if project["type"] == version_dependency_types["required"]:
       project_file = project["file"]
       if (project_dir / project_file["filename"]).exists(): continue
 
