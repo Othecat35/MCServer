@@ -555,7 +555,7 @@ def fetch_project_versions(project_id: str, game_versions: list | str = None, lo
   return project_versions
 
 # Resolve prejects dependencies
-def adapt_dependencies_data(dependencies: List[ProjectVersionDependency]) -> dict:
+def adapt_dependencies_data(dependencies: list[ProjectVersionDependency]) -> dict:
   dependencies_data = {}
   for dependency in dependencies:
     if dependency["project_id"] is not None and dependency["dependency_type"] != version_dependency_types["embedded"]:
