@@ -104,8 +104,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Faster mod resolving
 
 [unreleased]: https://github.com/Othecat35/MCServer/compare/v1.13.8...HEAD
-[1.13.6]: https://github.com/Othecat35/MCServer/compare/v1.13.7...v1.13.8
-[1.13.6]: https://github.com/Othecat35/MCServer/compare/v1.13.6...v1.13.7
+[1.13.8]: https://github.com/Othecat35/MCServer/compare/v1.13.7...v1.13.8
+[1.13.7]: https://github.com/Othecat35/MCServer/compare/v1.13.6...v1.13.7
 [1.13.6]: https://github.com/Othecat35/MCServer/compare/v1.13.5...v1.13.6
 [1.13.5]: https://github.com/Othecat35/MCServer/compare/v1.13.4...v1.13.5
 [1.13.4]: https://github.com/Othecat35/MCServer/compare/v1.13.3...v1.13.4
