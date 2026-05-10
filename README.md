@@ -1,13 +1,13 @@
 # MCServer
 ## About
-A Python script CLI tool that is created for helping with managing self-hosted Minecraft: Java Edition server with Modrinth intergration.
+A CLI tool to manage a Minecraft: Java Edition server.
 
 ## Windows
-This project is not designed with Windows in mind, try use WSL.
+This project is not designed for Windows, some behavior might be unexpected. Try use WSL instead.
 
 ## Requirements
 - Python 3.12 or later
-- JRE (depends on Minecraft version): (currently not supporting multiple JRE selection or work with the server version)
+- JRE (depends on Minecraft version): (Currently not having Java selection)
   - MC 1.0 - 1.16.5 : JRE 8
   - MC 1.17 - 1.17.1 : JRE 16
   - MC 1.18 - 1.20.4 : JRE 17
@@ -36,4 +36,4 @@ This project is not designed with Windows in mind, try use WSL.
 - Start the server: `mcserver start`
 
 ## Note
-This project is a personal project, but it might be useful for you. (selfhoster nerd!)
+This is a **personal project** for learning purpose, might be useful for myself.
