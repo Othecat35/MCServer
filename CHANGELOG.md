@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.9] - 2026-05-11
+
+### Added
+
+- Error message for adding projects that doesn't have version for current server
+
+### Fixed
+
+- Error when adding project (invalid value)
+
 ## [1.13.8] - 2026-04-29
 
 ### Fixed

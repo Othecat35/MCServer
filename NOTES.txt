@@ -124,4 +124,5 @@ mod indexing, don't forget!
 Gemini suggest adding "status" command and get ran usage info, sure but not noe
 A good error message for UX is one that not only tell you what went wrong, but also how to fix that error (or at least tell what caused the error)
 
-- Consider to cache optional projects' bulk fetch data in resolved_projects even though we don't neccesearily process it
+- Consider to cache optional projects' bulk fetch data in resolved_projects even though we don't neccesearily process it?
+- Delete cache if we don't install it (like dry run)

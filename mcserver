@@ -146,6 +146,15 @@ class EULAAgreementError(Exception): pass
 class FetchProjectVersionError(Exception): pass
 class DownloadURLError(Exception): pass
 
+#fetch_project_versions
+class NoProjectVersionError(Exception):
+  def __init__(self, message: str, project_id: str, loader_names: list[str], game_versions: list[str]):
+    super().__init__(message)
+
+    self.project_id = project_id
+    self.loader_names = loader_names
+    self.game_versions = game_versions
+
 class ResolveProjectsError(Exception):
   def __init__(self, message: str, mod_id: str, dependants: list | str = None):
     if dependants is None: dependants = []
@@ -482,11 +491,11 @@ def download_url(url: str, filename: str | Path, hashes: dict = None, headers: d
   shutil.move(tempfile, filename)
 
 # Modrinth API
-def fetch_project_versions(project_id: str, game_versions: list | str = None, loader_names: list | str = None, include_changelog: bool = False)-> list[ProjectVersion]:
+def fetch_project_versions(project_id: str, game_versions: list[str] | str | None = None, loader_names: list[str] | str | None = None, include_changelog: bool = False) -> list[ProjectVersion]:
   if isinstance(game_versions, str): game_versions = [game_versions]
   if isinstance(loader_names, str): loader_names = [loader_names]
 
-  # NOTE: 'featured' query parameter can't be determined what it changed of the data, so it isn't used for now
+  # NOTE: 'featured' query is currently not being used because its behavior cannot be determined for now
   # function parameter that is related: featured_only: bool = False (before include_changelog and after loader_names)
 
   query_parameters = {
@@ -497,6 +506,9 @@ def fetch_project_versions(project_id: str, game_versions: list | str = None, lo
   }
 
   fetched_versions = json.loads(fetch_url(f"{modrinth_api_base}project/{project_id}/version", params=query_parameters)["text"])
+
+  if len(fetched_versions) == 0:
+    raise NoProjectVersionError(f"Project '{project_id}' has no version for {pluralize('loader', len(loader_names))} '{', '.join(loader_names).title}', Minecraft {pluralize('version', len(game_versions)} '{', '.join(game_versions)}'", project_id, loader_names, game_version)
 
   project_versions = []
   for version in fetched_versions:
@@ -768,7 +780,7 @@ def add_projects(args):
       project_file = project["file"]
       if (project_dir / project_file["filename"]).exists(): continue
 
-      total_size += project_file["size"]
+      total_size += project_file["file_size"]
       required_project_name.append(f"{project['project_title']} ({project['project_slug']})")
     elif project_type == version_dependency_types["optional"]:
       optional_project_name.append(f"{project['project_title']} ({project['project_slug']})")
