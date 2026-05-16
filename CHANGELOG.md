@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.10] - 2026-95-16
+
+### Fixed
+
+- Missing `mods` directory when adding mod
+- Crash when using `--no-filter` option on `search`
+- Invalid code in an error
+
 ## [1.13.9] - 2026-05-11
 
 ### Added

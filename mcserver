@@ -405,17 +405,17 @@ def create_project_index(project_id: str, project_data: dict) -> None:
     write_project_index(project_id, project_data)
 
 # URLs
-def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int = 10):
-  if params is None: params = {}
+def fetch_url(url: str, query: dict | None = None, headers: dict | None = None, timeout: int = 10):
+  if query is None: query = {}
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
 
-  query_string = f"?{urllib.parse.urlencode(params)}" if params else ""
+  query_string = f"?{urllib.parse.urlencode(query)}" if query else ""
   request = urllib.request.Request(f"{url}{query_string}", headers=headers, method="GET")
 
   log.debug(f"Fetching URL: {request.full_url}")
   with urllib.request.urlopen(request, timeout=timeout) as response:
-    log.debug(f"Fetched with status {response.status} {response.reason}")
+    log.debug(f"Fetched with status: {response.status} {response.reason}")
 
     response_headers = {}
     for key, value in response.getheaders():
@@ -426,9 +426,8 @@ def fetch_url(url: str, params: dict = None, headers: dict = None, timeout: int 
       "text": response.read().decode("utf-8")
     }
 
-def download_url(url: str, filename: str | Path, hashes: dict = None, headers: dict = None, timeout: int = 10):
+def download_url(url: str, filename: str | Path, hashes: dict | None = None, headers: dict = None, timeout: int = 10):
   filename = Path(filename)
-
   if hashes is None: hashes = {}
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
@@ -505,10 +504,10 @@ def fetch_project_versions(project_id: str, game_versions: list[str] | str | Non
     "include_changelog": json.dumps(include_changelog)
   }
 
-  fetched_versions = json.loads(fetch_url(f"{modrinth_api_base}project/{project_id}/version", params=query_parameters)["text"])
+  fetched_versions = json.loads(fetch_url(f"{modrinth_api_base}project/{project_id}/version", query=query_parameters)["text"])
 
   if len(fetched_versions) == 0:
-    raise NoProjectVersionError(f"Project '{project_id}' has no version for {pluralize('loader', len(loader_names))} '{', '.join(loader_names).title}', Minecraft {pluralize('version', len(game_versions)} '{', '.join(game_versions)}'", project_id, loader_names, game_version)
+    raise NoProjectVersionError(f"Project '{project_id}' has no version for {pluralize('loader', len(loader_names))} '{(', '.join(loader_names)).title()}', Minecraft {pluralize('version', len(game_versions))} '{', '.join(game_versions)}'", project_id, loader_names, game_version)
 
   project_versions = []
   for version in fetched_versions:
@@ -700,7 +699,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
     #If project data doesn't have slug, fetch it
     if not project_data.get("slug"): fetch_ids.append(project_id)
 
-  projects = json.loads(fetch_url(f"{modrinth_api_base}projects", params={
+  projects = json.loads(fetch_url(f"{modrinth_api_base}projects", query={
     "ids": json.dumps(fetch_ids)
   })["text"])
 
@@ -808,6 +807,7 @@ def add_projects(args):
   if not answer:
     raise AddProjectsError("Cancelled")
 
+  project_dir.mkdir(exist_ok=True)
   for project in resolved_data.values():
     if project["type"] == version_dependency_types["required"]:
       project_file = project["file"]
@@ -925,6 +925,8 @@ def search_projects(args):
 
   search_index = sort_by or modrinth_config.get("sort_by", "relevance")
   search_offset = search_limit * (page - 1)
+  search_message = f"Searching projects with '{query}' in Modrinth sorted by {search_index}..."
+  search_filters = []
 
   if not (configs_dir / "server.json").exists():
     log.warning("Configuration file for 'server' is missing, no version filter will be applied.")
@@ -1026,7 +1028,7 @@ def show_projects(args):
   log.info(f"Getting {pluralize(project_label, len(projects))} information...")
   projects_info = json.loads(fetch_url(
     f"{modrinth_api_base}projects",
-    params={
+    query={
       "ids": json.dumps(projects)
     }
   )["text"])
