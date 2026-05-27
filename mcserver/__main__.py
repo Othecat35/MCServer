@@ -148,7 +148,7 @@ class DownloadURLError(Exception): pass
 
 #fetch_project_versions
 class NoProjectVersionError(Exception):
-  def __init__(self, message: str, project_id: str, loader_names: list[str], game_versions: list[str]):
+  def __init__(self, message: str, project_id: str, loader_names: list[str] | None , game_versions: list[str] | None):
     super().__init__(message)
 
     self.project_id = project_id
@@ -156,7 +156,7 @@ class NoProjectVersionError(Exception):
     self.game_versions = game_versions
 
 class ResolveProjectsError(Exception):
-  def __init__(self, message: str, mod_id: str, dependants: list | str = None):
+  def __init__(self, message: str, mod_id: str, dependants: list | str | None = None):
     if dependants is None: dependants = []
     if isinstance(dependants, str): dependants = [dependants]
     super().__init__(message)
@@ -165,7 +165,7 @@ class ResolveProjectsError(Exception):
     self.dependants = dependants or []
 
 class ResolveProjectsConflictsError(Exception):
-  def __init__(self, project_id: str, incompatible_dependants: list | str, required_dependants: list | str = None):
+  def __init__(self, project_id: str, incompatible_dependants: list | str, required_dependants: list | str | None = None):
     if required_dependants is None: required_dependants = []
     if isinstance(required_dependants, str): required_dependants = [required_dependants]
     if isinstance(incompatible_dependants, str): incompatible_dependants = [incompatible_dependants]
@@ -211,14 +211,12 @@ def mod_environment_color(environment: str, padding: int = 0):
   return f"{environment: <{padding}}"
 
 # Functions
-def print_help(args: argparse.ArgumentParser):
-  parser = args.parser
-
-  parser.print_help()
+def print_help(args):
+  args.parser.print_help()
   sys.exit(0)
 
 last_status_message = ""
-def print_status(message: str, dynamic: str = None):
+def print_status(message: str, dynamic: str | None = None):
   if dynamic is None: dynamic = ""
   global last_status_message
 
@@ -266,9 +264,10 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
     case _:
       return False
 
-def format_number(number: str, unit_type: str = "si"):
+def format_number(number: str | float, unit_type: str = "si"):
+  number = float(number)
   unit_multiples = 0
-  prefixes = 0
+  prefixes = []
 
   if unit_type == "si":
     unit_multiples = 1_000
@@ -281,7 +280,7 @@ def format_number(number: str, unit_type: str = "si"):
 
   iteration = 0
   while number >= unit_multiples:
-    if iteration > len(prefixes) - 2:
+    if iteration >= len(prefixes) - 1:
       break
 
     number /= unit_multiples
@@ -306,17 +305,18 @@ def pluralize(singular: str, count: int = 0, plural: str = ""):
 
   return singular
 
-def wrap_text(text: str, initial_indent: str = "", subsequent_indent: str = "", width: int = None):
-  if not isinstance(initial_indent, str):
-    raise ValueError(f"initial_indent must be str, not {type(initial_indent)}")
-  elif not isinstance(subsequent_indent, str):
-    raise ValueError(f"subsequent_indent must be str, not {type(subsequent_indent)}")
+def wrap_string(string: str, initial_indent: str | int = "", subsequent_indent: str | int = "", width: int | None = None):
+  if isinstance(initial_indent, int):
+    initial_indent = " " * initial_indent
+
+  if isinstance(subsequent_indent, int):
+    subsequent_indent = " " * subsequent_indent
 
   terminal_width = width or shutil.get_terminal_size().columns
-  return "\n".join(textwrap.wrap(text, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
+  return "\n".join(textwrap.wrap(string, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
 
 # Config functions
-def generate_config(config_name: str, update_config: dict = None):
+def generate_config(config_name: str, update_config: dict | None = None):
   if update_config is None: update_config = {}
 
   config_filename = f"{config_name}.json"
@@ -405,7 +405,7 @@ def create_project_index(project_id: str, project_data: dict) -> None:
     write_project_index(project_id, project_data)
 
 # URLs
-def fetch_url(url: str, query: dict | None = None, headers: dict | None = None, timeout: int = 10):
+def fetch_url(url: str, query: dict | None | None = None, headers: dict | None | None = None, timeout: int = 10):
   if query is None: query = {}
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
@@ -426,7 +426,7 @@ def fetch_url(url: str, query: dict | None = None, headers: dict | None = None, 
       "text": response.read().decode("utf-8")
     }
 
-def download_url(url: str, filename: str | Path, hashes: dict | None = None, headers: dict = None, timeout: int = 10):
+def download_url(url: str, filename: str | Path, hashes: dict | None | None = None, headers: dict | None = None, timeout: int = 10):
   filename = Path(filename)
   if hashes is None: hashes = {}
   if headers is None: headers = {}
@@ -440,8 +440,8 @@ def download_url(url: str, filename: str | Path, hashes: dict | None = None, hea
   log.debug(f"Downloading URL: {request_url.full_url}")
   log.debug(f"Temporary file: {tempfile}")
 
-  hash_algorithm = None
-  hash_name = None
+  hash_algorithm  = None
+  hash_name  = None
 
   if hashes.get("sha512"):
     hash_algorithm = hashlib.sha512()
@@ -507,7 +507,22 @@ def fetch_project_versions(project_id: str, game_versions: list[str] | str | Non
   fetched_versions = json.loads(fetch_url(f"{modrinth_api_base}project/{project_id}/version", query=query_parameters)["text"])
 
   if len(fetched_versions) == 0:
-    raise NoProjectVersionError(f"Project '{project_id}' has no version for {pluralize('loader', len(loader_names))} '{(', '.join(loader_names)).title()}', Minecraft {pluralize('version', len(game_versions))} '{', '.join(game_versions)}'", project_id, loader_names, game_version)
+    error_message = f"Project '{project_id}' has no version"
+
+    loader_list = ""
+    if loader_names:
+      error_message += f"for {pluralize('loader', len(loader_names))} '{(', '.join(loader_names)).title()}'"
+
+    version_list = ""
+    if game_versions:
+      version_list = f"Minecraft {pluralize('version', len(game_versions))} '{', '.join(game_versions)}'"
+
+      if loader_names:
+        error_message += f", {version_list}"
+      else:
+        error_message += version_list
+
+    raise NoProjectVersionError(error_message, project_id, loader_names, game_versions)
 
   project_versions = []
   for version in fetched_versions:
@@ -788,17 +803,17 @@ def add_projects(args):
 
   required_project_count = len(required_project_name)
   log.info(f"{required_project_count} {pluralize(project_label, required_project_count)} that {pluralize('is', required_project_count)} going to be downloaded:")
-  print(wrap_ansi(wrap_text(", ".join(required_project_name), initial_indent="  ", subsequent_indent="  "), "green"), end="\n\n")
+  print(wrap_ansi(wrap_string(", ".join(required_project_name), initial_indent="  ", subsequent_indent="  "), "green"), end="\n\n")
 
   if optional_project_name:
     optional_project_count = len(optional_project_name)
     log.info(f"{optional_project_count} {pluralize(project_label, optional_project_count)} that {pluralize('is', optional_project_count)} optional:")
-    print(wrap_ansi(wrap_text(", ".join(optional_project_name), initial_indent="  ", subsequent_indent="  "), "yellow"), end="\n\n")
+    print(wrap_ansi(wrap_string(", ".join(optional_project_name), initial_indent="  ", subsequent_indent="  "), "yellow"), end="\n\n")
 
   if incompatible_project_name:
     incompatible_project_count = len(incompatible_project_name)
     log.warning(f"{incompatible_project_count} {pluralize(project_label, incompatible_project_count)} that {pluralize('is', incompatible_project_count)} INCOMPATIBLE:")
-    print(wrap_ansi(wrap_text(", ".join(incompatible_project_name), initial_indent=" ", subsequent_indent=" "), "red"), end="\n\n")
+    print(wrap_ansi(wrap_string(", ".join(incompatible_project_name), initial_indent=" ", subsequent_indent=" "), "red"), end="\n\n")
 
   project_count = len(resolved_data)
   log.info(f"Will download {format_number(total_size, 'iec')} worth of {pluralize(project_label, project_count)} {pluralize("file", project_count)}.")
@@ -806,6 +821,9 @@ def add_projects(args):
   answer = confirmation_prompt("Do you want to continue?", True)
   if not answer:
     raise AddProjectsError("Cancelled")
+
+  if not project_dir:
+    raise TypeError("Cannot create directory for non-defined project type")
 
   project_dir.mkdir(exist_ok=True)
   for project in resolved_data.values():
@@ -855,6 +873,7 @@ def initialize_server(args):
   if project_dir is not None:
     project_dir.mkdir(exist_ok=True)
 
+  update_values = None
   for config in default_configs.keys():
     if config == "launcher":
       update_values = {
@@ -896,7 +915,7 @@ def install_server(args):
       log.info("Getting Mojang game version manifest...")
       version_manifest = json.loads(fetch_url("https://launchermeta.mojang.com/mc/game/version_manifest.json")["text"])
 
-      selected_version_url = None
+      selected_version_url = ""
       for version in version_manifest["versions"]:
         if version["id"] == server_version:
           selected_version_url =  version["url"]
@@ -943,7 +962,7 @@ def search_projects(args):
     update_project_label(loader_name)
 
     if loader_name == "vanilla":
-      raise SearchModError("Vanilla Minecraft server does not support mod.")
+      raise SearchProjectsError("Vanilla Minecraft server does not support mod.")
 
     search_message = f"Searching {pluralize(project_label)} with '{query}' in Modrinth for {loader_name.capitalize()}, Minecraft server {server_version} sorted by {search_index}..."
     search_filters = [
@@ -967,7 +986,7 @@ def search_projects(args):
 
   projects_list = response.get("hits", [])
   if not projects_list:
-    raise SearchModError(f"No mod found.")
+    raise SearchProjectsError(f"No mod found.")
 
   server_side_width = 0
   client_side_width = 0
@@ -999,7 +1018,7 @@ def search_projects(args):
     slug = project.get("slug", "<No Slug>")
     author = f"by {project.get('author', '<No Author>')}"
 
-    project_header = wrap_text(f"{title} ({slug}) {wrap_ansi(author, 'gray')}", subsequent_indent=" ")
+    project_header = wrap_string(f"{title} ({slug}) {wrap_ansi(author, 'gray')}", subsequent_indent=" ")
 
     downloads = project.get("downloads", 0)
     follows = project.get("follows", 0)
@@ -1011,7 +1030,7 @@ def search_projects(args):
     server_side = wrap_ansi(f"Server: {mod_environment_color(project.get('server_side', "unknown"), server_side_width)}", "bold")
     client_side = mod_environment_color(project.get("client_side", "unknown"), client_side_width)
 
-    description = wrap_text(project["description"], initial_indent="  ", subsequent_indent=" ")
+    description = wrap_string(project["description"], initial_indent="  ", subsequent_indent=" ")
 
     is_end_of_list = (index + 1) == shown_projects_count
 
@@ -1023,7 +1042,7 @@ def search_projects(args):
 def show_projects(args):
   projects = args.projects
 
-  update_project_label(load_config("server", allow_missing=True))
+  update_project_label(load_config("server", allow_missing=True)["loader"]["name"])
 
   log.info(f"Getting {pluralize(project_label, len(projects))} information...")
   projects_info = json.loads(fetch_url(
@@ -1041,13 +1060,13 @@ def show_projects(args):
     followers = wrap_ansi(format_number(project.get("followers", 0)), "bold")
 
     project_categories = ', '.join(project.get('categories', ['None'])).title()
-    categories = wrap_text(f"Categories: {wrap_ansi(project_categories, 'bold')}", subsequent_indent=" ")
+    categories = wrap_string(f"Categories: {wrap_ansi(project_categories, 'bold')}", subsequent_indent=" ")
 
     project_loaders = ', '.join(project.get('loaders', ['None'])).title()
-    loaders = wrap_text(f"Loaders: {wrap_ansi(project_loaders, 'bold')}", subsequent_indent=" ")
+    loaders = wrap_string(f"Loaders: {wrap_ansi(project_loaders, 'bold')}", subsequent_indent=" ")
 
     project_game_versions = ', '.join(project.get('game_versions', ['None'])).title()
-    game_versions = wrap_text(f"Minecraft Versions: {wrap_ansi(project_game_versions, 'bold')}", subsequent_indent=" ")
+    game_versions = wrap_string(f"Minecraft Versions: {wrap_ansi(project_game_versions, 'bold')}", subsequent_indent=" ")
 
     server_side = wrap_ansi(f"Server: {mod_environment_color(project.get('server_side', '<Unknown>'))}", "bold")
     client_side = mod_environment_color(project.get("client_side", "<Unknown>"))
@@ -1060,7 +1079,7 @@ def show_projects(args):
     homepage = wrap_ansi(f"https://modrinth.com/mod/{project_homepage}", "bold")
 
     project_description = project.get('description', '<No Description>')
-    description = wrap_text(f"Description: {wrap_ansi(project_description, 'bold')}", subsequent_indent=" ")
+    description = wrap_string(f"Description: {wrap_ansi(project_description, 'bold')}", subsequent_indent=" ")
 
     if (project_index >= 1): print()
     print(f"""Name: {title} ({slug})
