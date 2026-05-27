@@ -126,3 +126,4 @@ A good error message for UX is one that not only tell you what went wrong, but a
 
 - Consider to cache optional projects' bulk fetch data in resolved_projects even though we don't neccesearily process it?
 - Delete cache if we don't install it (like dry run)
+- Oh, back with zipapp huh... and I also have pyright now? cool
