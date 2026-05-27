@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-__version__ = "1.13.10"
-
-import argparse, copy, hashlib, json, math, os, shutil, sys, textwrap, time
-import urllib.parse, urllib.request
+import argparse, copy, json, math, os, shutil, sys, textwrap, time
 import logging as log
+
+from shared import __version__
+from modrinth_api import fetch_project_versions, ProjectVersionDependency, modrinth_api_base
+from networking import fetch_url, download_url
+from shared import pluralize
 
 from pathlib import Path
 from collections import deque
-from typing import TypedDict, NotRequired
 
 # Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
@@ -15,8 +16,6 @@ log_level = log.DEBUG if debug_mode else log.INFO
 
 color_output_mode = "auto" # 'never', 'auto', 'always'
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
-user_agent = f"Othecat35/MCServer/{__version__}"
-modrinth_api_base = "https://api.modrinth.com/v2/"
 
 mods_loader = ["fabric"]
 plugins_loader = ["paper"]
@@ -26,13 +25,6 @@ eula_agree_sentence = "Yes, I agree."
 
 si_prefixes = ["", "K", "M", "B", "T"]
 iec_prefixes = ["B", "KiB", "MiB", "GiB", "TiB"]
-
-read_chunk_size = 1024 * 64 # 64KiB
-
-special_plural = {
-  "is": "are",
-  "this": "these"
-}
 
 # Severity levels
 version_dependency_types = {
@@ -83,56 +75,16 @@ default_configs = {
 }
 
 # Paths
-current_dir = Path.cwd()
+mods_dir = Path("mods")
+plugins_dir = Path("plugins")
 
-mods_dir = current_dir / "mods"
-plugins_dir = current_dir / "plugins"
-
-mcserver_dir = current_dir / ".mcserver"
+mcserver_dir = Path(".mcserver")
 configs_dir = mcserver_dir / "configs"
 
 projects_index_dir = mcserver_dir / "projects_index"
 slug_id_file = projects_index_dir / ".slug_id.json"
 
 tempfiles_dir = mcserver_dir / "tempfiles"
-
-# TypedDict
-#Project Version
-class ProjectVersionDependency(TypedDict):
-  project_id: str | None
-  dependency_type: int
-  version_id: str | None
-  filename: str | None
-
-class ProjectVersionFileHashes(TypedDict):
-  sha512: str
-  sha1: str
-
-class ProjectVersionFile(TypedDict):
-  url: str
-  filename: str
-  hashes: ProjectVersionFileHashes
-  file_size: int
-  file_type: str | None
-
-class ProjectVersion(TypedDict):
-  version_name: str
-  version_number: str
-  changelog: NotRequired[str | None]
-  dependencies: list[ProjectVersionDependency]
-  game_versions: list[str]
-  version_type: str
-  loader_names: list[str]
-  featured: bool
-  version_status: str
-  requested_status: str | None
-  version_id: str
-  project_id: str
-  author_id: str
-  date_published: str
-  download_count: int
-  files: list[ProjectVersionFile]
-  primary_file: ProjectVersionFile
 
 # Error classes
 class AddProjectsError(Exception): pass
@@ -145,24 +97,6 @@ class StartServerError(Exception): pass
 class EULAAgreementError(Exception): pass
 class FetchProjectVersionError(Exception): pass
 class DownloadURLError(Exception): pass
-
-#fetch_project_versions
-class NoProjectVersionError(Exception):
-  def __init__(self, message: str, project_id: str, loader_names: list[str] | None , game_versions: list[str] | None):
-    super().__init__(message)
-
-    self.project_id = project_id
-    self.loader_names = loader_names
-    self.game_versions = game_versions
-
-class ResolveProjectsError(Exception):
-  def __init__(self, message: str, mod_id: str, dependants: list | str | None = None):
-    if dependants is None: dependants = []
-    if isinstance(dependants, str): dependants = [dependants]
-    super().__init__(message)
-
-    self.mod_id = mod_id
-    self.dependants = dependants or []
 
 class ResolveProjectsConflictsError(Exception):
   def __init__(self, project_id: str, incompatible_dependants: list | str, required_dependants: list | str | None = None):
@@ -288,23 +222,6 @@ def format_number(number: str | float, unit_type: str = "si"):
 
   return f"{round(number, 2):g}{prefixes[iteration]}"
 
-def pluralize(singular: str, count: int = 0, plural: str = ""):
-  if count != 1:
-    if plural:
-      return plural
-
-    if singular in special_plural:
-      return special_plural[singular]
-
-    if singular.endswith(("ch", "sh", "x", "s", "o")):
-      return f"{singular}es"
-    elif singular.endswith("y") and singular[-2] not in "aeiou":
-      return f"{singular[:-1]}ies"
-    else:
-      return f"{singular}s"
-
-  return singular
-
 def wrap_string(string: str, initial_indent: str | int = "", subsequent_indent: str | int = "", width: int | None = None):
   if isinstance(initial_indent, int):
     initial_indent = " " * initial_indent
@@ -404,188 +321,12 @@ def create_project_index(project_id: str, project_data: dict) -> None:
   else:
     write_project_index(project_id, project_data)
 
-# URLs
-def fetch_url(url: str, query: dict | None | None = None, headers: dict | None | None = None, timeout: int = 10):
-  if query is None: query = {}
-  if headers is None: headers = {}
-  headers.setdefault("User-Agent", user_agent)
-
-  query_string = f"?{urllib.parse.urlencode(query)}" if query else ""
-  request = urllib.request.Request(f"{url}{query_string}", headers=headers, method="GET")
-
-  log.debug(f"Fetching URL: {request.full_url}")
-  with urllib.request.urlopen(request, timeout=timeout) as response:
-    log.debug(f"Fetched with status: {response.status} {response.reason}")
-
-    response_headers = {}
-    for key, value in response.getheaders():
-      response_headers[key.lower()] = value
-
-    return {
-      "headers": response_headers,
-      "text": response.read().decode("utf-8")
-    }
-
-def download_url(url: str, filename: str | Path, hashes: dict | None | None = None, headers: dict | None = None, timeout: int = 10):
-  filename = Path(filename)
-  if hashes is None: hashes = {}
-  if headers is None: headers = {}
-  headers.setdefault("User-Agent", user_agent)
-
-  basename = filename.name
-  tempfile = tempfiles_dir / basename
-
-  request_url = urllib.request.Request(url, headers=headers, method="GET")
-
-  log.debug(f"Downloading URL: {request_url.full_url}")
-  log.debug(f"Temporary file: {tempfile}")
-
-  hash_algorithm  = None
-  hash_name  = None
-
-  if hashes.get("sha512"):
-    hash_algorithm = hashlib.sha512()
-    hash_name = "sha512"
-  elif hashes.get("sha1"):
-    hash_algorithm = hashlib.sha1()
-    hash_name = "sha1"
-
-  expected_hash = None
-
-  if hash_name:
-    expected_hash = hashes[hash_name]
-    log.debug(f"Calculating hash {hash_name} while downloading...")
-    log.debug(f"Expected {hash_name}: {expected_hash}")
-
-  with urllib.request.urlopen(request_url, timeout=timeout) as response:
-    content_length = int(response.getheader("Content-Length", default=0))
-    downloaded_length = 0
-
-    with open(tempfile, mode="wb") as file:
-      while True:
-        data = response.read(read_chunk_size)
-
-        if not data:
-          break
-
-        if hash_algorithm:
-          hash_algorithm.update(data)
-
-        downloaded_length += len(data)
-
-        if content_length == 0:
-          print_status(f"Downloading {basename}... (unknown final size)", dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}")
-        else:
-          print_status(f"Downloading {basename}... File size: {format_number(content_length, 'iec')}", dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}/{format_number(content_length, 'iec')} ({round(downloaded_length / content_length * 100)}%)")
-
-        file.write(data)
-
-    if hash_algorithm:
-      calculated_hash = hash_algorithm.hexdigest()
-
-      log.debug(f"Got hash: {calculated_hash}")
-      if calculated_hash != expected_hash:
-        raise DownloadURLError(f"Downloaded file '{tempfile.relative_to(current_dir)}' hash does not match with the expected {hash_name} hash")
-
-  shutil.move(tempfile, filename)
-
-# Modrinth API
-def fetch_project_versions(project_id: str, game_versions: list[str] | str | None = None, loader_names: list[str] | str | None = None, include_changelog: bool = False) -> list[ProjectVersion]:
-  if isinstance(game_versions, str): game_versions = [game_versions]
-  if isinstance(loader_names, str): loader_names = [loader_names]
-
-  # NOTE: 'featured' query is currently not being used because its behavior cannot be determined for now
-  # function parameter that is related: featured_only: bool = False (before include_changelog and after loader_names)
-
-  query_parameters = {
-    "loaders": json.dumps(loader_names),
-    "game_versions": json.dumps(game_versions),
-    #"featured": json.dumps(featured_only),
-    "include_changelog": json.dumps(include_changelog)
-  }
-
-  fetched_versions = json.loads(fetch_url(f"{modrinth_api_base}project/{project_id}/version", query=query_parameters)["text"])
-
-  if len(fetched_versions) == 0:
-    error_message = f"Project '{project_id}' has no version"
-
-    loader_list = ""
-    if loader_names:
-      error_message += f"for {pluralize('loader', len(loader_names))} '{(', '.join(loader_names)).title()}'"
-
-    version_list = ""
-    if game_versions:
-      version_list = f"Minecraft {pluralize('version', len(game_versions))} '{', '.join(game_versions)}'"
-
-      if loader_names:
-        error_message += f", {version_list}"
-      else:
-        error_message += version_list
-
-    raise NoProjectVersionError(error_message, project_id, loader_names, game_versions)
-
-  project_versions = []
-  for version in fetched_versions:
-    # Dependency converter
-    dependencies = []
-    for dependency in version["dependencies"]:
-      dependencies.append({
-        "project_id": dependency["project_id"],
-        "dependency_type": version_dependency_types[dependency["dependency_type"]],
-        "version_id": dependency["version_id"],
-        "filename": dependency["file_name"]
-      })
-
-    # File filter
-    files = []
-    primary_file = {}
-
-    for file in version["files"]:
-      file_data = {
-        "url": file["url"],
-        "filename": file["filename"],
-        "hashes": file["hashes"],
-        "file_size": file["size"],
-        "file_type": file["file_type"],
-      }
-
-      if file["primary"]:
-        primary_file = file_data
-      else:
-        files.append(file_data)
-
-    if not primary_file:
-      primary_file = files[0]
-
-    # Reconstruction
-    project_versions.append({
-      "version_name": version["name"],
-      "version_number": version["version_number"],
-      "changelog": version.get("changelog"),
-      "dependencies": dependencies,
-      "game_versions": version["game_versions"],
-      "version_type": version["version_type"],
-      "loader_names": version["loaders"],
-      "featured": version["featured"],
-      "version_status": version["status"],
-      "requested_status": version["requested_status"],
-      "version_id": version["id"],
-      "project_id": version["project_id"],
-      "author_id": version["author_id"],
-      "date_published": version["date_published"],
-      "download_count": version["downloads"],
-      "files": files,
-      "primary_file": primary_file
-    })
-
-  return project_versions
-
 # Resolve prejects dependencies
 def adapt_dependencies_data(dependencies: list[ProjectVersionDependency]) -> dict:
   dependencies_data = {}
   for dependency in dependencies:
     if dependency["project_id"] is not None and dependency["dependency_type"] != version_dependency_types["embedded"]:
-      dependencies_data[dependency["project_id"]] = dependency["dependency_type"]
+      dependencies_data[dependency["project_id"]] = version_dependency_types[dependency["dependency_type"]]
 
   return dependencies_data
 
