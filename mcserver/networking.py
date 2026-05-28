@@ -3,8 +3,7 @@ import hashlib, shutil
 import urllib.parse, urllib.request
 import logging as log
 
-from shared import __version__
-from constants import current_dir, mcserver_dir
+from constants import __version__, current_dir, mcserver_dir
 
 from pathlib import Path
 

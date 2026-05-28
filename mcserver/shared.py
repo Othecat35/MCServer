@@ -1,5 +1,4 @@
 # Variables
-__version__ = "1.13.10"
 special_plural = {
   "is": "are",
   "this": "these"
