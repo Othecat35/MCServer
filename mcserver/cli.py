@@ -2,10 +2,12 @@
 import argparse, copy, json, math, os, shutil, sys, textwrap, time
 import logging as log
 
+from config import default_configs, generate_config, load_config
 from constants import __version__
+from indexing import project_index_exists, write_project_index, read_project_index, project_indexes_dir, slug_id_file
 from modrinth_api import fetch_project_versions, ProjectVersionDependency, modrinth_api_base
 from networking import fetch_url, download_url
-from shared import pluralize
+from shared import pluralize, format_number
 
 from pathlib import Path
 from collections import deque
@@ -22,9 +24,6 @@ plugins_loader = ["paper"]
 loaders_list = ["vanilla"] + mods_loader + plugins_loader
 
 eula_agree_sentence = "Yes, I agree."
-
-si_prefixes = ["", "K", "M", "B", "T"]
-iec_prefixes = ["B", "KiB", "MiB", "GiB", "TiB"]
 
 # Severity levels
 version_dependency_types = {
@@ -48,41 +47,12 @@ ansi_codes = {
   "start_line": "\033[G"
 }
 
-default_configs = {
-  "launcher": {
-    "ram": {
-      "_comment": "Memory size in MebiByte (MiB)",
-      "min": 512,
-      "max": 2_048
-    },
-
-    "jarfile": "Launcher.jar",
-    "hide_gui": True
-  },
-
-  "modrinth": {
-    "search_limit": 20,
-    "sort_by": "relevance"
-  },
-
-  "server": {
-    "version": "", # Auto-fetched the latest version when init without --mc-version
-    "loader": {
-      "name": "vanilla",
-      "version": ""
-    }
-  }
-}
-
 # Paths
 mods_dir = Path("mods")
 plugins_dir = Path("plugins")
 
 mcserver_dir = Path(".mcserver")
 configs_dir = mcserver_dir / "configs"
-
-projects_index_dir = mcserver_dir / "projects_index"
-slug_id_file = projects_index_dir / ".slug_id.json"
 
 tempfiles_dir = mcserver_dir / "tempfiles"
 
@@ -166,15 +136,6 @@ def hahaha_yes():
   print("The cake is a lie.")
   sys.exit(0)
 
-def merge_dict(base: dict, update: dict):
-  for key, value in update.items():
-    if key in base and isinstance(base[key], dict) and isinstance(value, dict):
-      merge_dict(base[key], value)
-    else:
-      base[key] = value
-
-  return base
-
 def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
   accepted_value = "y/n"
   if default_option:
@@ -198,30 +159,6 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
     case _:
       return False
 
-def format_number(number: str | float, unit_type: str = "si"):
-  number = float(number)
-  unit_multiples = 0
-  prefixes = []
-
-  if unit_type == "si":
-    unit_multiples = 1_000
-    prefixes = si_prefixes
-  elif unit_type == "iec":
-    unit_multiples = 1_024
-    prefixes = iec_prefixes
-  else:
-    raise ValueError(f"'{unit_type}' is not a valid number unit type")
-
-  iteration = 0
-  while number >= unit_multiples:
-    if iteration >= len(prefixes) - 1:
-      break
-
-    number /= unit_multiples
-    iteration += 1
-
-  return f"{round(number, 2):g}{prefixes[iteration]}"
-
 def wrap_string(string: str, initial_indent: str | int = "", subsequent_indent: str | int = "", width: int | None = None):
   if isinstance(initial_indent, int):
     initial_indent = " " * initial_indent
@@ -231,65 +168,6 @@ def wrap_string(string: str, initial_indent: str | int = "", subsequent_indent: 
 
   terminal_width = width or shutil.get_terminal_size().columns
   return "\n".join(textwrap.wrap(string, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
-
-# Config functions
-def generate_config(config_name: str, update_config: dict | None = None):
-  if update_config is None: update_config = {}
-
-  config_filename = f"{config_name}.json"
-  config_path = configs_dir / config_filename
-
-  try:
-    config_content = copy.deepcopy(default_configs[config_name])
-  except KeyError as error:
-    raise ValueError(f"Failed to generate configuration file for '{config_name}': No default configuration available") from error
-
-  config_data = merge_dict(config_content, update_config)
-
-  try:
-    with open(config_path, mode="xt") as config_file:
-      json.dump(
-        config_data,
-        config_file,
-        indent=2
-      )
-  except FileExistsError as error:
-    raise FileExistsError(f"Cannot create configuration file for '{config_name}': File already exists") from error
-  except FileNotFoundError as error:
-    raise FileNotFoundError(f"Cannot create configuration file for '{config_name}': Configuration directory does not exist") from error
-  except IsADirectoryError as error:
-    raise IsADirectoryError(f"Cannot create configuration file for '{config_name}': Directory with same name already exists") from error
-  except PermissionError as error:
-    raise PermissionError(f"Cannot create configuration file for '{config_name}': Permission denied to create file") from error
-
-def load_config(config_name: str, allow_missing: bool = False):
-  config_filename = f"{config_name}.json"
-  config_path = configs_dir / config_filename
-
-  try:
-    with open(config_path, mode="rt") as config_file:
-      return json.load(config_file)
-  except json.JSONDecodeError as error:
-    msg = error.msg
-    lineno = error.lineno
-    colno = error.colno
-
-    raise ValueError(f"Failed to load configuration for `{config_name}`: {msg} at line {lineno} column {colno}") from error
-
-  except FileNotFoundError as error:
-    if allow_missing:
-      log.warning(f"Configuration file '{config_name}' is missing, using existing default value")
-
-      try:
-        return default_configs[config_name]
-      except KeyError:
-        raise KeyError(f"No default configuration found for '{config_name}'") from error # from the FileNotFoundError
-
-    raise FileNotFoundError(f"Cannot read configuration file for '{config_name}': Configuration file does not exist") from error
-  except IsADirectoryError as error:
-    raise IsADirectoryError(f"Cannot read configuration file for '{config_name}': Not a file (is a directory)") from error
-  except PermissionError as error:
-    raise PermissionError(f"Cannot read configuration file for '{config_name}': Permission denied to read file") from error
 
 project_label = "project"
 project_dir = None
@@ -304,22 +182,6 @@ def update_project_label(loader_name: str):
   elif loader_name in plugins_loader:
     project_label = "plugin"
     project_dir = plugins_dir
-
-# Mod indexing
-def project_index_exists(project_id: str) -> bool:
-  return (projects_index_dir / f"{project_id}.json").exists()
-
-def write_project_index(project_id: str, project_data: dict) -> None:
-  (projects_index_dir / f"{project_id}.json").write_text(json.dumps(project_data, indent=2))
-
-def read_project_index(project_id: str) -> dict:
-  return json.loads((projects_index_dir / f"{project_id}.json").read_text())
-
-def create_project_index(project_id: str, project_data: dict) -> None:
-  if project_index_exists(project_id):
-    raise FileExistsError(f"Project index file for '{project_id}' already exists")
-  else:
-    write_project_index(project_id, project_data)
 
 # Resolve prejects dependencies
 def adapt_dependencies_data(dependencies: list[ProjectVersionDependency]) -> dict:
@@ -594,7 +456,7 @@ def initialize_server(args):
   mcserver_dir.mkdir(exist_ok=True)
 
   configs_dir.mkdir(exist_ok=True)
-  projects_index_dir.mkdir(exist_ok=True)
+  project_indexes_dir.mkdir(exist_ok=True)
 
   tempfiles_dir.mkdir(exist_ok=True)
 
