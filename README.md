@@ -15,13 +15,13 @@ This project is not designed for Windows, some behavior might be unexpected. Try
 
 ## How to install
 - System-wide (Requires root): 
-1. Download the `mcserver` script file
+1. Download the `mcserver` script file from GitHub releases
 2. Move the file to `/usr/local/bin`
 3. Run `chmod +x mcserver`
 
 - Per-user:
 1. Create a directory "bin"
-2. Download the script onto that directory
+2. Download the script from GitHub releases onto that directory
 3. Give it "executable" permission with `chmod +x mcserver`
 4. Add the directory in the PATH environment:
    - Run `export PATH=$HOME/bin:$PATH` if you're using shell that is POSIX-compliant like Bash, Zsh, or ash
