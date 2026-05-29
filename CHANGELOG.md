@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.13.10] - 2026-95-16
+## [1.13.11] - 2026-05-29
+
+### Changed
+
+- Code structure to be modula with zipapp
+- Rename project index directory to `project_indexes`
+
+### Fixed
+
+- Error class name inconsistency
+
+## [1.13.10] - 2026-05-16
 
 ### Fixed
 

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-__version__: str = "1.13.10"
+__version__: str = "1.13.11"
 
 current_dir: Path = Path.cwd()
 mcserver_dir: Path = Path(".mcserver")
