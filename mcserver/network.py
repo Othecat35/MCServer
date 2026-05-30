@@ -16,7 +16,8 @@ tempfiles_dir = mcserver_dir / "tempfiles"
 read_chunk_size: int = 1024 * 64 # 64KiB
 
 # Functions
-def request_url(url: str, query: dict | None = None, data: dict | None = None, headers: dict | None = None, method: str = "get", timeout: int = 10) -> dict:
+def request_url(url: str, query: dict | None = None, data: dict | None = None, headers: dict | None = None, method: str = "GET", timeout: int = 10) -> dict:
+  method = method.upper()
   if query is None: query = {}
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
@@ -24,9 +25,9 @@ def request_url(url: str, query: dict | None = None, data: dict | None = None, h
   query_string = f"?{urllib.parse.urlencode(query)}" if query else ""
   request = urllib.request.Request(f"{url}{query_string}", data=data, headers=headers, method=method)
 
-  log.debug(f"Fetching URL: {request.full_url}")
+  log.debug(f"Requesting URL: {method} {request.full_url}")
   with urllib.request.urlopen(request, timeout=timeout) as response:
-    log.debug(f"Fetched with status: {response.status} {response.reason}")
+    log.debug(f"Responded with status: {response.status} {response.reason}")
 
     response_headers = {}
     for key, value in response.getheaders():

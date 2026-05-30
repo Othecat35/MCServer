@@ -588,8 +588,7 @@ def search_projects(args):
       "index": search_index,
       "limit": search_limit,
       "offset": search_offset
-    }
-  )["text"])
+    })["text"])
 
   projects_list = response.get("hits", [])
   if not projects_list:
