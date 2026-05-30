@@ -1,12 +1,11 @@
-#!/usr/bin/env python3
-import argparse, copy, json, math, os, shutil, sys, textwrap, time
+import argparse, json, math, os, shutil, sys, textwrap, time
 import logging as log
 
 from config import default_configs, generate_config, load_config
 from constants import __version__
 from indexing import project_index_exists, write_project_index, read_project_index, project_indexes_dir, slug_id_file
 from modrinth_api import fetch_project_versions, ProjectVersionDependency, modrinth_api_base
-from networking import fetch_url, download_url
+from network import download_url, request_url
 from shared import pluralize, format_number
 
 from pathlib import Path
@@ -62,7 +61,6 @@ class InitializeServerError(Exception): pass
 class InstallServerError(Exception): pass
 class SearchProjectsError(Exception): pass
 class ShowProjectsError(Exception): pass
-class StartServerError(Exception): pass
 
 class EULAAgreementError(Exception): pass
 class FetchProjectVersionError(Exception): pass
@@ -317,7 +315,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
     #If project data doesn't have slug, fetch it
     if not project_data.get("slug"): fetch_ids.append(project_id)
 
-  projects = json.loads(fetch_url(f"{modrinth_api_base}projects", query={
+  projects = json.loads(request_url(f"{modrinth_api_base}projects", query={
     "ids": json.dumps(fetch_ids)
   })["text"])
 
@@ -378,7 +376,8 @@ def add_projects(args):
   server_version = server_config["version"]
 
   if server_loader["name"] == "vanilla":
-    raise AddProjectsError("Vanilla Minecraft server does not support mod")
+    log.error("Vanilla Minecraft server does not support mod")
+    return 1
 
   update_project_label(loader_name)
 
@@ -404,9 +403,10 @@ def add_projects(args):
     elif project_type == version_dependency_types["incompatible"]:
       incompatible_project_name.append(f"{project['project_title']} ({project['project_slug']})")
 
-  required_project_count = len(required_project_name)
-  log.info(f"{required_project_count} {pluralize(project_label, required_project_count)} that {pluralize('is', required_project_count)} going to be downloaded:")
-  print(wrap_ansi(wrap_string(", ".join(required_project_name), initial_indent="  ", subsequent_indent="  "), "green"), end="\n\n")
+  if required_project_name:
+    required_project_count = len(required_project_name)
+    log.info(f"{required_project_count} {pluralize(project_label, required_project_count)} that {pluralize('is', required_project_count)} going to be downloaded:")
+    print(wrap_ansi(wrap_string(", ".join(required_project_name), initial_indent="  ", subsequent_indent="  "), "green"), end="\n\n")
 
   if optional_project_name:
     optional_project_count = len(optional_project_name)
@@ -418,15 +418,21 @@ def add_projects(args):
     log.warning(f"{incompatible_project_count} {pluralize(project_label, incompatible_project_count)} that {pluralize('is', incompatible_project_count)} INCOMPATIBLE:")
     print(wrap_ansi(wrap_string(", ".join(incompatible_project_name), initial_indent=" ", subsequent_indent=" "), "red"), end="\n\n")
 
-  project_count = len(resolved_data)
-  log.info(f"Will download {format_number(total_size, 'iec')} worth of {pluralize(project_label, project_count)} {pluralize("file", project_count)}.")
+  if required_project_name:
+    project_count = len(resolved_data)
+    log.info(f"Will download {format_number(total_size, 'iec')} worth of {pluralize(project_label, project_count)} {pluralize("file", project_count)}.")
+  else:
+    log.info(f"All requested {pluralize(project_label, len(projects))} has been downloaded, nothing to do!")
+    return 0
 
   answer = confirmation_prompt("Do you want to continue?", True)
   if not answer:
-    raise AddProjectsError("Cancelled")
+    print("Cancelled")
+    return 1
 
   if not project_dir:
-    raise TypeError("Cannot create directory for non-defined project type")
+    log.error("Cannot create directory for non-defined project type")
+    return 1
 
   project_dir.mkdir(exist_ok=True)
   for project in resolved_data.values():
@@ -465,7 +471,7 @@ def initialize_server(args):
 
   if mc_version == "latest":
     log.info("Getting Mojang game version manifest...")
-    latest_version = json.loads(fetch_url("https://launchermeta.mojang.com/mc/game/version_manifest.json")["text"])["latest"]["release"]
+    latest_version = json.loads(request_url("https://launchermeta.mojang.com/mc/game/version_manifest.json")["text"])["latest"]["release"]
     mc_version = latest_version
 
   if loader == "vanilla":
@@ -516,7 +522,7 @@ def install_server(args):
       download_url(f"https://meta.fabricmc.net/v2/versions/loader/{server_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
     case "vanilla":
       log.info("Getting Mojang game version manifest...")
-      version_manifest = json.loads(fetch_url("https://launchermeta.mojang.com/mc/game/version_manifest.json")["text"])
+      version_manifest = json.loads(request_url("https://launchermeta.mojang.com/mc/game/version_manifest.json")["text"])
 
       selected_version_url = ""
       for version in version_manifest["versions"]:
@@ -524,7 +530,7 @@ def install_server(args):
           selected_version_url =  version["url"]
           break
 
-      server_download = json.loads(fetch_url(selected_version_url)["text"])["downloads"]["server"]
+      server_download = json.loads(request_url(selected_version_url)["text"])["downloads"]["server"]
       log.info(f"Downloading jarfile for vanilla Minecraft server {server_version}...")
 
       download_url(server_download["url"], launcher_config["jarfile"], hashes={
@@ -576,9 +582,7 @@ def search_projects(args):
     ]
 
   log.info(search_message)
-  response = json.loads(fetch_url(
-    f"{modrinth_api_base}search",
-    {
+  response = json.loads(request_url(f"{modrinth_api_base}search", query={
       "query": query,
       "facets": json.dumps(search_filters),
       "index": search_index,
@@ -648,9 +652,7 @@ def show_projects(args):
   update_project_label(load_config("server", allow_missing=True)["loader"]["name"])
 
   log.info(f"Getting {pluralize(project_label, len(projects))} information...")
-  projects_info = json.loads(fetch_url(
-    f"{modrinth_api_base}projects",
-    query={
+  projects_info = json.loads(request_url(f"{modrinth_api_base}projects", query={
       "ids": json.dumps(projects)
     }
   )["text"])
@@ -703,31 +705,36 @@ def start_server(args):
   jarfile = launcher_config['jarfile']
 
   if not Path(jarfile).exists():
-    raise StartServerError(f"Couldn't find server jarfile '{jarfile}'")
+    log.error(f"Couldn't find server jarfile '{jarfile}'")
+    return 1
 
   if not shutil.which("java"):
-    raise StartServerError("Cannot find 'java' in PATH, is Java installed correctly?")
+    log.error("Cannot find 'java' in PATH, is Java installed correctly?")
+    return 1
 
   if memory_limit["min"] > memory_limit["max"]:
-    raise StartServerError(f"Minimum RAM cannot be larger that maximum RAM, please check configuration for `launcher`")
+    log.error(f"Minimum RAM cannot be larger that maximum RAM, please check configuration for `launcher`")
+    return 1
 
   try:
     if not check_eula_agreed():
       log.warning("You need to agree to Mojang's EULA in order to run the server: https://aka.ms/MinecraftEULA")
-      log.info(f"Type {wrap_ansi(eula_agree_sentence, 'yellow')} (case-sensitive) to agree with Mojang's EULA.")
+      log.info(f"Please type '{wrap_ansi(eula_agree_sentence, 'yellow')}' (case-insensitive) to agree with Mojang's EULA.")
       answer = input("> ")
 
-      if answer == eula_agree_sentence:
+      if answer.lower() == eula_agree_sentence.lower():
         eula_agree()
       else:
-        raise EULAAgreementError("Failed to start the Minecraft server: EULA not agreed")
+        log.error("Failed to start the Minecraft server: EULA not agreed")
+        return 1
   except KeyboardInterrupt:
-    raise EULAAgreementError("\nFailed to start the Minecraft server: EULA not agreed")
+    log.error("\nFailed to start the Minecraft server: EULA not agreed")
+    return 1
 
   java_command_argv = [
     "java",
-    f"-Xms{memory_limit['min']}M",
     f"-Xmx{memory_limit['max']}M",
+    f"-Xms{memory_limit['min']}M",
     "-jar",
     launcher_config["jarfile"]
   ]
@@ -737,7 +744,7 @@ def start_server(args):
 
   log.info("Starting Minecraft server...")
   log.debug(f"Executing command: {' '.join(java_command_argv)}")
-  os.execvp("java", java_command_argv)
+  os.execvp(java_command_argv[0], java_command_argv)
 
 # Log handler
 class ClearLineHandler(log.StreamHandler):
@@ -816,13 +823,4 @@ def main():
   parser_show.set_defaults(func=show_projects)
 
   args = parser.parse_args()
-
-  # Let it crash
-  if debug_mode:
-    args.func(args)
-  else:
-    try:
-      args.func(args)
-    except Exception as error:
-      log.error(error)
-      sys.exit(1)
+  sys.exit(args.func(args))

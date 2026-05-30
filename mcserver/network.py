@@ -11,18 +11,18 @@ from pathlib import Path
 class DownloadURLError(Exception): pass
 
 # Variables
-user_agent = f"Othecat35/MCServer/{__version__}"
+user_agent = f"Othecat35/MCServer/{__version__} (https://github.com/Othecat35/MCServer)"
 tempfiles_dir = mcserver_dir / "tempfiles"
 read_chunk_size: int = 1024 * 64 # 64KiB
 
 # Functions
-def fetch_url(url: str, query: dict | None | None = None, headers: dict | None | None = None, timeout: int = 10):
+def request_url(url: str, query: dict | None = None, data: dict | None = None, headers: dict | None = None, method: str = "get", timeout: int = 10) -> dict:
   if query is None: query = {}
   if headers is None: headers = {}
   headers.setdefault("User-Agent", user_agent)
 
   query_string = f"?{urllib.parse.urlencode(query)}" if query else ""
-  request = urllib.request.Request(f"{url}{query_string}", headers=headers, method="GET")
+  request = urllib.request.Request(f"{url}{query_string}", data=data, headers=headers, method=method)
 
   log.debug(f"Fetching URL: {request.full_url}")
   with urllib.request.urlopen(request, timeout=timeout) as response:

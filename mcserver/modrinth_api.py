@@ -2,7 +2,7 @@ import json
 from typing import TypedDict, NotRequired
 
 from constants import modrinth_api_base
-from networking import fetch_url
+from network import request_url
 from shared import pluralize
 
 # TypedDict
@@ -76,7 +76,7 @@ def fetch_project_versions(project_id: str, game_versions: list[str] | str | Non
     "include_changelog": json.dumps(include_changelog)
   }
 
-  fetched_versions = json.loads(fetch_url(f"{modrinth_api_base}project/{project_id}/version", query=query_parameters)["text"])
+  fetched_versions = json.loads(request_url(f"{modrinth_api_base}project/{project_id}/version", query=query_parameters)["text"])
 
   if len(fetched_versions) == 0:
     error_message = f"Project '{project_id}' has no version"
