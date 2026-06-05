@@ -1,57 +1,87 @@
 import json
 
-from typing import TypedDict
+from typing import Type, TypedDict
 
 from network import request_url
 from constants import papermc_api_base
 
 # TypedDicts
-class BuildCommit(TypedDict):
-  commit_hash: str
-  commit_time: str
-  message: str
-
-class DownloadChecksum(TypedDict):
+class DownloadChecksums(TypedDict):
   sha256: str
 
 class BuildDownload(TypedDict):
   file_name: str
-  checksums: DownloadChecksum
+  checksums: DownloadChecksums
   file_size: int
   download_url: str
+
+class BuildCommit(TypedDict):
+  build_sha: str
+  build_time: str
+  message: str
 
 class ProjectBuild(TypedDict):
   build_id: int
   build_time: str
   channel: str
   commits: list[BuildCommit]
-  download: BuildDownload
+  downloads: BuildDownload
 
 # Functions
 def get_latest_build(project_name: str, game_version: str) -> ProjectBuild:
-  build_data = request_url(f"{papermc_api_base}v3/projects/{project_name}/versions/{game_version}/builds/latest")["text"]
+  response = json.loads(request_url(f"{papermc_api_base}projects/{project_name}/versions/{game_version}/builds/latest")["body"])
 
   build_commits = []
-  for commit in build_data["commits"]:
+  for commit in response["commits"]:
     build_commits.append({
-      "commit_hash": commit["hash"],
+      "commit_hash": commit["sha"],
       "commit_time": commit["time"],
       "message": commit["message"]
     })
 
-  build_download = build_data["downloads"]["server:default"]
+  # NOTE: For now, it is hardcoded to only use the "server:default" 'prop'
+  server_default = response["downloads"]["server:default"]
 
   return {
-    "build_id": build_data["id"],
-    "build_time": build_data["time"],
-    "channel": build_data["channel"],
+    "build_id": response["id"],
+    "build_time": response["time"],
+    "channel": response["channel"],
     "commits": build_commits,
-    "download": {
-      "file_name": build_download["name"],
-      "checksums": {
-        "sha256": build_download["checksums"]["sha256"]
+    "downloads": {
+    "file_name": server_default["name"],
+    "checksums": {
+      "sha256": server_default["checksums"]["sha256"]
       },
-      "file_size": build_download["size"],
-      "download_url": build_download["url"]
+      "file_size": server_default["size"],
+      "download_url": server_default["url"]
+    }
+  }
+
+def get_build(project_name: str, game_version: str, build_id: int) -> ProjectBuild:
+  response = json.loads(request_url(f"{papermc_api_base}projects/{project_name}/versions/{game_version}/builds/{build_id}")["body"])
+
+  build_commits = []
+  for commit in response["commits"]:
+    build_commits.append({
+      "commit_hash": commit["sha"],
+      "commit_time": commit["time"],
+      "message": commit["message"]
+    })
+
+  # NOTE: For now, it is hardcoded to only use the "server:default" 'prop'
+  server_default = response["downloads"]["server:default"]
+
+  return {
+    "build_id": response["id"],
+    "build_time": response["time"],
+    "channel": response["channel"],
+    "commits": build_commits,
+    "downloads": {
+    "file_name": server_default["name"],
+    "checksums": {
+      "sha256": server_default["checksums"]["sha256"]
+      },
+      "file_size": server_default["size"],
+      "download_url": server_default["url"]
     }
   }

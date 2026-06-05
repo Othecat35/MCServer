@@ -2,8 +2,7 @@ import copy, json
 
 import logging as log
 
-from constants import mcserver_dir
-from shared import merge_dict
+from shared import mcserver_dir, merge_dict
 
 # Variables
 configs_dir = mcserver_dir / "configs"

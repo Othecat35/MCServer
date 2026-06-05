@@ -256,7 +256,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
 
   projects = json.loads(request_url(f"{modrinth_api_base}projects", query={
     "ids": json.dumps(fetch_ids)
-  })["text"])
+  })["body"])
 
   for project in projects:
     if resolved_data[project["id"]]["type"] in (version_dependency_types["required"], version_dependency_types["incompatible"]):
@@ -410,7 +410,7 @@ def initialize_server(args):
 
   if mc_version == "latest":
     log.info("Getting Mojang game version manifest...")
-    latest_version = json.loads(request_url("https://launchermeta.mojang.com/mc/game/version_manifest.json")["text"])["latest"]["release"]
+    latest_version = json.loads(request_url("https://launchermeta.mojang.com/mc/game/version_manifest.json")["body"])["latest"]["release"]
     mc_version = latest_version
 
   if loader == "vanilla":
@@ -461,7 +461,7 @@ def install_server(args):
       download_url(f"https://meta.fabricmc.net/v2/versions/loader/{server_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
     case "vanilla":
       log.info("Getting Mojang game version manifest...")
-      version_manifest = json.loads(request_url("https://launchermeta.mojang.com/mc/game/version_manifest.json")["text"])
+      version_manifest = json.loads(request_url("https://launchermeta.mojang.com/mc/game/version_manifest.json")["body"])
 
       selected_version_url = ""
       for version in version_manifest["versions"]:
@@ -469,7 +469,7 @@ def install_server(args):
           selected_version_url =  version["url"]
           break
 
-      server_download = json.loads(request_url(selected_version_url)["text"])["downloads"]["server"]
+      server_download = json.loads(request_url(selected_version_url)["body"])["downloads"]["server"]
       log.info(f"Downloading jarfile for vanilla Minecraft server {server_version}...")
 
       download_url(server_download["url"], launcher_config["jarfile"], hashes={
@@ -527,7 +527,7 @@ def search_projects(args):
       "index": search_index,
       "limit": search_limit,
       "offset": search_offset
-    })["text"])
+    })["body"])
 
   projects_list = response.get("hits", [])
   if not projects_list:
@@ -593,7 +593,7 @@ def show_projects(args):
   projects_info = json.loads(request_url(f"{modrinth_api_base}projects", query={
       "ids": json.dumps(projects)
     }
-  )["text"])
+  )["body"])
 
   for project_index, project in enumerate(projects_info):
     title = wrap_ansi(project.get("title", "") or "<No Title>", "bold")

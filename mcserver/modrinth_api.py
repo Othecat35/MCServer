@@ -76,7 +76,7 @@ def fetch_project_versions(project_id: str, game_versions: list[str] | str | Non
     "include_changelog": json.dumps(include_changelog)
   }
 
-  fetched_versions = json.loads(request_url(f"{modrinth_api_base}project/{project_id}/version", query=query_parameters)["text"])
+  fetched_versions = json.loads(request_url(f"{modrinth_api_base}project/{project_id}/version", query=query_parameters)["body"])
 
   if len(fetched_versions) == 0:
     error_message = f"Project '{project_id}' has no version"

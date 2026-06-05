@@ -7,6 +7,12 @@ from constants import __version__
 from shared import current_dir, format_number, mcserver_dir, print_status
 
 from pathlib import Path
+from typing import  TypedDict
+
+# TypedDict
+class ResponseObject(TypedDict):
+  body: str
+  headers: dict
 
 # Errors
 class DownloadURLError(Exception): pass
@@ -17,7 +23,7 @@ tempfiles_dir = mcserver_dir / "tempfiles"
 read_chunk_size: int = 1024 * 64 # 64KiB
 
 # Functions
-def request_url(url: str, query: dict | None = None, data: dict | None = None, headers: dict | None = None, method: str = "GET", timeout: int = 10) -> dict:
+def request_url(url: str, query: dict | None = None, data: dict | None = None, headers: dict | None = None, method: str = "GET", timeout: int = 10) -> ResponseObject:
   method = method.upper()
   if query is None: query = {}
   if headers is None: headers = {}
@@ -35,8 +41,8 @@ def request_url(url: str, query: dict | None = None, data: dict | None = None, h
       response_headers[key.lower()] = value
 
     return {
-      "headers": response_headers,
-      "text": response.read().decode("utf-8")
+      "body": response.read().decode("utf-8"),
+      "headers": response_headers
     }
 
 def download_url(url: str, filename: str | Path, hashes: dict | None | None = None, headers: dict | None = None, timeout: int = 10):
