@@ -3,7 +3,8 @@ import hashlib, shutil
 import urllib.parse, urllib.request
 import logging as log
 
-from constants import __version__, current_dir, mcserver_dir
+from constants import __version__
+from shared import current_dir, format_number, mcserver_dir, print_status
 
 from pathlib import Path
 
@@ -70,7 +71,7 @@ def download_url(url: str, filename: str | Path, hashes: dict | None | None = No
     log.debug(f"Expected {hash_name}: {expected_hash}")
 
   with urllib.request.urlopen(request_url, timeout=timeout) as response:
-    # content_length = int(response.getheader("Content-Length", default=0))
+    content_length = int(response.getheader("Content-Length", default=0))
     downloaded_length = 0
 
     with open(tempfile, mode="wb") as file:
@@ -85,10 +86,10 @@ def download_url(url: str, filename: str | Path, hashes: dict | None | None = No
 
         downloaded_length += len(data)
 
-        # if content_length == 0:
-        #   print_status(f"Downloading {basename}... (unknown final size)", dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}")
-        # else:
-        #   print_status(f"Downloading {basename}... File size: {format_number(content_length, 'iec')}", dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}/{format_number(content_length, 'iec')} ({round(downloaded_length / content_length * 100)}%)")
+        if content_length == 0:
+          print_status(f"Downloading {basename}... (unknown final size)", dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}")
+        else:
+          print_status(f"Downloading {basename}... File size: {format_number(content_length, 'iec')}", dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}/{format_number(content_length, 'iec')} ({round(downloaded_length / content_length * 100)}%)")
 
         file.write(data)
 

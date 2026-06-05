@@ -1,6 +1,6 @@
 import json
 
-from constants import mcserver_dir
+from shared import mcserver_dir
 
 # Variables
 project_indexes_dir = mcserver_dir / "project_indexes"

@@ -6,7 +6,7 @@ from constants import __version__
 from indexing import project_index_exists, write_project_index, read_project_index, project_indexes_dir, slug_id_file
 from modrinth_api import fetch_project_versions, ProjectVersionDependency, modrinth_api_base
 from network import download_url, request_url
-from shared import pluralize, format_number
+from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi
 
 from pathlib import Path
 from collections import deque
@@ -14,9 +14,6 @@ from collections import deque
 # Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
 log_level = log.DEBUG if debug_mode else log.INFO
-
-color_output_mode = "auto" # 'never', 'auto', 'always'
-isatty = sys.stdout.isatty() and sys.stderr.isatty()
 
 mods_loader = ["fabric"]
 plugins_loader = ["paper"]
@@ -32,27 +29,11 @@ version_dependency_types = {
   "incompatible": 3
 }
 
-ansi_codes = {
-  "gray": "\033[90m",
-  "green": "\033[92m",
-  "red": "\033[91m",
-  "yellow": "\033[93m",
-
-  "bold": "\033[1m",
-  "reset": "\033[0m",
-
-  "clear_line": "\033[K",
-  "cursor_up": "\033[A",
-  "start_line": "\033[G"
-}
-
 # Paths
 mods_dir = Path("mods")
 plugins_dir = Path("plugins")
 
-mcserver_dir = Path(".mcserver")
 configs_dir = mcserver_dir / "configs"
-
 tempfiles_dir = mcserver_dir / "tempfiles"
 
 # Error classes
@@ -83,52 +64,10 @@ class ResolveProjectsConflictsError(Exception):
     self.incompatible_dependants = incompatible_dependants
     self.required_dependants = required_dependants
 
-# Color functions
-def ansi(name: str):
-  match color_output_mode:
-    case "always":
-      return ansi_codes.get(name, "")
-    case "never":
-      return ""
-    case "auto":
-      if isatty:
-        return ansi_codes.get(name, "")
-
-      return ""
-    case _:
-      raise ValueError(f"Invalid string '{color_output_mode}' of variable color_output_mode")
-
-def wrap_ansi(string: str, ansi_name: str):
-  return f"{ansi(ansi_name)}{string}{ansi('reset')}"
-
-def mod_environment_color(environment: str, padding: int = 0):
-  if environment == "required":
-    return wrap_ansi(f"{'Required': <{padding}}", "green")
-  elif environment == "optional":
-    return wrap_ansi(f"{'Optional': <{padding}}", "yellow")
-  elif environment == "unsupported":
-    return wrap_ansi(f"{'Unsupported': <{padding}}", "red")
-  elif environment == "unknown":
-    return wrap_ansi(f"{'Unknown': <{padding}}", "gray")
-  return f"{environment: <{padding}}"
-
 # Functions
 def print_help(args):
   args.parser.print_help()
   sys.exit(0)
-
-last_status_message = ""
-def print_status(message: str, dynamic: str | None = None):
-  if dynamic is None: dynamic = ""
-  global last_status_message
-
-  if dynamic and isatty:
-    print(f"{ansi('clear_line')} {dynamic}", end=ansi('start_line'), flush=True)
-  else:
-    if message != last_status_message:
-      print(message, flush=True)
-
-      last_status_message = message
 
 def hahaha_yes():
   print("The cake is a lie.")

@@ -1,3 +1,6 @@
+import sys
+
+from pathlib import Path
 from constants import iec_prefixes, si_prefixes
 
 # Variables
@@ -5,6 +8,27 @@ special_plural = {
   "is": "are",
   "this": "these"
 }
+
+current_dir: Path = Path.cwd()
+mcserver_dir: Path = Path(".mcserver")
+
+color_output_mode = "auto" # 'never', 'auto', 'always'
+ansi_codes = {
+  "gray": "\033[90m",
+  "green": "\033[92m",
+  "red": "\033[91m",
+  "yellow": "\033[93m",
+
+  "bold": "\033[1m",
+  "reset": "\033[0m",
+
+  "clear_line": "\033[K",
+  "cursor_up": "\033[A",
+  "start_line": "\033[G"
+}
+
+isatty = sys.stdout.isatty() and sys.stderr.isatty()
+last_status_message = ""
 
 # Functions
 def pluralize(singular: str, count: int = 0, plural: str = ""):
@@ -56,3 +80,43 @@ def merge_dict(base: dict, update: dict):
       base[key] = value
 
   return base
+
+def ansi(name: str):
+  match color_output_mode:
+    case "always":
+      return ansi_codes.get(name, "")
+    case "never":
+      return ""
+    case "auto":
+      if isatty:
+        return ansi_codes.get(name, "")
+
+      return ""
+    case _:
+      raise ValueError(f"Invalid string '{color_output_mode}' of variable color_output_mode")
+
+def wrap_ansi(string: str, ansi_name: str):
+  return f"{ansi(ansi_name)}{string}{ansi('reset')}"
+
+def mod_environment_color(environment: str, padding: int = 0):
+  if environment == "required":
+    return wrap_ansi(f"{'Required': <{padding}}", "green")
+  elif environment == "optional":
+    return wrap_ansi(f"{'Optional': <{padding}}", "yellow")
+  elif environment == "unsupported":
+    return wrap_ansi(f"{'Unsupported': <{padding}}", "red")
+  elif environment == "unknown":
+    return wrap_ansi(f"{'Unknown': <{padding}}", "gray")
+  return f"{environment: <{padding}}"
+
+def print_status(message: str, dynamic: str | None = None):
+  if dynamic is None: dynamic = ""
+  global last_status_message
+
+  if dynamic and isatty:
+    print(f"{ansi('clear_line')} {dynamic}", end=ansi('start_line'), flush=True)
+  else:
+    if message != last_status_message:
+      print(message, flush=True)
+
+      last_status_message = message

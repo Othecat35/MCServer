@@ -3,8 +3,7 @@ import json
 from typing import TypedDict
 
 from network import request_url
-
-papermc_base_api = "https://fill.papermc.io/"
+from constants import papermc_api_base
 
 # TypedDicts
 class BuildCommit(TypedDict):
@@ -30,7 +29,7 @@ class ProjectBuild(TypedDict):
 
 # Functions
 def get_latest_build(project_name: str, game_version: str) -> ProjectBuild:
-  build_data = request_url(f"{papermc_base_api}v3/projects/{project_name}/versions/{game_version}/builds/latest")["text"]
+  build_data = request_url(f"{papermc_api_base}v3/projects/{project_name}/versions/{game_version}/builds/latest")["text"]
 
   build_commits = []
   for commit in build_data["commits"]:
