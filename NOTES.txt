@@ -23,9 +23,9 @@ Here's where I can yap about something
 ---
 
 Semantic Versioning (MAJOR.Minor.patch):
-- MAJOR: When you make incompatible changes
-- Minor: When you add or change functionality that is backward compatible
-- patch: When you make backward compatible bug fixes
+- MAJOR: When you make incompatible API changes
+- Minor: When you add functionality that is backward compatible
+- patch: When you make bug fixes
 
 The "v" Version Prefix:
 - Use in:
@@ -39,8 +39,10 @@ The "v" Version Prefix:
   - Changelog header
   - (Basically everything that is internal about the project)
 
-Changelog Structure (Examples):
+Changelog Structure (Examples): ---
+
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
@@ -49,81 +51,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Mod indexing
 
 ### Removed
+
 - The whole project
 
 ## [<semver>] - <date(YYYY-MM-DD)>
 
 ### Added
+
 - New command `D`
 
 ### Changed
+
 - Command `A` now print `Hello, world!`
 
 ### Deprecating
+
 - Removing command `C`
 
 ### Removed
+
 - Command `B`
 
 ### Fixed
+
 - Bug where the script stuck in an infinite loop
 
 ### Security
+
 - Fix auth bug
 
-[unreleased] : https://github.com/Othecat35/MCServer/compare/<latest_tag>...HEAD
-[<current_tag>] : https://github.com/Othecat35/MCServer/compare/<prev_tag>...<current_tag>
+## [0.0.0] - 2026-06-08
+
+### Changed
+
+- This example
+
+[unreleased]: https://github.com/<username/<repo>/compare/<latest_tag>...HEAD
+[<semvar>]: https://github.com/<username>/<repo>/compare/<prev_tag>...<tag>
+[0.1.0]: https://github.com/<username>/<repo>/releases/tag/v0.1.0
 
 ---
 
-add_argument
-name or flags - Either a name or a list of option strings, e.g. 'foo' or '-f', '--foo'.
-action        - The basic type of action to be taken when this argument is encountered at the command line.
-nargs         - The number of command-line arguments that should be consumed.
-const         - A constant value required by some action and nargs selections.
-default       - The value produced if the argument is absent from the command line and if it is absent from the namespace object.
-type          - The type to which the command-line argument should be converted.
-choices       - A sequence of the allowable values for the argument.
-required      - Whether or not the command-line option may be omitted (optionals only).
-help          - A brief description of what the argument does.
-metavar       - A name for the argument in usage messages.
-dest          - The name of the attribute to be added to the object returned by parse_args().
-deprecated    - Whether or not use of the argument is deprecated.
-
-dependencies and dependents
-mod indexing
-split mod dependency resolution and download from the add_mod command: done, but just the BFS
 make it nicer (imposible)
-- what am I doing making this project? my school has nothing to do with it. Me being self-deprecating and having Impostor Syndrome while coding is apparently normal? how?
-paper? later.
+- what am I doing making this project? my school has nothing to do with it. Me being self-deprecating and having Impostor Syndrome while coding is apparently normal? how? #TODO: comment-out this line
+paper? later. I mean it is close to being worked on ;)
 progress bar: whats that
-more efficient sha calculating directly while downloading instead if after downloading: yay
 warn client only mod because as the name suggest, it is designed for server! client already have too much attention ;/
 fabric installer, be dynamic (but sadly coding is not that magical that I can command the computer easily :insert_smile_with_tears_emoji:)
-mod indexing is per mod. dependencies and depends, is a list, which contains id and type.
-move the print_status as a callback to intergrate directly in resolve_mods: done
-download_url with a status indicator like how much is downloaded vs total seems great: there, check it yourself
-add init options for search because I felt like it
+add init options for search because I felt like it: future/present me here. I, in fact, don't actually felt like it.
 Lol the data-driven backup >:(
-pid lock I guess
-java installed check smh: fine, there
+pid lock I guess, what? .mcserver/.lock
 be a good API citizen and implement ratelimit check >:)
-auto download sometimes, when there's no optional or incompatible mods, or the size is "reasonable"
+auto download sometimes, when there's no optional or incompatible mods, or the size is "reasonable": what are you talking about?
 haha, the scope will grow even more when you implement that rdepends >:)
-oh hell nah, I already implemented that rdepends? how so quick? I have AI as helper, if you know rubberducking, that is exactly what I'm doing! not vibecodinf I swear.
-Before that, fix my data migration logic first to make every single entry uses id as the key and don't leave any slug left!
-After that, also implement a conflict check pls, like if you request this mod and that mod, and they met as "incompatible", whatever. you are kinda responsible for that, not really but nice to have, and make yourself comoareable to Prism >:). by "you" I mean myself.
-And then? hahaha, the hole of the rabbithole for dependency resolution didn't end there, you have to index them. why? because I said so. nah jk, because we should know that we already have Fabric API installed so we don't redownload it again
+oh hell nah, I already implemented that rdepends? how so quick? I have AI as helper, if you know rubberducking, that is exactly what I'm doing! not vibecoding I swear.
+Before that, fix my data migration logic first to make every single entry uses id as the key and don't leave any slug left! done, lol
+After that, also implement a conflict check pls, like if you request this mod and that mod, and they met as "incompatible", whatever. you are kinda responsible for that, not really but nice to have, and make yourself comoareable to Prism >:). by "you" I mean myself. there, pls update your mcserver
+And then? hahaha, the hole of the rabbithole for dependency resolution didn't end there, you have to index them. why? because I said so. nah jk, because we should know that we already have Fabric API installed so we don't redownload it again. wdym?
 remove? list? update? clean? check? yep, btw clean means remove orphaned mods, and check? I guess that can be used to scan for any manual .jar added in mods/
-now make any mod that are incompatible ripples down to the source, only stopped by an optional mod -_-, wait, why I'm bother to fetch optional mods? just make it required only!
-You screwed up the add command lol
-mod indexing, don't forget!
-Gemini suggest adding "status" command and get ran usage info, sure but not noe
+now make any mod that are incompatible ripples down to the source, only stopped by an optional mod -_-, wait, why I'm bother to fetch optional mods? just make it required only! idk I'm in the middle of refactoring rn
+You screwed up the add command lol, no I'm not >:c
+mod indexing, don't forget! don't remind me the... 3rd time?
+Gemini suggest adding "status" command and get ram usage info, sure but not now. oh good idea I guess
 A good error message for UX is one that not only tell you what went wrong, but also how to fix that error (or at least tell what caused the error)
 
 - Consider to cache optional projects' bulk fetch data in resolved_projects even though we don't neccesearily process it?
 - Delete cache if we don't install it (like dry run)
 - Oh, back with zipapp huh... and I also have pyright now? cool
+- You know what's cool? the ability to put 1.125M in the RAM config ofc. and also check if system RAM is even enough to run the server with the config.
+- Make backup data-driven, meaning you can choose what ro get bsckup. and also option to rotate backup seems good for storage, deleting older backup for the new one.
