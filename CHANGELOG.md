@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.14] - 2026-06-11
+
+### Changed
+
+- Revert code changes
+
 ## [1.13.13] - 2026-06-11
 
 ### Changed
@@ -144,7 +150,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased]: https://github.com/Othecat35/MCServer/compare/v1.13.12...HEAD
+[unreleased]: https://github.com/Othecat35/MCServer/compare/v1.13.14...HEAD
+[1.13.14]: https://github.com/Othecat35/MCServer/compare/v1.13.13...v1.13.14
+[1.13.13]: https://github.com/Othecat35/MCServer/compare/v1.13.12...v1.13.13
 [1.13.12]: https://github.com/Othecat35/MCServer/compare/v1.13.11...v1.13.12
 [1.13.11]: https://github.com/Othecat35/MCServer/compare/v1.13.10...v1.13.11
 [1.13.10]: https://github.com/Othecat35/MCServer/compare/v1.13.9...v1.13.10
