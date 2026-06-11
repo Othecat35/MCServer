@@ -62,7 +62,7 @@ class ResolveProjectsError(Exception):
     self.dependants = dependants or []
 
 # Functions
-def fetch_project_versions(project_id: str, game_versions: list[str] | str | None = None, loader_names: list[str] | str | None = None, include_changelog: bool = False) -> list[ProjectVersion]:
+def get_project_versions(project_id: str, game_versions: list[str] | str | None = None, loader_names: list[str] | str | None = None, include_changelog: bool = False) -> list[ProjectVersion]:
   if isinstance(game_versions, str): game_versions = [game_versions]
   if isinstance(loader_names, str): loader_names = [loader_names]
 
@@ -76,7 +76,7 @@ def fetch_project_versions(project_id: str, game_versions: list[str] | str | Non
     "include_changelog": json.dumps(include_changelog)
   }
 
-  fetched_versions = json.loads(request_url(f"{modrinth_base_api}//project/{project_id}/version", query=query_parameters)["body"])
+  fetched_versions = json.loads(request_url(f"{modrinth_base_api}/project/{project_id}/version", query=query_parameters)["body"])
 
   if len(fetched_versions) == 0:
     error_message = f"Project '{project_id}' has no version"
