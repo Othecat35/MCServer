@@ -81,6 +81,30 @@ def merge_dict(base: dict, update: dict):
 
   return base
 
+def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
+  accepted_value = "y/n"
+  if default_option:
+    accepted_value = "Y/n"
+  else:
+    accepted_value = "y/N"
+
+  try:
+    answer = input(f"{prompt} [{accepted_value}]: ")
+  except KeyboardInterrupt:
+    print() # To avoid weird no newline when Ctrl+C
+    return False
+
+  match answer.lower():
+    case "y" | "yes":
+      return True
+    case "n" | "no":
+      return False
+    case "":
+      return default_option
+    case _:
+      return False
+
+# ANSI
 def ansi(name: str):
   match color_output_mode:
     case "always":

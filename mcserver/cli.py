@@ -4,9 +4,9 @@ import logging as log
 from config import default_configs, generate_config, load_config
 from constants import __version__
 from indexing import project_index_exists, write_project_index, read_project_index, project_indexes_dir, slug_id_file
-from modrinth_api import fetch_project_versions, ProjectVersionDependency, modrinth_api_base
+from modrinth_api import fetch_project_versions, ProjectVersionDependency, modrinth_base_api
 from network import download_url, request_url
-from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi
+from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
 
 from pathlib import Path
 from collections import deque
@@ -72,29 +72,6 @@ def print_help(args):
 def hahaha_yes():
   print("The cake is a lie.")
   sys.exit(0)
-
-def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
-  accepted_value = "y/n"
-  if default_option:
-    accepted_value = "Y/n"
-  else:
-    accepted_value = "y/N"
-
-  try:
-    answer = input(f"{prompt} [{accepted_value}]: ")
-  except KeyboardInterrupt:
-    print() # To avoid weird no newline when Ctrl+C
-    return False
-
-  match answer.lower():
-    case "y" | "yes":
-      return True
-    case "n" | "no":
-      return False
-    case "":
-      return default_option
-    case _:
-      return False
 
 def wrap_string(string: str, initial_indent: str | int = "", subsequent_indent: str | int = "", width: int | None = None):
   if isinstance(initial_indent, int):
@@ -254,7 +231,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
     #If project data doesn't have slug, fetch it
     if not project_data.get("slug"): fetch_ids.append(project_id)
 
-  projects = json.loads(request_url(f"{modrinth_api_base}projects", query={
+  projects = json.loads(request_url(f"{modrinth_base_api}/projects", query={
     "ids": json.dumps(fetch_ids)
   })["body"])
 
@@ -521,7 +498,7 @@ def search_projects(args):
     ]
 
   log.info(search_message)
-  response = json.loads(request_url(f"{modrinth_api_base}search", query={
+  response = json.loads(request_url(f"{modrinth_base_api}/search", query={
       "query": query,
       "facets": json.dumps(search_filters),
       "index": search_index,
@@ -590,7 +567,7 @@ def show_projects(args):
   update_project_label(load_config("server", allow_missing=True)["loader"]["name"])
 
   log.info(f"Getting {pluralize(project_label, len(projects))} information...")
-  projects_info = json.loads(request_url(f"{modrinth_api_base}projects", query={
+  projects_info = json.loads(request_url(f"{modrinth_base_api}/projects", query={
       "ids": json.dumps(projects)
     }
   )["body"])
