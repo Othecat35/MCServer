@@ -59,8 +59,8 @@ def download_url(url: str, filename: str | Path, hashes: dict | None | None = No
   log.debug(f"Downloading URL: {request_url.full_url}")
   log.debug(f"Temporary file: {tempfile}")
 
-  hash_algorithm  = None
-  hash_name  = None
+  hash_algorithm = None
+  hash_name = None
 
   if hashes.get("sha512"):
     hash_algorithm = hashlib.sha512()

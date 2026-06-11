@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.15] - 2026-06-11
+
+### Added
+
+- Error class when there's no file in a project version
+
+### Fixed
+
+- The slug_to_id function to use existing format
+- The Mdorinth API base to use https instead of http
+
+### Removed
+
+- Unused error class
+
 ## [1.13.14] - 2026-06-11
 
 ### Changed
@@ -150,7 +165,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased]: https://github.com/Othecat35/MCServer/compare/v1.13.14...HEAD
+[unreleased]: https://github.com/Othecat35/MCServer/compare/v1.13.15...HEAD
+[1.13.15]: https://github.com/Othecat35/MCServer/compare/v1.13.14...v1.13.15
 [1.13.14]: https://github.com/Othecat35/MCServer/compare/v1.13.13...v1.13.14
 [1.13.13]: https://github.com/Othecat35/MCServer/compare/v1.13.12...v1.13.13
 [1.13.12]: https://github.com/Othecat35/MCServer/compare/v1.13.11...v1.13.12

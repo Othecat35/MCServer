@@ -1,6 +1,6 @@
 import json
 
-from typing import Type, TypedDict
+from typing import TypedDict
 
 from network import request_url
 from constants import papermc_base_api

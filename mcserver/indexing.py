@@ -31,6 +31,6 @@ def slug_to_id(project_slug: str) -> str:
     log.debug("Loading slug_id.json")
     slug_id = json.loads(slug_id_file.read_text())
 
-  project_id = slug_id.get(project_slug, project_slug)
+  project_id = slug_id.get(project_slug, {"id": project_slug})["id"]
   log.debug(f"Project slug '{project_slug}' is id '{project_id}'")
   return project_id

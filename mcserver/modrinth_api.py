@@ -44,7 +44,7 @@ class ProjectVersion(TypedDict):
   primary_file: ProjectVersionFile
 
 # Errors
-class NoProjectVersionError(Exception):
+class NoProjectVersionFileError(Exception):
   def __init__(self, message: str, project_id: str, loader_names: list[str] | None , game_versions: list[str] | None):
     super().__init__(message)
 
@@ -52,14 +52,13 @@ class NoProjectVersionError(Exception):
     self.loader_names = loader_names
     self.game_versions = game_versions
 
-class ResolveProjectsError(Exception):
-  def __init__(self, message: str, mod_id: str, dependants: list | str | None = None):
-    if dependants is None: dependants = []
-    if isinstance(dependants, str): dependants = [dependants]
+class NoProjectVersionError(Exception):
+  def __init__(self, message: str, project_id: str, loader_names: list[str] | None , game_versions: list[str] | None):
     super().__init__(message)
 
-    self.mod_id = mod_id
-    self.dependants = dependants or []
+    self.project_id = project_id
+    self.loader_names = loader_names
+    self.game_versions = game_versions
 
 # Functions
 def get_project_versions(project_id: str, game_versions: list[str] | str | None = None, loader_names: list[str] | str | None = None, include_changelog: bool = False) -> list[ProjectVersion]:
@@ -125,8 +124,10 @@ def get_project_versions(project_id: str, game_versions: list[str] | str | None 
       else:
         files.append(file_data)
 
-    if not primary_file:
+    if not primary_file and len(version["files"]) > 0:
       primary_file = files[0]
+    else:
+      raise NoProjectVersionFileError(f"Project version '{version["id"]}' has no file", version["project_id"], loader_names, game_versions)
 
     # Reconstruction
     project_versions.append({

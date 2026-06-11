@@ -1,6 +1,6 @@
-__version__: str = "1.13.14"
+__version__: str = "1.13.15"
 
-modrinth_base_api: str = "http://api.modrinth.com/v2"
+modrinth_base_api: str = "https://api.modrinth.com/v2"
 papermc_base_api: str = "https://fill.papermc.io"
 
 si_prefixes = ["", "K", "M", "B", "T"]
