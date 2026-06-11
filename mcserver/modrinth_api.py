@@ -124,10 +124,11 @@ def get_project_versions(project_id: str, game_versions: list[str] | str | None 
       else:
         files.append(file_data)
 
-    if not primary_file and len(version["files"]) > 0:
-      primary_file = files[0]
-    else:
-      raise NoProjectVersionFileError(f"Project version '{version["id"]}' has no file", version["project_id"], loader_names, game_versions)
+    if not primary_file:
+      if len(files) > 0:
+        primary_file = files[0]
+      else:
+        raise NoProjectVersionFileError(f"Project version '{version["id"]}' has no file", version["project_id"], loader_names, game_versions)
 
     # Reconstruction
     project_versions.append({
