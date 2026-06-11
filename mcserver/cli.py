@@ -3,7 +3,7 @@ import logging as log
 
 from config import default_configs, generate_config, load_config
 from constants import __version__
-from indexing import project_index_exists, write_project_index, read_project_index, project_indexes_dir, slug_to_id
+from indexing import project_index_exists, write_project_index, read_project_index, project_indexes_dir, slug_to_id, slug_id_file, slug_id
 from modrinth_api import get_project_versions, ProjectVersionDependency, modrinth_base_api
 from network import download_url, request_url
 from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
@@ -114,15 +114,16 @@ def filter_dependencies_type(dependencies: dict, filter_type: str):
 
   return dependencies_list
 
-def resolve_projects(project_ids: list | str, game_version: str, loader_name: str):
-  project_ids = list(project_ids)
+def resolve_projects(projects_id: list | str, game_version: str, loader_name: str) -> dict:
+  projects_id = list(projects_id)
   unresolved_ids = deque()
   resolved_data = {}
 
-  for project_id in project_ids:
+  # Initial seeding
+  for project_id in projects_id:
     project_id = slug_to_id(project_id)
 
-    log.debug(f"Adding project '{project_id}' to unresolved")
+    log.debug(f"Adding project '{project_id}' as unresolved")
     unresolved_ids.append(project_id)
     resolved_data[project_id] = {
       "manual": True,
@@ -130,156 +131,131 @@ def resolve_projects(project_ids: list | str, game_version: str, loader_name: st
       "dependants": {}
     }
 
-  log.debug(json.dumps(resolved_data, indent=2))
+  # Main code
+  while unresolved_ids:
+    project_id = unresolved_ids.popleft()
+    project_data = resolved_data.pop(project_id)
+
+    log.debug(f"Processing project '{project_id}'")
+
+    skip_fetch_version = False
+
+    if project_index_exists(project_id):
+      project_index_data = read_project_index(project_id)
+      project_index_type = project_index_data["type"]
+
+      if project_index_type == version_dependency_types["incompatible"]:
+        project_index_dependants = project_index_data["dependants"]
+
+        incompatible_dependants = filter_dependencies_type(project_index_dependants, "incompatible")
+        required_dependants = filter_dependencies_type(project_index_dependants, "required")
+        raise ResolveProjectsConflictsError(project_id, incompatible_dependants, required_dependants)
+
+      log.debug("Project index exists, using it as cache")
+      project_index_data["dependants"].update(project_data["dependants"])
+      if project_data["manual"]:
+        project_index_data["manual"] = True
+
+      project_data = project_index_data
+      skip_fetch_version = True
+
+    if not skip_fetch_version:
+      log.debug("Fetching project version")
+      version = get_project_versions(project_id, game_version, loader_name)[0]
+      project_id = version["project_id"]
+
+      # Check if entry with project ID still exists (meaning we're still using slug)
+      if project_id in resolved_data:
+        log.debug(f"Found existing data with ID {project_id}")
+        existing_entry = resolved_data.pop(project_id)
+
+        # Check if existing entry is marked as incompatible
+        if existing_entry["type"] == version_dependency_types["incompatible"]:
+          incompatible_dependants = filter_dependencies_type(existing_entry["dependants"], "incompatible")
+          raise ResolveProjectsConflictsError(project_id, incompatible_dependants)
+
+        log.debug(f"Keeping existing data")
+        project_data["dependants"].update(existing_entry["dependants"])
+
+      project_data["version_id"] = version["version_id"]
+      project_data["version_name"] = version["version_name"]
+      project_data["version_number"] = version["version_number"]
+
+      project_data["dependencies"] = adapt_dependencies_data(version["dependencies"])
+      project_data["file"] = version["primary_file"]
+
+    for dependency_id, dependency_type in project_data["dependencies"].items():
+      if dependency_id in resolved_data:
+        dependency_data = resolved_data[dependency_id]
+        dependency_data_type = dependency_data["type"]
+        dependency_data_dependants = dependency_data["dependants"]
+
+        if dependency_type == version_dependency_types["required"]:
+          if dependency_data_type == version_dependency_types["incompatible"]:
+            incompatible_dependants = filter_dependencies_type(dependency_data_dependants, "incompatible")
+            raise ResolveProjectsConflictsError(dependency_id, incompatible_dependants, project_id)
+          elif dependency_data_type == version_dependency_types["optional"]:
+            log.debug(f"Adding initially optional dependency '{project_id}' to unresolved")
+            unresolved_ids.append(dependency_id)
+        elif dependency_type == version_dependency_types["incompatible"] and dependency_data_type == version_dependency_types["required"]:
+          required_dependants = filter_dependencies_type(dependency_data_dependants, "required")
+          raise ResolveProjectsConflictsError(dependency_id, project_id, required_dependants)
+
+        log.debug(f"Updating project data '{dependency_id}' with new '{dependency_type}' type dependant")
+        dependency_data["dependants"][project_id] = dependency_type
+        dependency_data["type"] = max(dependency_data["type"], dependency_type)
+      else:
+        log.debug(f"Adding new project entry for dependency: {dependency_id}")
+        resolved_data[dependency_id] = {
+          "manual": False,
+          "type": dependency_type,
+          "dependants": {
+            project_id: dependency_type
+          }
+        }
+
+        # Only process required mods
+        if dependency_type == version_dependency_types["required"]:
+          unresolved_ids.append(dependency_id)
+
+    resolved_data[project_id] = project_data
+
+  # Populate resolved_data with even more data
+  fetch_ids = []
+  for project_id, project_data in resolved_data.items():
+    #If project data doesn't have slug, fetch it
+    if not project_data.get("slug"): fetch_ids.append(project_id)
+
+  projects = json.loads(request_url(f"{modrinth_base_api}/projects", query={
+    "ids": json.dumps(fetch_ids)
+  })["body"])
+
+  for project in projects:
+    if resolved_data[project["id"]]["type"] in (version_dependency_types["required"], version_dependency_types["incompatible"]):
+      slug_id[project["slug"]] = {
+        "id": project["id"]
+      }
+
+    project_data = resolved_data[project["id"]]
+
+    project_data["project_slug"] = project["slug"]
+    project_data["project_title"] = project["title"]
+    project_data["project_description"] = project["description"]
+    project_data["project_license"] = project["license"]
+    project_data["loaders"] = project["loaders"]
+
+  # Update with new slug to ID data
+  slug_id_file.write_text(json.dumps(slug_id, indent=2))
+
+  # Write project index
+  for project_id, project_data in resolved_data.items():
+    project_type = project_data["type"]
+    if project_type in (version_dependency_types["required"], version_dependency_types["incompatible"]):
+      log.debug(f"Indexing project '{project_id}' with type {project_type} and manual {project_data['manual']}")
+      write_project_index(project_id, project_data)
+
+  if debug_mode: print(json.dumps(resolved_data, indent=2))
   return resolved_data
-
-# def resolve_projects(projects_id: list | str, game_version: str, loader_name: str) -> dict:
-#   if isinstance(projects_id, str): projects_id = [projects_id]
-#   unresolved_ids = deque()
-#   resolved_data = {}
-
-#   # Initial seeding
-#   slug_id = json.loads(slug_id_file.read_text())
-#   for project_id in projects_id:
-#     if project_id in slug_id:
-#       actual_id  = slug_id[project_id]["id"]
-
-#       log.debug(f"Replacing project slug '{project_id}' with ID '{actual_id}'")
-#       project_id = actual_id
-
-#     log.debug(f"Adding project '{project_id}' as unresolved")
-#     unresolved_ids.append(project_id)
-#     resolved_data[project_id] = {
-#       "manual": True,
-#       "type": version_dependency_types["required"],
-#       "dependants": {}
-#     }
-
-#   # Main code
-#   while unresolved_ids:
-#     project_id = unresolved_ids.popleft()
-#     project_data = resolved_data.pop(project_id)
-
-#     log.debug(f"Processing project '{project_id}'")
-
-#     skip_fetch_version = False
-
-#     if project_index_exists(project_id):
-#       project_index_data = read_project_index(project_id)
-#       project_index_type = project_index_data["type"]
-
-#       if project_index_type == version_dependency_types["incompatible"]:
-#         project_index_dependants = project_index_data["dependants"]
-
-#         incompatible_dependants = filter_dependencies_type(project_index_dependants, "incompatible")
-#         required_dependants = filter_dependencies_type(project_index_dependants, "required")
-#         raise ResolveProjectsConflictsError(project_id, incompatible_dependants, required_dependants)
-
-#       log.debug("Project index exists, using it as cache")
-#       project_index_data["dependants"].update(project_data["dependants"])
-#       if project_data["manual"]:
-#         project_index_data["manual"] = True
-
-#       project_data = project_index_data
-#       skip_fetch_version = True
-
-#     if not skip_fetch_version:
-#       log.debug("Fetching project version")
-#       version = get_project_versions(project_id, game_version, loader_name)[0]
-#       project_id = version["project_id"]
-
-#       # Check if entry with project ID still exists (meaning we're still using slug)
-#       if project_id in resolved_data:
-#         log.debug(f"Found existing data with ID {project_id}")
-#         existing_entry = resolved_data.pop(project_id)
-
-#         # Check if existing entry is marked as incompatible
-#         if existing_entry["type"] == version_dependency_types["incompatible"]:
-#           incompatible_dependants = filter_dependencies_type(existing_entry["dependants"], "incompatible")
-#           raise ResolveProjectsConflictsError(project_id, incompatible_dependants)
-
-#         log.debug(f"Keeping existing data")
-#         project_data["dependants"].update(existing_entry["dependants"])
-
-#       project_data["version_id"] = version["version_id"]
-#       project_data["version_name"] = version["version_name"]
-#       project_data["version_number"] = version["version_number"]
-
-#       project_data["dependencies"] = adapt_dependencies_data(version["dependencies"])
-#       project_data["file"] = version["primary_file"]
-
-#     for dependency_id, dependency_type in project_data["dependencies"].items():
-#       if dependency_id in resolved_data:
-#         dependency_data = resolved_data[dependency_id]
-#         dependency_data_type = dependency_data["type"]
-#         dependency_data_dependants = dependency_data["dependants"]
-
-#         if dependency_type == version_dependency_types["required"]:
-#           if dependency_data_type == version_dependency_types["incompatible"]:
-#             incompatible_dependants = filter_dependencies_type(dependency_data_dependants, "incompatible")
-#             raise ResolveProjectsConflictsError(dependency_id, incompatible_dependants, project_id)
-#           elif dependency_data_type == version_dependency_types["optional"]:
-#             log.debug(f"Adding initially optional dependency '{project_id}' to unresolved")
-#             unresolved_ids.append(dependency_id)
-#         elif dependency_type == version_dependency_types["incompatible"] and dependency_data_type == version_dependency_types["required"]:
-#           required_dependants = filter_dependencies_type(dependency_data_dependants, "required")
-#           raise ResolveProjectsConflictsError(dependency_id, project_id, required_dependants)
-
-#         log.debug(f"Updating project data '{dependency_id}' with new '{dependency_type}' type dependant")
-#         dependency_data["dependants"][project_id] = dependency_type
-#         dependency_data["type"] = max(dependency_data["type"], dependency_type)
-#       else:
-#         log.debug(f"Adding new project entry for dependency: {dependency_id}")
-#         resolved_data[dependency_id] = {
-#           "manual": False,
-#           "type": dependency_type,
-#           "dependants": {
-#             project_id: dependency_type
-#           }
-#         }
-
-#         # Only process required mods
-#         if dependency_type == version_dependency_types["required"]:
-#           unresolved_ids.append(dependency_id)
-
-#     resolved_data[project_id] = project_data
-
-#   # Populate resolved_data with even more data
-#   fetch_ids = []
-#   for project_id, project_data in resolved_data.items():
-#     #If project data doesn't have slug, fetch it
-#     if not project_data.get("slug"): fetch_ids.append(project_id)
-
-#   projects = json.loads(request_url(f"{modrinth_base_api}/projects", query={
-#     "ids": json.dumps(fetch_ids)
-#   })["body"])
-
-#   for project in projects:
-#     if resolved_data[project["id"]]["type"] in (version_dependency_types["required"], version_dependency_types["incompatible"]):
-#       slug_id[project["slug"]] = {
-#         "id": project["id"]
-#       }
-
-#     project_data = resolved_data[project["id"]]
-
-#     project_data["project_slug"] = project["slug"]
-#     project_data["project_title"] = project["title"]
-#     project_data["project_description"] = project["description"]
-#     project_data["project_license"] = project["license"]
-#     project_data["loaders"] = project["loaders"]
-
-#   # Update with new slug to ID data
-#   slug_id_file.write_text(json.dumps(slug_id, indent=2))
-
-#   # Write project index
-#   for project_id, project_data in resolved_data.items():
-#     project_type = project_data["type"]
-#     if project_type in (version_dependency_types["required"], version_dependency_types["incompatible"]):
-#       log.debug(f"Indexing project '{project_id}' with type {project_type} and manual {project_data['manual']}")
-#       write_project_index(project_id, project_data)
-
-#   if debug_mode: print(json.dumps(resolved_data, indent=2))
-#   return resolved_data
 
 # EULA functions
 def check_eula_agreed():

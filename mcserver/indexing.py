@@ -18,18 +18,11 @@ def write_project_index(project_id: str, project_data: dict) -> None:
 def read_project_index(project_id: str) -> dict:
   return json.loads((project_indexes_dir / f"{project_id}.json").read_text())
 
-# def create_project_index(project_id: str, project_data: dict) -> None:
-#   if project_index_exists(project_id):
-#     raise FileExistsError(f"Project index file for '{project_id}' already exists")
-#   else:
-#     write_project_index(project_id, project_data)
-
-def create_project_index(project_id: str, project_metadata: dict, project_relationship: dict[str, int]) -> None:
-  project_entry = project_indexes_dir / project_id
-  project_entry.mkdir(exist_ok=True)
-
-  project_metadata_file = project_entry / "metadata.json"
-  project_relationship_file = project_entry / "relationship.json"
+def create_project_index(project_id: str, project_data: dict) -> None:
+  if project_index_exists(project_id):
+    raise FileExistsError(f"Project index file for '{project_id}' already exists")
+  else:
+    write_project_index(project_id, project_data)
 
 slug_id = {}
 def slug_to_id(project_slug: str) -> str:
