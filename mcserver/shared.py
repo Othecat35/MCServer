@@ -1,7 +1,9 @@
+# Modules
 import sys
 
-from pathlib import Path
 from constants import iec_prefixes, si_prefixes
+
+from pathlib import Path
 
 # Variables
 special_plural = {
@@ -72,7 +74,7 @@ def format_number(number: str | float, unit_type: str = "si"):
 
   return f"{round(number, 2):g}{prefixes[iteration]}"
 
-def merge_dict(base: dict, update: dict):
+def merge_dict(base: dict, update: dict) -> dict:
   for key, value in update.items():
     if key in base and isinstance(base[key], dict) and isinstance(value, dict):
       merge_dict(base[key], value)

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-06-14
+
+### Changed
+
+- Separate the project index data to metadata and relationship
+
+### Fixed
+
+- Fetching list of ids when it is not needed
+
 ## [1.13.16] - 2026-06-11
 
 ### Fixed

@@ -1,8 +1,9 @@
+# Modules
 import json
 
 import logging as log
 
-from shared import mcserver_dir
+from shared import mcserver_dir, merge_dict
 
 # Variables
 indexes_dir = mcserver_dir / "indexes"
@@ -16,9 +17,11 @@ slug_id_file = indexes_dir / ".slug_id.json"
 #      metadata.json
 #      relationship.json
 
-
 # Functions
-def crate_project_index(project_id: str, metadata: dict | None = None, relationship: dict | None = None):
+def create_project_index(project_id: str, metadata: dict | None = None, relationship: dict | None = None) -> None:
+  if metadata is None: new_metadata = {}
+  if relationship is None: new_relationship = {}
+
   project_index = indexes_dir / project_id
   project_metadata = project_index / "metadata.json"
   project_relationship = project_index / "relationship.json"
@@ -30,7 +33,7 @@ def crate_project_index(project_id: str, metadata: dict | None = None, relations
   project_metadata.write_text(json.dumps(metadata, indent=2))
   project_relationship.write_text(json.dumps(relationship, indent=2))
 
-def read_project_index(project_id: str) -> dict[str, dict]:
+def read_project_index(project_id: str) -> dict:
   project_index = indexes_dir / project_id
   project_metadata = project_index / "metadata.json"
   project_relationship = project_index / "relationship.json"
@@ -40,10 +43,17 @@ def read_project_index(project_id: str) -> dict[str, dict]:
     "relationship": json.loads(project_relationship.read_text())
   }
 
-def update_project_index(project_id: str, new_metadata: dict | None = None, new_relationship: dict | None = None):
-    project_index = indexes_dir / project_id
+def update_project_index(project_id: str, new_metadata: dict | None = None, new_relationship: dict | None = None) -> None:
+  if new_metadata is None: new_metadata = {}
+  if new_relationship is None: new_relationship = {}
+
+  project_index = indexes_dir / project_id
   project_metadata = project_index / "metadata.json"
   project_relationship = project_index / "relationship.json"
+
+  old_data = read_project_index(project_id)
+  project_metadata.write_text(json.dumps(merge_dict(old_data["metadata"], new_metadata), indent=2))
+  project_relationship.write_text(json.dumps(merge_dict(old_data["relationship"], new_relationship), indent=2))
 
 def delete_project_index(project_id: str) -> None:
   project_index = indexes_dir / project_id
@@ -52,6 +62,10 @@ def delete_project_index(project_id: str) -> None:
 
   project_metadata.unlink()
   project_relationship.unlink()
+  project_index.rmdir()
+
+def project_index_exists(project_id: str) -> bool:
+  return (indexes_dir / project_id).exists()
 
 slug_id = {}
 def slug_to_id(project_slug: str) -> str:

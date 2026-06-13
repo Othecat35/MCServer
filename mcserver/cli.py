@@ -1,11 +1,12 @@
+# Modules
 import argparse, json, math, os, shutil, sys, textwrap, time
 import logging as log
 
 from config import default_configs, generate_config, load_config
 from constants import __version__
-from indexing import project_index_exists, write_project_index, read_project_index, project_indexes_dir, slug_to_id, slug_id_file, slug_id
+from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
 from modrinth_api import get_project_versions, ProjectVersionDependency, modrinth_base_api
-from network import download_url, request_url
+from networking import download_url, request_url
 from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
 
 from pathlib import Path
@@ -126,15 +127,22 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
     log.debug(f"Adding project '{project_id}' as unresolved")
     unresolved_ids.append(project_id)
     resolved_data[project_id] = {
-      "manual": True,
-      "type": version_dependency_types["required"],
-      "dependants": {}
+      "metadata": {},
+      "relationship": {
+        "manual": True,
+        "type": version_dependency_types["required"],
+        "dependencies": {},
+        "dependants": {}
+      }
     }
 
   # Main code
   while unresolved_ids:
     project_id = unresolved_ids.popleft()
+
     project_data = resolved_data.pop(project_id)
+    project_metadata = project_data["metadata"]
+    project_relationship = project_data["relationship"]
 
     log.debug(f"Processing project '{project_id}'")
 
@@ -142,19 +150,21 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
 
     if project_index_exists(project_id):
       project_index_data = read_project_index(project_id)
-      project_index_type = project_index_data["type"]
 
-      if project_index_type == version_dependency_types["incompatible"]:
-        project_index_dependants = project_index_data["dependants"]
+      project_index_relationship = project_index_data["relationship"]
+      project_dependency_type = project_index_relationship["type"]
 
-        incompatible_dependants = filter_dependencies_type(project_index_dependants, "incompatible")
-        required_dependants = filter_dependencies_type(project_index_dependants, "required")
+      if project_dependency_type == version_dependency_types["incompatible"]:
+        project_dependants = project_index_relationship["dependants"]
+
+        incompatible_dependants = filter_dependencies_type(project_dependants, "incompatible")
+        required_dependants = filter_dependencies_type(project_dependants, "required")
         raise ResolveProjectsConflictsError(project_id, incompatible_dependants, required_dependants)
 
       log.debug("Project index exists, using it as cache")
-      project_index_data["dependants"].update(project_data["dependants"])
-      if project_data["manual"]:
-        project_index_data["manual"] = True
+      project_index_relationship["dependants"].update(project_relationship["dependants"])
+      if project_relationship["manual"]:
+        project_index_relationship["manual"] = True
 
       project_data = project_index_data
       skip_fetch_version = True
@@ -168,27 +178,30 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
       if project_id in resolved_data:
         log.debug(f"Found existing data with ID {project_id}")
         existing_entry = resolved_data.pop(project_id)
+        existing_entry_relationship = existing_entry["relationship"]
 
         # Check if existing entry is marked as incompatible
-        if existing_entry["type"] == version_dependency_types["incompatible"]:
-          incompatible_dependants = filter_dependencies_type(existing_entry["dependants"], "incompatible")
+        if existing_entry_relationship["type"] == version_dependency_types["incompatible"]:
+          incompatible_dependants = filter_dependencies_type(existing_entry_relationship["dependants"], "incompatible")
           raise ResolveProjectsConflictsError(project_id, incompatible_dependants)
 
         log.debug(f"Keeping existing data")
-        project_data["dependants"].update(existing_entry["dependants"])
+        project_relationship["dependants"].update(existing_entry_relationship["dependants"])
 
-      project_data["version_id"] = version["version_id"]
-      project_data["version_name"] = version["version_name"]
-      project_data["version_number"] = version["version_number"]
+      project_metadata["version_id"] = version["version_id"]
+      project_metadata["version_name"] = version["version_name"]
+      project_metadata["version_number"] = version["version_number"]
+      project_metadata["file"] = version["primary_file"]
 
-      project_data["dependencies"] = adapt_dependencies_data(version["dependencies"])
-      project_data["file"] = version["primary_file"]
+      project_relationship["dependencies"] = adapt_dependencies_data(version["dependencies"])
 
-    for dependency_id, dependency_type in project_data["dependencies"].items():
+    for dependency_id, dependency_type in project_relationship["dependencies"].items():
       if dependency_id in resolved_data:
         dependency_data = resolved_data[dependency_id]
-        dependency_data_type = dependency_data["type"]
-        dependency_data_dependants = dependency_data["dependants"]
+        dependency_data_relationship = dependency_data["relationship"]
+
+        dependency_data_type = dependency_data_relationship["type"]
+        dependency_data_dependants = dependency_data_relationship["dependants"]
 
         if dependency_type == version_dependency_types["required"]:
           if dependency_data_type == version_dependency_types["incompatible"]:
@@ -202,15 +215,19 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
           raise ResolveProjectsConflictsError(dependency_id, project_id, required_dependants)
 
         log.debug(f"Updating project data '{dependency_id}' with new '{dependency_type}' type dependant")
-        dependency_data["dependants"][project_id] = dependency_type
-        dependency_data["type"] = max(dependency_data["type"], dependency_type)
+        dependency_data_dependants[project_id] = dependency_type
+        dependency_data_relationship["type"] = max(dependency_data_relationship["type"], dependency_type)
       else:
         log.debug(f"Adding new project entry for dependency: {dependency_id}")
         resolved_data[dependency_id] = {
-          "manual": False,
-          "type": dependency_type,
-          "dependants": {
-            project_id: dependency_type
+          "metadata": {},
+          "relationship": {
+            "manual": False,
+            "type": dependency_type,
+            "dependencies": {},
+            "dependants": {
+              project_id: dependency_type
+            }
           }
         }
 
@@ -224,35 +241,40 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
   fetch_ids = []
   for project_id, project_data in resolved_data.items():
     #If project data doesn't have slug, fetch it
-    if not project_data.get("slug"): fetch_ids.append(project_id)
+    if not project_data["metadata"].get("project_slug"): fetch_ids.append(project_id)
 
-  projects = json.loads(request_url(f"{modrinth_base_api}/projects", query={
-    "ids": json.dumps(fetch_ids)
-  })["body"])
+  if fetch_ids != []:
+    projects = json.loads(request_url(f"{modrinth_base_api}/projects", query={
+      "ids": json.dumps(fetch_ids)
+    })["body"])
 
-  for project in projects:
-    if resolved_data[project["id"]]["type"] in (version_dependency_types["required"], version_dependency_types["incompatible"]):
-      slug_id[project["slug"]] = {
-        "id": project["id"]
-      }
+    for project in projects:
+      if resolved_data[project["id"]]["relationship"]["type"] in (version_dependency_types["required"], version_dependency_types["incompatible"]):
+        slug_id[project["slug"]] = {
+          "id": project["id"]
+        }
 
-    project_data = resolved_data[project["id"]]
+      project_metadata = resolved_data[project["id"]]["metadata"]
 
-    project_data["project_slug"] = project["slug"]
-    project_data["project_title"] = project["title"]
-    project_data["project_description"] = project["description"]
-    project_data["project_license"] = project["license"]
-    project_data["loaders"] = project["loaders"]
+      project_metadata["project_slug"] = project["slug"]
+      project_metadata["project_title"] = project["title"]
+      project_metadata["project_description"] = project["description"]
+      project_metadata["project_license"] = project["license"]
+      project_metadata["loaders"] = project["loaders"]
 
-  # Update with new slug to ID data
-  slug_id_file.write_text(json.dumps(slug_id, indent=2))
+    # Update with new slug to ID data
+    slug_id_file.write_text(json.dumps(slug_id, indent=2))
 
   # Write project index
   for project_id, project_data in resolved_data.items():
-    project_type = project_data["type"]
+    project_type = project_data["relationship"]["type"]
     if project_type in (version_dependency_types["required"], version_dependency_types["incompatible"]):
-      log.debug(f"Indexing project '{project_id}' with type {project_type} and manual {project_data['manual']}")
-      write_project_index(project_id, project_data)
+      log.debug(f"Indexing project '{project_id}' with type {project_type} and manual {project_data["relationship"]['manual']}")
+      #write_project_index(project_id, project_data)
+      if project_index_exists(project_id):
+        update_project_index(project_id, project_data["metadata"], project_data["relationship"])
+      else:
+        create_project_index(project_id, project_data["metadata"], project_data["relationship"])
 
   if debug_mode: print(json.dumps(resolved_data, indent=2))
   return resolved_data
@@ -302,17 +324,17 @@ def add_projects(args):
   incompatible_project_name = []
 
   for project in resolved_data.values():
-    project_type = project["type"]
+    project_type = project["relationship"]["type"]
     if project_type == version_dependency_types["required"]:
-      project_file = project["file"]
+      project_file = project["metadata"]["file"]
       if (project_dir / project_file["filename"]).exists(): continue
 
       total_size += project_file["file_size"]
-      required_project_name.append(f"{project['project_title']} ({project['project_slug']})")
+      required_project_name.append(f"{project["metadata"]['project_title']} ({project["metadata"]['project_slug']})")
     elif project_type == version_dependency_types["optional"]:
-      optional_project_name.append(f"{project['project_title']} ({project['project_slug']})")
+      optional_project_name.append(f"{project["metadata"]['project_title']} ({project["metadata"]['project_slug']})")
     elif project_type == version_dependency_types["incompatible"]:
-      incompatible_project_name.append(f"{project['project_title']} ({project['project_slug']})")
+      incompatible_project_name.append(f"{project["metadata"]['project_title']} ({project["metadata"]['project_slug']})")
 
   if required_project_name:
     required_project_count = len(required_project_name)
@@ -347,11 +369,11 @@ def add_projects(args):
 
   project_dir.mkdir(exist_ok=True)
   for project in resolved_data.values():
-    if project["type"] == version_dependency_types["required"]:
-      project_file = project["file"]
+    if project["relationship"]["type"] == version_dependency_types["required"]:
+      project_file = project["metadata"]["file"]
       if (project_dir / project_file["filename"]).exists(): continue
 
-      log.info(f"Downloading version {project['version_name']}...")
+      log.info(f"Downloading version {project["metadata"]['version_name']}...")
       download_url(project_file["url"], project_dir / project_file["filename"], hashes=project_file["hashes"])
 
 def initialize_server(args):
@@ -373,7 +395,7 @@ def initialize_server(args):
   mcserver_dir.mkdir(exist_ok=True)
 
   configs_dir.mkdir(exist_ok=True)
-  project_indexes_dir.mkdir(exist_ok=True)
+  indexes_dir.mkdir(exist_ok=True)
 
   tempfiles_dir.mkdir(exist_ok=True)
 

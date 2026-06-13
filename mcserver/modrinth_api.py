@@ -1,8 +1,9 @@
+# Modules
 import json
 from typing import TypedDict, NotRequired
 
 from constants import modrinth_base_api
-from network import request_url
+from networking import request_url
 from shared import pluralize
 
 # TypedDict
@@ -81,7 +82,7 @@ def get_project_versions(project_id: str, game_versions: list[str] | str | None 
     error_message = f"Project '{project_id}' has no version"
 
     if loader_names:
-      error_message += f"for {pluralize('loader', len(loader_names))} '{(', '.join(loader_names)).title()}'"
+      error_message += f" for {pluralize('loader', len(loader_names))} '{(', '.join(loader_names)).title()}'"
 
     version_list = ""
     if game_versions:
