@@ -5,13 +5,12 @@ A CLI tool to manage a Minecraft: Java Edition server.
 ## Windows
 This project is not designed for Windows, some behavior might be unexpected. Try use WSL instead.
 
+## Termux
+Yez I explicitly made it to works well in Termux, it is tge whole motivation to make it CLI only and avoiding dependency like requests (even though it worked on Termux)
+
 ## Requirements
 - Python 3.12 or later
-- JRE (depends on Minecraft version): (Currently not having Java selection)
-  - MC 1.0 - 1.16.5 : JRE 8
-  - MC 1.17 - 1.17.1 : JRE 16
-  - MC 1.18 - 1.20.4 : JRE 17
-  - MC 1.20.5 - Later : JRE 21
+- JRE (depends on Minecraft version)
 
 ## How to install
 - System-wide (Requires root): 
