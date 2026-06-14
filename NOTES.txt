@@ -125,3 +125,5 @@ A good error message for UX is one that not only tell you what went wrong, but a
 - You know what's cool? the ability to put 1.125M in the RAM config ofc. and also check if system RAM is even enough to run the server with the config.
 - Make backup data-driven, meaning you can choose what ro get bsckup. and also option to rotate backup seems good for storage, deleting older backup for the new one.
 - Hey, make every command function print with log.error and return as integer instead of raising error pls :>
+- You have a bug on whatever this is;
+FileNotFoundError: [Errno 2] No such file or directory: '.mcserver/project_indexes/.slug_id.json'
