@@ -3,10 +3,7 @@
 A CLI tool to manage a Minecraft: Java Edition server.
 
 ## Windows
-This project is not designed for Windows, some behavior might be unexpected. Try use WSL instead.
-
-## Termux
-Yez I explicitly made it to works well in Termux, it is tge whole motivation to make it CLI only and avoiding dependency like requests (even though it worked on Termux)
+Windows is untested, try using this inside WSL instead.
 
 ## Requirements
 - Python 3.12 or later
@@ -30,9 +27,19 @@ Yez I explicitly made it to works well in Termux, it is tge whole motivation to 
 - Initialize the server: `mcserver init [options]`
 - Install the server: `mcserver install`
 - Search mods from Modrinth: `mcserver search [<query>] [options]`
-- Show mods information from Modrinth: `mcserver show <mods>`
+- Show mod information from Modrinth: `mcserver show <mods>`
 - Add mods (and its dependencies): `mcserver add <mods>`
 - Start the server: `mcserver start`
 
+### Example
+```bash
+mcserver init --mc-version=1.20.1 --loader=fabric --loader-version=0.19.3
+mcserver install
+mcserver search thdilos
+mcserver show thdilos-fox-origin
+mcserver add thdilos-fox-origins-expanded lithium tick-stasis ferrite-core krypton
+mcserver start
+```
+
 ## Note
-This is a **personal project** for learning purpose, might be useful for myself.
+This is a **personal project** that I use to learn while developing it. and yes, Termux is fully supported.
