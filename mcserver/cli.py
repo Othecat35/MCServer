@@ -6,6 +6,7 @@ from config import default_configs, generate_config, load_config
 from constants import __version__
 from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
 from modrinth_api import get_project_versions, ProjectVersionDependency, modrinth_base_api
+from mojang_eula import check_eula_agreed, eula_agree
 from networking import download_url, request_url
 from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
 
@@ -280,24 +281,6 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
   return resolved_data
 
 # EULA functions
-def check_eula_agreed():
-  try:
-    with open("eula.txt") as file:
-      for line in file.readlines():
-        if line.startswith("eula=true"):
-          return True
-  except FileNotFoundError:
-    pass
-
-  return False
-
-def eula_agree():
-  timestamp = time.strftime("%a %b %d %H:%M:%S GMT %Y", time.gmtime())
-  with open("eula.txt", mode="wt") as file:
-    file.write(f"""#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).
-#{timestamp}
-eula=true""")
-
 # Command functions
 def add_projects(args):
   projects = args.projects
