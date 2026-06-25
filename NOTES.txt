@@ -127,3 +127,8 @@ A good error message for UX is one that not only tell you what went wrong, but a
 - Hey, make every command function print with log.error and return as integer instead of raising error pls :>
 - You have a bug on whatever this is;
 FileNotFoundError: [Errno 2] No such file or directory: '.mcserver/project_indexes/.slug_id.json'
+
+- Ignore the last error, it just me forgetting to update my MCServer using zip_app
+- .mcserver/metadata.json and .mcserver/lock.json
+- Warn projects that don't show up when `show`
+- Actually, .mcserver/state.json (replacing lock.json) sounds better, and we can store pid_number, action, and created_time?
