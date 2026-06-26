@@ -747,8 +747,8 @@ def main():
   args = parser.parse_args()
   sys.exit(args.func(args))
 
-### This file used to be a one big script file, 1,200 file. and the modularization is after I found out about
-### zipapp, silly me. the reason that I may reinvent the wheel is because I used to want it just download
+### This file used to be a one big script file, 1,200 line. and the modularization is after I found out about
+### zipapp, silly me. The reason that I may reinvent the wheel is because I used to want it just download
 ### script and run without the 'pip install -r requirements.txt' ritual, and that is way before I knew about
 ### zipapp, so I can't bundle requests or something. but now? I technically can, but I'll just continue the
 ### external-free code, for fun and learning :shrug:
