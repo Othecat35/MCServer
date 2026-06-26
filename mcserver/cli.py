@@ -457,6 +457,9 @@ def install_server(args):
 
   log.info("Server installation is complete.")
 
+def list_projects(args) -> int:
+  return 0
+
 def search_projects(args):
   query = " ".join(args.query)
   no_filter = args.no_filter
@@ -721,6 +724,10 @@ def main():
   parser_add = subparsers.add_parser("add", description="Add project(s) from Modrinth", help="Add project(s) from Modrinth")
   parser_add.add_argument("projects", nargs="+", type=str, help="Slug (or ID) of the project(s)")
   parser_add.set_defaults(func=add_projects)
+
+  # 'list' command
+  parser_list = subparsers.add_parser("list", description="List downloaded projects", help="List downloaded projects")
+  parser_list.set_defaults(func=list_projects)
 
   # 'search' command
   parser_search = subparsers.add_parser("search", description="Search projects in Modrinth", help="Search projects in Modrinth")
