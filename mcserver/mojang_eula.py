@@ -1,12 +1,13 @@
-# Imports
+#Modules
+# Standard
 import time
 
 from pathlib import Path
 
-# Variables
+#Paths
 eula_file = Path("eula.txt")
 
-# Functions
+#Functions
 def check_eula_agreed():
   try:
     for line in eula_file.read_text().split("\n"):
@@ -22,4 +23,3 @@ def eula_agree():
   eula_file.write_text(f"""#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).
 #{timestamp}
 eula=true""")
-

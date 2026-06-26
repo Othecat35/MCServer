@@ -117,18 +117,28 @@ now make any mod that are incompatible ripples down to the source, only stopped 
 You screwed up the add command lol, no I'm not >:c
 mod indexing, don't forget! don't remind me the... 3rd time?
 Gemini suggest adding "status" command and get ram usage info, sure but not now. oh good idea I guess
-A good error message for UX is one that not only tell you what went wrong, but also how to fix that error (or at least tell what caused the error)
 
+.mcserver/
+- metadata.json # Not created yet
+- state.json # Not created yet
+- configs/
+  - launcher.json
+  - modrinth.json
+  - server.json
+- indexes/
+  - .slug_id.json
+  - <project_id>/
+    - metadata.json
+    - relationship.json
+- tempfiles/
+
+- A good error message for UX is one that not only tell you what went wrong, but also how to fix that error (or at least tell what caused the error) | Not like I'm interested right now...
 - Consider to cache optional projects' bulk fetch data in resolved_projects even though we don't neccesearily process it?
 - Delete cache if we don't install it (like dry run)
 - Oh, back with zipapp huh... and I also have pyright now? cool
 - You know what's cool? the ability to put 1.125M in the RAM config ofc. and also check if system RAM is even enough to run the server with the config.
 - Make backup data-driven, meaning you can choose what ro get bsckup. and also option to rotate backup seems good for storage, deleting older backup for the new one.
 - Hey, make every command function print with log.error and return as integer instead of raising error pls :>
-- You have a bug on whatever this is;
-FileNotFoundError: [Errno 2] No such file or directory: '.mcserver/project_indexes/.slug_id.json'
-
-- Ignore the last error, it just me forgetting to update my MCServer using zip_app
 - .mcserver/metadata.json and .mcserver/lock.json
 - Warn projects that don't show up when `show`
 - Actually, .mcserver/state.json (replacing lock.json) sounds better, and we can store pid_number, action, and created_time?

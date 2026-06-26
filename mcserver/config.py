@@ -1,12 +1,13 @@
-# Modules
+#Modules
+# Standard
 import copy, json
 
 import logging as log
 
+#MCServer
 from shared import mcserver_dir, merge_dict
 
-# Variables
-configs_dir = mcserver_dir / "configs"
+#Variables
 default_configs = {
   "launcher": {
     "ram": {
@@ -33,7 +34,10 @@ default_configs = {
   }
 }
 
-# Functions
+#Paths
+configs_dir = mcserver_dir / "configs"
+
+#Functions
 def generate_config(config_name: str, update_config: dict | None = None):
   if update_config is None: update_config = {}
 

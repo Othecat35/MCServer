@@ -1,29 +1,33 @@
-# Modules
+#Modules
+# Standard
 import hashlib, shutil
 
 import urllib.parse, urllib.request
 import logging as log
 
-from constants import __version__
-from shared import current_dir, format_number, mcserver_dir, print_status
-
 from pathlib import Path
 from typing import  TypedDict
 
-# TypedDict
+# MCServer
+from constants import __version__
+from shared import current_dir, format_number, mcserver_dir, print_status
+
+#TypedDict
 class ResponseObject(TypedDict):
   body: str
   headers: dict
 
-# Errors
+#Errors
 class DownloadURLError(Exception): pass
 
-# Variables
+#Variables
 user_agent = f"Othecat35/MCServer/{__version__} (https://github.com/Othecat35/MCServer)"
-tempfiles_dir = mcserver_dir / "tempfiles"
 read_chunk_size: int = 1024 * 64 # 64KiB
 
-# Functions
+#Paths
+tempfiles_dir = mcserver_dir / "tempfiles"
+
+#Functions
 def request_url(url: str, query: dict | None = None, data: dict | None = None, headers: dict | None = None, method: str = "GET", timeout: int = 10) -> ResponseObject:
   method = method.upper()
   if query is None: query = {}

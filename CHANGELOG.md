@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Metadata to keep information of what version of MCServer is used
+- State to keep information of a running MCServer to avoid conflict
+
 ## [2.0.0] - 2026-06-14
 
 ### Changed

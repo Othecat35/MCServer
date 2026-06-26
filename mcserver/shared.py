@@ -1,18 +1,17 @@
-# Modules
+#Modules
+# Standard
 import sys
-
-from constants import iec_prefixes, si_prefixes
 
 from pathlib import Path
 
-# Variables
+# MCServer
+from constants import iec_prefixes, si_prefixes
+
+#Variables
 special_plural = {
   "is": "are",
   "this": "these"
 }
-
-current_dir: Path = Path.cwd()
-mcserver_dir: Path = Path(".mcserver")
 
 color_output_mode = "auto" # 'never', 'auto', 'always'
 ansi_codes = {
@@ -32,7 +31,11 @@ ansi_codes = {
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 last_status_message = ""
 
-# Functions
+#Paths
+current_dir: Path = Path.cwd()
+mcserver_dir: Path = Path(".mcserver")
+
+#Functions
 def pluralize(singular: str, count: int = 0, plural: str = ""):
   if count != 1:
     if plural:

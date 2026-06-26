@@ -1,19 +1,23 @@
-# Modules
-import argparse, json, math, os, shutil, sys, textwrap, time
+#Modules
+# Standard
+import argparse, json, math, os, shutil, sys, textwrap
 import logging as log
-
-from config import default_configs, generate_config, load_config
-from constants import __version__
-from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
-from modrinth_api import get_project_versions, ProjectVersionDependency, modrinth_base_api
-from mojang_eula import check_eula_agreed, eula_agree
-from networking import download_url, request_url
-from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
 
 from pathlib import Path
 from collections import deque
 
-# Variables
+# MCServer
+from config import default_configs, generate_config, load_config
+from constants import __version__
+from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
+from metadata import metadata_file
+from modrinth_api import get_project_versions, ProjectVersionDependency, modrinth_base_api
+from mojang_eula import check_eula_agreed, eula_agree
+from networking import download_url, request_url
+from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
+from state import state_file
+
+#Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
 log_level = log.DEBUG if debug_mode else log.INFO
 
@@ -31,14 +35,14 @@ version_dependency_types = {
   "incompatible": 3
 }
 
-# Paths
+#Paths
 mods_dir = Path("mods")
 plugins_dir = Path("plugins")
 
 configs_dir = mcserver_dir / "configs"
 tempfiles_dir = mcserver_dir / "tempfiles"
 
-# Error classes
+#Error Classes
 class AddProjectsError(Exception): pass
 class InitializeServerError(Exception): pass
 class InstallServerError(Exception): pass
@@ -66,7 +70,7 @@ class ResolveProjectsConflictsError(Exception):
     self.incompatible_dependants = incompatible_dependants
     self.required_dependants = required_dependants
 
-# Functions
+#Functions
 def print_help(args):
   args.parser.print_help()
   sys.exit(0)
@@ -280,8 +284,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
   if debug_mode: print(json.dumps(resolved_data, indent=2))
   return resolved_data
 
-# EULA functions
-# Command functions
+#Command Functions
 def add_projects(args):
   projects = args.projects
 
@@ -376,6 +379,16 @@ def initialize_server(args):
   update_project_label(loader)
 
   mcserver_dir.mkdir(exist_ok=True)
+
+  if not metadata_file.exists():
+    metadata_file.write_text(json.dumps({
+      "mcserver": {
+        "version": __version__
+      }
+    }, indent=2))
+
+  if not state_file.exists():
+    state_file.write_text(json.dumps({}))
 
   configs_dir.mkdir(exist_ok=True)
   indexes_dir.mkdir(exist_ok=True)
@@ -664,14 +677,14 @@ def start_server(args):
   log.debug(f"Executing command: {' '.join(java_command_argv)}")
   os.execvp(java_command_argv[0], java_command_argv)
 
-# Log handler
+#Log handler
 class ClearLineHandler(log.StreamHandler):
   def emit(self, record):
     self.stream.write(ansi('clear_line') + ansi('start_line'))
     self.stream.flush()
     super().emit(record)
 
-# Main
+#Main
 def main():
   if ((sys.argv[1] if len(sys.argv) > 1 else "") == "cake"): hahaha_yes()
 
@@ -747,8 +760,8 @@ def main():
   args = parser.parse_args()
   sys.exit(args.func(args))
 
-### This file used to be a one big script file, 1,200 line. and the modularization is after I found out about
-### zipapp, silly me. The reason that I may reinvent the wheel is because I used to want it just download
-### script and run without the 'pip install -r requirements.txt' ritual, and that is way before I knew about
-### zipapp, so I can't bundle requests or something. but now? I technically can, but I'll just continue the
+### This file used to be a one big script file, 1,200 lines. and the modularization happens after I found out
+### about zipapp, silly me. The reason that I might "reinvent the wheel" is because I used to want it just
+### downloadscript and run without the 'pip install -r requirements.txt' ritual, and that is way before I
+### knew about zipapp, so I can't bundle requests or something. but now? I technically can, but I'll just continue the
 ### external-free code, for fun and learning :shrug:

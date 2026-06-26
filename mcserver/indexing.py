@@ -1,23 +1,17 @@
-# Modules
+#Modules
+# Standard
 import json
 
 import logging as log
 
+# MCServer
 from shared import mcserver_dir, merge_dict
 
-# Variables
+#Paths
 indexes_dir = mcserver_dir / "indexes"
 slug_id_file = indexes_dir / ".slug_id.json"
 
-# Directory structure reference:
-#.mcserver/
-#  indexes/
-#    .slug_id.json
-#    <project_id>/
-#      metadata.json
-#      relationship.json
-
-# Functions
+#Functions
 def create_project_index(project_id: str, metadata: dict | None = None, relationship: dict | None = None) -> None:
   if metadata is None: new_metadata = {}
   if relationship is None: new_relationship = {}
@@ -67,6 +61,7 @@ def delete_project_index(project_id: str) -> None:
 def project_index_exists(project_id: str) -> bool:
   return (indexes_dir / project_id).exists()
 
+# Slug to ID
 slug_id = {}
 def slug_to_id(project_slug: str) -> str:
   global slug_id

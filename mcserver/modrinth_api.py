@@ -1,13 +1,15 @@
-# Modules
+#Modules
+# Standard
 import json
 from typing import TypedDict, NotRequired
 
+# MCServer
 from constants import modrinth_base_api
 from networking import request_url
 from shared import pluralize
 
-# TypedDict
-#Project Version
+#TypedDict
+# Project Version
 class ProjectVersionDependency(TypedDict):
   project_id: str | None
   dependency_type: str
@@ -44,7 +46,7 @@ class ProjectVersion(TypedDict):
   files: list[ProjectVersionFile]
   primary_file: ProjectVersionFile
 
-# Errors
+#Errors
 class NoProjectVersionFileError(Exception):
   def __init__(self, message: str, project_id: str, loader_names: list[str] | None , game_versions: list[str] | None):
     super().__init__(message)
@@ -61,7 +63,7 @@ class NoProjectVersionError(Exception):
     self.loader_names = loader_names
     self.game_versions = game_versions
 
-# Functions
+#Functions
 def get_project_versions(project_id: str, game_versions: list[str] | str | None = None, loader_names: list[str] | str | None = None, include_changelog: bool = False) -> list[ProjectVersion]:
   if isinstance(game_versions, str): game_versions = [game_versions]
   if isinstance(loader_names, str): loader_names = [loader_names]

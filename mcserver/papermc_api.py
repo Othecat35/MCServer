@@ -1,12 +1,14 @@
-# Modules
+#Modules
+# Standard
 import json
 
 from typing import TypedDict
 
+# MCServer
 from networking import request_url
 from constants import papermc_base_api
 
-# TypedDicts
+#TypedDicts
 class DownloadChecksums(TypedDict):
   sha256: str
 
@@ -28,7 +30,7 @@ class ProjectBuild(TypedDict):
   commits: list[BuildCommit]
   downloads: BuildDownload
 
-# Functions
+#Functions
 def get_build(project_name: str, game_version: str, build_id: int | str) -> ProjectBuild:
   response = json.loads(request_url(f"{papermc_base_api}/projects/{project_name}/versions/{game_version}/builds/{build_id}")["body"])
 
