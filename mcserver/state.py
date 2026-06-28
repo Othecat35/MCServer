@@ -1,6 +1,6 @@
 #Modules
 # Standard
-import json, os, sys
+import json, os
 
 import logging as log
 
@@ -16,7 +16,7 @@ state_file = mcserver_dir / "state.json"
 def get_start_time(pid: int | str) -> int:
   proc_path = Path("/proc") / str(pid)
   if not proc_path.exists():
-    log.debug(f"Process ID ({pid}) seems to not exist")
+    log.debug(f"Process ID ({pid}) seems not exist")
     return 0
 
   return int((proc_path / "stat").read_text().split()[21])

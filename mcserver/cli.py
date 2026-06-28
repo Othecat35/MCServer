@@ -15,7 +15,7 @@ from modrinth_api import get_project_versions, ProjectVersionDependency, modrint
 from mojang_eula import check_eula_agreed, eula_agree
 from networking import download_url, request_url
 from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
-from state import state_file
+from state import get_state, set_state, is_active
 
 #Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
@@ -288,6 +288,10 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
 def add_projects(args):
   projects = args.projects
 
+  if is_active():
+    log.error(f"There's another MCServer processes running with process ID: {get_state()["process_id"]}")
+    return 1
+
   server_config = load_config("server")
   server_loader = server_config["loader"]
 
@@ -353,6 +357,8 @@ def add_projects(args):
     log.error("Cannot create directory for non-defined project type")
     return 1
 
+  set_state("adding_project")
+
   project_dir.mkdir(exist_ok=True)
   for project in resolved_data.values():
     if project["relationship"]["type"] == version_dependency_types["required"]:
@@ -386,9 +392,6 @@ def initialize_server(args):
         "version": __version__
       }
     }, indent=2))
-
-  if not state_file.exists():
-    state_file.write_text(json.dumps({}))
 
   configs_dir.mkdir(exist_ok=True)
   indexes_dir.mkdir(exist_ok=True)
@@ -436,6 +439,10 @@ def initialize_server(args):
       log.debug(f"Configuration file for `{config}` already exists, not regenerating")
 
 def install_server(args):
+  if is_active():
+    log.error(f"There's another MCServer processes running with process ID: {get_state()["process_id"]}")
+    return 1
+
   server_config = load_config("server")
   launcher_config = load_config("launcher")
 
@@ -444,6 +451,8 @@ def install_server(args):
 
   loader_name = server_loader["name"]
   loader_version = server_loader["version"]
+
+  set_state("installing_server")
 
   match loader_name:
     case "fabric":
@@ -635,6 +644,10 @@ def start_server(args):
 
   jarfile = launcher_config['jarfile']
 
+  if is_active():
+    log.error(f"There's another MCServer processes running with process ID: {get_state()["process_id"]}")
+    return 1
+
   if not Path(jarfile).exists():
     log.error(f"Couldn't find server jarfile '{jarfile}'")
     return 1
@@ -674,6 +687,8 @@ def start_server(args):
     java_command_argv.append("nogui")
 
   log.info("Starting Minecraft server...")
+
+  set_state("starting_server")
   log.debug(f"Executing command: {' '.join(java_command_argv)}")
   os.execvp(java_command_argv[0], java_command_argv)
 

@@ -144,3 +144,23 @@ Gemini suggest adding "status" command and get ram usage info, sure but not now.
 - Actually, .mcserver/state.json (replacing lock.json) sounds better, and we can store pid_number, action, and created_time?
 - The `show` command could show which Minecraft version are in common, pls future me >:). either in each mod's entry or at the end as sumarry of some sort.
 - ChatGPT just told me about zipapp just now? Yes, it did.
+
+I got an idea about the dependency resolutionin this small project (line 111)
+So, instead of a big resolve_projects that do almost everything, why don't we just split them?
+We can have a "data provider", function that when called will return the data that the resolver needs.
+The "rule", or just the conflict checker -_-
+And the BFS, the engine of the resolver.
+probably like:
+user: "request mod a"
+resolve_dependencies: hey get_project_dependencies, what are the dependencies of mod a?
+get_project_dependencies: mod b is required and mod c is required
+resolve_dependencies: are mod b is somehow incompactible?
+check_dependency_conflicts: no
+resolve_dependencies: are mod c is somehow incompactible??
+check_dependency_conflicts: no
+resolve_dependencies: ok... what are dependencies of mod b?
+(some dialogue later)
+resolve_dependencies: ok, there's no more dependency. here you go "return the list of dependencies"
+user: why are there 129 mods 0_0
+
+thx chatgpt but I can't prove it yet
