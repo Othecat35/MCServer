@@ -142,3 +142,5 @@ Gemini suggest adding "status" command and get ram usage info, sure but not now.
 - .mcserver/metadata.json and .mcserver/lock.json
 - Warn projects that don't show up when `show`
 - Actually, .mcserver/state.json (replacing lock.json) sounds better, and we can store pid_number, action, and created_time?
+- The `show` command could show which Minecraft version are in common, pls future me >:). either in each mod's entry or at the end as sumarry of some sort.
+- ChatGPT just told me about zipapp just now? Yes, it did.
