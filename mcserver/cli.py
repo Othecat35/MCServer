@@ -10,6 +10,7 @@ from collections import deque
 from config import default_configs, generate_config, load_config
 from constants import __version__
 from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
+from mcserver.purpurmc_api import download_url
 from metadata import metadata_file
 from modrinth_api import get_project_versions, ProjectVersionDependency, modrinth_base_api
 from mojang_eula import check_eula_agreed, eula_agree
@@ -22,7 +23,7 @@ debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
 log_level = log.DEBUG if debug_mode else log.INFO
 
 mods_loader = ["fabric"]
-plugins_loader = ["paper"]
+plugins_loader = ["paper", "purpur"]
 loaders_list = ["vanilla"] + mods_loader + plugins_loader
 
 eula_agree_sentence = "Yes, I agree."
@@ -90,18 +91,18 @@ def wrap_string(string: str, initial_indent: str | int = "", subsequent_indent: 
   return "\n".join(textwrap.wrap(string, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
 
 project_label = "project"
-project_dir = None
+loader_dir = None
 
-def update_project_label(loader_name: str):
+def set_loader_context(loader_name: str):
   global project_label
-  global project_dir
+  global loader_dir
 
   if loader_name in mods_loader:
     project_label = "mod"
-    project_dir = mods_dir
+    loader_dir = mods_dir
   elif loader_name in plugins_loader:
     project_label = "plugin"
-    project_dir = plugins_dir
+    loader_dir = plugins_dir
 
 # Resolve prejects dependencies
 def adapt_dependencies_data(dependencies: list[ProjectVersionDependency]) -> dict:
@@ -302,7 +303,7 @@ def add_projects(args):
     log.error("Vanilla Minecraft server does not support mod")
     return 1
 
-  update_project_label(loader_name)
+  set_loader_context(loader_name)
 
   resolved_data = resolve_projects(projects, server_version, loader_name)
 
@@ -317,7 +318,7 @@ def add_projects(args):
     project_type = project["relationship"]["type"]
     if project_type == version_dependency_types["required"]:
       project_file = project["metadata"]["file"]
-      if (project_dir / project_file["filename"]).exists(): continue
+      if (loader_dir / project_file["filename"]).exists(): continue
 
       total_size += project_file["file_size"]
       required_project_name.append(f"{project["metadata"]['project_title']} ({project["metadata"]['project_slug']})")
@@ -353,38 +354,78 @@ def add_projects(args):
     print("Cancelled")
     return 1
 
-  if not project_dir:
+  if not loader_dir:
     log.error("Cannot create directory for non-defined project type")
     return 1
 
   set_state("adding_project")
 
-  project_dir.mkdir(exist_ok=True)
+  loader_dir.mkdir(exist_ok=True)
   for project in resolved_data.values():
     if project["relationship"]["type"] == version_dependency_types["required"]:
       project_file = project["metadata"]["file"]
-      if (project_dir / project_file["filename"]).exists(): continue
+      if (loader_dir / project_file["filename"]).exists(): continue
 
       log.info(f"Downloading version {project["metadata"]['version_name']}...")
-      download(project_file["url"], project_dir / project_file["filename"], hashes=project_file["hashes"])
+      download(project_file["url"], loader_dir / project_file["filename"], hashes=project_file["hashes"])
+
+
+
+
+
+
 
 def initialize_server(args):
-  mc_version = args.mc_version
+  game_version = args.mc_version
 
-  loader = args.loader
+  loader_name = args.loader
   loader_version = args.loader_version
 
   min_ram = args.min_ram
   max_ram = args.max_ram
 
-  if not mcserver_dir.exists():
-    log.info(f"Initializing server configuration...")
-  else:
-    log.info(f"Reinitializing server configuration...")
+  # Update project 'context'
+  set_loader_context(loader_name)
 
-  update_project_label(loader)
-
+  # Creating the directories
   mcserver_dir.mkdir(exist_ok=True)
+  configs_dir.mkdir(exist_ok=True)
+  indexes_dir.mkdir(exist_ok=True)
+
+  tempfiles_dir.mkdir(exist_ok=True)
+
+  if loader_dir is not None:
+    loader_dir.mkdir(exist_ok=True)
+
+  # Creating the files
+  if not slug_id_file.exists():
+    slug_id_file.write_text(json.dumps({}, indent=2))
+
+  # Configuration files
+  for config_name in default_configs.keys():
+    update_config = None
+    match config_name:
+      case "launcher":
+        update_config = {
+          "ram": {
+            "min": min_ram,
+            "max": max_ram
+          }
+        }
+
+      case "server":
+        update_config = {
+          "version": game_version,
+          "loader": {
+            "name": loader_name,
+            "version": loader_version
+          }
+        }
+
+    try:
+      generate_config(config_name, update_config)
+    except FileExistsError:
+      log.debug(f"Configuration file '{config_name}' already exist, continuing...")
 
   if not metadata_file.exists():
     metadata_file.write_text(json.dumps({
@@ -393,50 +434,65 @@ def initialize_server(args):
       }
     }, indent=2))
 
-  configs_dir.mkdir(exist_ok=True)
-  indexes_dir.mkdir(exist_ok=True)
+  return 0
 
-  tempfiles_dir.mkdir(exist_ok=True)
 
-  if not slug_id_file.exists():
-    slug_id_file.write_text(json.dumps({}, indent=2))
 
-  if mc_version == "latest":
-    log.info("Getting Mojang game version manifest...")
-    latest_version = json.loads(request("https://launchermeta.mojang.com/mc/game/version_manifest.json")["body"])["latest"]["release"]
-    mc_version = latest_version
 
-  if loader == "vanilla":
-    loader_version = None
 
-  # TODO: add the "latest" for loader version too
 
-  if project_dir is not None:
-    project_dir.mkdir(exist_ok=True)
 
-  update_values = None
-  for config in default_configs.keys():
-    if config == "launcher":
-      update_values = {
-        "ram": {
-          "min": min_ram,
-          "max": max_ram
-        }
-      }
 
-    if config == "server":
-      update_values = {
-        "version": mc_version,
-        "loader": {
-          "name": loader,
-          "version": loader_version
-        }
-      }
 
-    try:
-      generate_config(config, update_config=update_values)
-    except FileExistsError:
-      log.debug(f"Configuration file for `{config}` already exists, not regenerating")
+
+
+
+# def initialize_server(args):
+#   # Arguments
+#   mc_version = args.mc_version
+
+#   loader_name = args.loader
+#   loader_version = args.loader_version
+
+#   min_ram = args.min_ram
+#   max_ram = args.max_ram
+
+#   # Check if server is 'already initialized'
+#   if not metadata_file.exists():
+#     log.info(f"Initializing server configuration...")
+#   else:
+#     log.info(f"Reinitializing server configuration...")
+
+#   update_project_label(loader_name)
+
+#   # Make the root directory for MCServer
+#   mcserver_dir.mkdir(exist_ok=True)
+
+#   # Create the metadata.json
+#   if not metadata_file.exists():
+#     metadata_file.write_text(json.dumps({
+#       "mcserver": {
+#         "version": __version__
+#       }
+#     }, indent=2))
+
+#   configs_dir.mkdir(exist_ok=True)
+#   indexes_dir.mkdir(exist_ok=True)
+
+#   tempfiles_dir.mkdir(exist_ok=True)
+
+#   if not slug_id_file.exists():
+#     slug_id_file.write_text(json.dumps({}, indent=2))
+
+#   if mc_version == "latest":
+#     log.info("Getting Mojang game version manifest...")
+#     latest_version = json.loads(request("https://launchermeta.mojang.com/mc/game/version_manifest.json")["body"])["latest"]["release"]
+#     mc_version = latest_version
+
+#   if loader == "vanilla":
+#     loader_version = None
+
+#   # TODO: add the "latest" for loader version too
 
 def install_server(args):
   if is_active():
@@ -454,10 +510,19 @@ def install_server(args):
 
   set_state("installing_server")
 
+  # Download Jarfile
   match loader_name:
+    # Mod loaders
     case "fabric":
-      log.info(f"Downloading Fabric loader {loader_version} for Minecraft server {server_version}...")
+      log.info(f"Downloading Fabric loader {loader_version} for Minecraft {server_version}...")
       download(f"https://meta.fabricmc.net/v2/versions/loader/{server_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
+
+    # Plugin loaders
+    case "purpur":
+      log.info(f"Downloading Purpur version {loader_version} for Minecraft {server_version}...")
+      download(download_url("purpur", server_version, loader_version), launcher_config["jarfile"])
+
+    # Vanilla
     case "vanilla":
       log.info("Getting Mojang game version manifest...")
       version_manifest = json.loads(request("https://launchermeta.mojang.com/mc/game/version_manifest.json")["body"])
@@ -509,7 +574,7 @@ def search_projects(args):
     server_version = server_config["version"]
     loader_name = server_loader["name"]
 
-    update_project_label(loader_name)
+    set_loader_context(loader_name)
 
     if loader_name == "vanilla":
       raise SearchProjectsError("Vanilla Minecraft server does not support mod.")
@@ -589,7 +654,7 @@ def search_projects(args):
 def show_projects(args):
   projects = args.projects
 
-  update_project_label(load_config("server", allow_missing=True)["loader"]["name"])
+  set_loader_context(load_config("server", allow_missing=True)["loader"]["name"])
 
   log.info(f"Getting {pluralize(project_label, len(projects))} information...")
   projects_info = json.loads(request(f"{modrinth_base_api}/v2/projects", query={
