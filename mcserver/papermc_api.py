@@ -24,7 +24,7 @@ class BuildCommit(TypedDict):
   commit_message: str #original: message
 
 class ProjectBuild(TypedDict):
-  build_id: int                    #original: id
+  build_version: int                    #original: id
   build_time: str                  #original: time
   channel: str                     #original: channel
   build_commits: list[BuildCommit] #original: commits
@@ -53,7 +53,7 @@ def get_project_build(project_name: str, game_version: str, build_id: int | Lite
     }
 
   return {
-    "build_id": response_data["id"],
+    "build_version": response_data["id"],
     "build_time": response_data["time"],
     "channel": response_data["channel"],
     "build_commits": build_commits,
