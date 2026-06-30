@@ -18,6 +18,8 @@ from networking import download, request
 from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
 from state import get_state, set_state, is_active
 
+import mojang_manifest
+
 #Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
 log_level = log.DEBUG if debug_mode else log.INFO
@@ -369,12 +371,6 @@ def add_projects(args):
       log.info(f"Downloading version {project["metadata"]['version_name']}...")
       download(project_file["url"], loader_dir / project_file["filename"], hashes=project_file["hashes"])
 
-
-
-
-
-
-
 def initialize_server(args):
   game_version = args.mc_version
 
@@ -386,6 +382,8 @@ def initialize_server(args):
 
   # Update project 'context'
   set_loader_context(loader_name)
+
+  is_first_initialize = not metadata_file.exists()
 
   # Creating the directories
   mcserver_dir.mkdir(exist_ok=True)
@@ -401,7 +399,21 @@ def initialize_server(args):
   if not slug_id_file.exists():
     slug_id_file.write_text(json.dumps({}, indent=2))
 
-  # Configuration files
+  # Special game_version
+  match game_version:
+    case "latest" | "latest-release":
+      latest_release_version = mojang_manifest.get_latest_release_version()
+      log.info(f"Latest Minecraft release version is: {latest_release_version}")
+      game_version = latest_release_version
+    case "latest-snapshot":
+      latest_snapshot_version = mojang_manifest.get_latest_snapshot_version()
+      log.info(f"Latest Minecraft snapshot version is: {latest_snapshot_version}")
+      game_version = latest_snapshot_version
+
+  if loader_name == "vanilla":
+    loader_version = None
+
+  # Generate configuration files
   for config_name in default_configs.keys():
     update_config = None
     match config_name:
@@ -427,72 +439,19 @@ def initialize_server(args):
     except FileExistsError:
       log.debug(f"Configuration file '{config_name}' already exist, continuing...")
 
-  if not metadata_file.exists():
+  if is_first_initialize:
     metadata_file.write_text(json.dumps({
       "mcserver": {
         "version": __version__
       }
     }, indent=2))
 
+  if is_first_initialize:
+    log.info("Initialized server configuration.")
+  else:
+    log.info("Reinitialized server configuration.")
+
   return 0
-
-
-
-
-
-
-
-
-
-
-
-
-# def initialize_server(args):
-#   # Arguments
-#   mc_version = args.mc_version
-
-#   loader_name = args.loader
-#   loader_version = args.loader_version
-
-#   min_ram = args.min_ram
-#   max_ram = args.max_ram
-
-#   # Check if server is 'already initialized'
-#   if not metadata_file.exists():
-#     log.info(f"Initializing server configuration...")
-#   else:
-#     log.info(f"Reinitializing server configuration...")
-
-#   update_project_label(loader_name)
-
-#   # Make the root directory for MCServer
-#   mcserver_dir.mkdir(exist_ok=True)
-
-#   # Create the metadata.json
-#   if not metadata_file.exists():
-#     metadata_file.write_text(json.dumps({
-#       "mcserver": {
-#         "version": __version__
-#       }
-#     }, indent=2))
-
-#   configs_dir.mkdir(exist_ok=True)
-#   indexes_dir.mkdir(exist_ok=True)
-
-#   tempfiles_dir.mkdir(exist_ok=True)
-
-#   if not slug_id_file.exists():
-#     slug_id_file.write_text(json.dumps({}, indent=2))
-
-#   if mc_version == "latest":
-#     log.info("Getting Mojang game version manifest...")
-#     latest_version = json.loads(request("https://launchermeta.mojang.com/mc/game/version_manifest.json")["body"])["latest"]["release"]
-#     mc_version = latest_version
-
-#   if loader == "vanilla":
-#     loader_version = None
-
-#   # TODO: add the "latest" for loader version too
 
 def install_server(args):
   if is_active():

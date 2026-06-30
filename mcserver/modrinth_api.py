@@ -1,7 +1,7 @@
 #Modules
 # Standard
 import json
-from typing import TypedDict, NotRequired
+from typing import Literal, TypedDict, NotRequired
 
 # MCServer
 from constants import modrinth_base_api
@@ -12,7 +12,7 @@ from shared import pluralize
 # Project Version
 class ProjectVersionDependency(TypedDict):
   project_id: str | None
-  dependency_type: str
+  dependency_type: Literal["incompatible", "required", "optional", "embedded"]
   version_id: str | None
   filename: str | None
 
