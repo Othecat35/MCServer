@@ -5,7 +5,7 @@ from typing import TypedDict, NotRequired
 
 # MCServer
 from constants import modrinth_base_api
-from networking import request_url
+from networking import request
 from shared import pluralize
 
 #TypedDict
@@ -78,7 +78,7 @@ def get_project_versions(project_id: str, game_versions: list[str] | str | None 
     "include_changelog": json.dumps(include_changelog)
   }
 
-  fetched_versions = json.loads(request_url(f"{modrinth_base_api}/project/{project_id}/version", query=query_parameters)["body"])
+  fetched_versions = json.loads(request(f"{modrinth_base_api}/v2/project/{project_id}/version", query=query_parameters)["body"])
 
   if len(fetched_versions) == 0:
     error_message = f"Project '{project_id}' has no version"

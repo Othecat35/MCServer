@@ -16,6 +16,7 @@ from shared import current_dir, format_number, mcserver_dir, print_status
 class ResponseObject(TypedDict):
   body: str
   headers: dict
+  status: int
 
 #Errors
 class DownloadURLError(Exception): pass
@@ -28,7 +29,7 @@ read_chunk_size: int = 1024 * 64 # 64KiB
 tempfiles_dir = mcserver_dir / "tempfiles"
 
 #Functions
-def request_url(url: str, query: dict | None = None, data: dict | None = None, headers: dict | None = None, method: str = "GET", timeout: int = 10) -> ResponseObject:
+def request(url: str, query: dict | None = None, data: dict | None = None, headers: dict | None = None, method: str = "GET", timeout: int = 10) -> ResponseObject:
   method = method.upper()
   if query is None: query = {}
   if headers is None: headers = {}
@@ -47,10 +48,11 @@ def request_url(url: str, query: dict | None = None, data: dict | None = None, h
 
     return {
       "body": response.read().decode("utf-8"),
-      "headers": response_headers
+      "headers": response_headers,
+      "status": response.status
     }
 
-def download_url(url: str, filename: str | Path, hashes: dict | None | None = None, headers: dict | None = None, timeout: int = 10):
+def download(url: str, filename: str | Path, hashes: dict | None | None = None, headers: dict | None = None, timeout: int = 10):
   filename = Path(filename)
   if hashes is None: hashes = {}
   if headers is None: headers = {}

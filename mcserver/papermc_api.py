@@ -5,7 +5,7 @@ import json
 from typing import TypedDict
 
 # MCServer
-from networking import request_url
+from networking import request
 from constants import papermc_base_api
 
 #TypedDicts
@@ -19,9 +19,9 @@ class BuildDownload(TypedDict):
   download_url: str
 
 class BuildCommit(TypedDict):
-  build_sha: str
-  build_time: str
-  message: str
+  commit_hash: str
+  commit_time: str
+  commit_message: str
 
 class ProjectBuild(TypedDict):
   build_id: int
@@ -32,14 +32,14 @@ class ProjectBuild(TypedDict):
 
 #Functions
 def get_build(project_name: str, game_version: str, build_id: int | str) -> ProjectBuild:
-  response = json.loads(request_url(f"{papermc_base_api}/projects/{project_name}/versions/{game_version}/builds/{build_id}")["body"])
+  response = json.loads(request(f"{papermc_base_api}/projects/{project_name}/versions/{game_version}/builds/{build_id}")["body"])
 
   build_commits = []
   for commit in response["commits"]:
     build_commits.append({
       "commit_hash": commit["sha"],
       "commit_time": commit["time"],
-      "message": commit["message"]
+      "commit_message": commit["message"]
     })
 
   # NOTE: For now, it is hardcoded to only use the "server:default" 'prop'

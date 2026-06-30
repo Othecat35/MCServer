@@ -13,7 +13,7 @@ from indexing import project_index_exists, create_project_index, read_project_in
 from metadata import metadata_file
 from modrinth_api import get_project_versions, ProjectVersionDependency, modrinth_base_api
 from mojang_eula import check_eula_agreed, eula_agree
-from networking import download_url, request_url
+from networking import download, request
 from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
 from state import get_state, set_state, is_active
 
@@ -249,7 +249,7 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
     if not project_data["metadata"].get("project_slug"): fetch_ids.append(project_id)
 
   if fetch_ids != []:
-    projects = json.loads(request_url(f"{modrinth_base_api}/projects", query={
+    projects = json.loads(request(f"{modrinth_base_api}/v2/projects", query={
       "ids": json.dumps(fetch_ids)
     })["body"])
 
@@ -366,7 +366,7 @@ def add_projects(args):
       if (project_dir / project_file["filename"]).exists(): continue
 
       log.info(f"Downloading version {project["metadata"]['version_name']}...")
-      download_url(project_file["url"], project_dir / project_file["filename"], hashes=project_file["hashes"])
+      download(project_file["url"], project_dir / project_file["filename"], hashes=project_file["hashes"])
 
 def initialize_server(args):
   mc_version = args.mc_version
@@ -403,7 +403,7 @@ def initialize_server(args):
 
   if mc_version == "latest":
     log.info("Getting Mojang game version manifest...")
-    latest_version = json.loads(request_url("https://launchermeta.mojang.com/mc/game/version_manifest.json")["body"])["latest"]["release"]
+    latest_version = json.loads(request("https://launchermeta.mojang.com/mc/game/version_manifest.json")["body"])["latest"]["release"]
     mc_version = latest_version
 
   if loader == "vanilla":
@@ -457,10 +457,10 @@ def install_server(args):
   match loader_name:
     case "fabric":
       log.info(f"Downloading Fabric loader {loader_version} for Minecraft server {server_version}...")
-      download_url(f"https://meta.fabricmc.net/v2/versions/loader/{server_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
+      download(f"https://meta.fabricmc.net/v2/versions/loader/{server_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
     case "vanilla":
       log.info("Getting Mojang game version manifest...")
-      version_manifest = json.loads(request_url("https://launchermeta.mojang.com/mc/game/version_manifest.json")["body"])
+      version_manifest = json.loads(request("https://launchermeta.mojang.com/mc/game/version_manifest.json")["body"])
 
       selected_version_url = ""
       for version in version_manifest["versions"]:
@@ -468,10 +468,10 @@ def install_server(args):
           selected_version_url =  version["url"]
           break
 
-      server_download = json.loads(request_url(selected_version_url)["body"])["downloads"]["server"]
+      server_download = json.loads(request(selected_version_url)["body"])["downloads"]["server"]
       log.info(f"Downloading jarfile for vanilla Minecraft server {server_version}...")
 
-      download_url(server_download["url"], launcher_config["jarfile"], hashes={
+      download(server_download["url"], launcher_config["jarfile"], hashes={
         "sha1": server_download["sha1"]
       })
     case _:
@@ -523,7 +523,7 @@ def search_projects(args):
     ]
 
   log.info(search_message)
-  response = json.loads(request_url(f"{modrinth_base_api}/search", query={
+  response = json.loads(request(f"{modrinth_base_api}/v2/search", query={
       "query": query,
       "facets": json.dumps(search_filters),
       "index": search_index,
@@ -592,7 +592,7 @@ def show_projects(args):
   update_project_label(load_config("server", allow_missing=True)["loader"]["name"])
 
   log.info(f"Getting {pluralize(project_label, len(projects))} information...")
-  projects_info = json.loads(request_url(f"{modrinth_base_api}/projects", query={
+  projects_info = json.loads(request(f"{modrinth_base_api}/v2/projects", query={
       "ids": json.dumps(projects)
     }
   )["body"])
