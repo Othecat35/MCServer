@@ -25,10 +25,10 @@ class BuildCommit(TypedDict):
 
 class ProjectBuild(TypedDict):
   build_version: int                    #original: id
-  build_time: str                  #original: time
-  channel: str                     #original: channel
-  build_commits: list[BuildCommit] #original: commits
-  downloads: dict[str, BuildProp]  #original: downloads
+  build_time: str                       #original: time
+  channel: str                          #original: channel
+  build_commits: list[BuildCommit]      #original: commits
+  download_props: dict[str, BuildProp]  #original: downloads
 
 #Functions
 def get_project_build(project_name: str, game_version: str, build_id: int | Literal["latest"]) -> ProjectBuild:
@@ -52,13 +52,15 @@ def get_project_build(project_name: str, game_version: str, build_id: int | Lite
       "download_url": prop_data["url"]
     }
 
+  # NOTE: probably use the "server:default" prop
+
   return {
     "build_version": response_data["id"],
     "build_time": response_data["time"],
     "channel": response_data["channel"],
     "build_commits": build_commits,
-    "downloads": download_props
-    }
+    "download_props": download_props
+  }
 
 def get_latest_project_build(project_name: str, game_version: str) -> ProjectBuild:
   return get_project_build(project_name, game_version, "latest")

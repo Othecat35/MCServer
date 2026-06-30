@@ -18,7 +18,8 @@ from networking import download, request
 from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
 from state import get_state, set_state, is_active
 
-import mojang_manifest
+import config, state
+import mojang_manifest, papermc_api, purpurmc_api
 
 #Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
@@ -372,6 +373,7 @@ def add_projects(args):
       download(project_file["url"], loader_dir / project_file["filename"], hashes=project_file["hashes"])
 
 def initialize_server(args):
+  # Arguments
   game_version = args.mc_version
 
   loader_name = args.loader
@@ -380,10 +382,46 @@ def initialize_server(args):
   min_ram = args.min_ram
   max_ram = args.max_ram
 
+  if loader_name == "vanilla":
+    loader_version = None
+
   # Update project 'context'
   set_loader_context(loader_name)
 
   is_first_initialize = not metadata_file.exists()
+
+  # Special latest game_version
+  match game_version:
+    case "latest" | "latest-release":
+      latest_release_version = mojang_manifest.get_latest_release_version()
+      log.info(f"Latest Minecraft release version is: {latest_release_version}")
+      game_version = latest_release_version
+    case "latest-snapshot":
+      latest_snapshot_version = mojang_manifest.get_latest_snapshot_version()
+      log.info(f"Latest Minecraft snapshot version is: {latest_snapshot_version}")
+      game_version = latest_snapshot_version
+
+  # Special latest loader_version
+  if loader_version == "latest":
+    match loader_name:
+      # Mod loaders
+      case "fabric":
+        # TODO: make fabric actually have the special case, you (Othecat35) implement fabric
+        # as the only loader back then, for like 5 months straight! and yet you don't have
+        # 'special' latest for it. am I kidding me? but its fine, I get that the Fabric meta
+        # is a bit confusing, take your time.
+        log.error("Fabric doesn't have handler for latest version yet, considering manually use a version like 0.19.3.")
+        return 1
+
+      # Plugin loaders
+      case "paper":
+        latest_build_version = papermc_api.get_latest_project_build("paper", game_version)["build_version"]
+        log.info(f"Latest Paper build version is: {latest_build_version}")
+        loader_version = latest_build_version
+      case "purpur":
+        latest_build_version = purpurmc_api.get_latest_project_build("purpur", game_version)["build_version"]
+        log.info(f"Latest Purpur build version is: {latest_build_version}")
+        loader_version = latest_build_version
 
   # Creating the directories
   mcserver_dir.mkdir(exist_ok=True)
@@ -398,20 +436,6 @@ def initialize_server(args):
   # Creating the files
   if not slug_id_file.exists():
     slug_id_file.write_text(json.dumps({}, indent=2))
-
-  # Special game_version
-  match game_version:
-    case "latest" | "latest-release":
-      latest_release_version = mojang_manifest.get_latest_release_version()
-      log.info(f"Latest Minecraft release version is: {latest_release_version}")
-      game_version = latest_release_version
-    case "latest-snapshot":
-      latest_snapshot_version = mojang_manifest.get_latest_snapshot_version()
-      log.info(f"Latest Minecraft snapshot version is: {latest_snapshot_version}")
-      game_version = latest_snapshot_version
-
-  if loader_name == "vanilla":
-    loader_version = None
 
   # Generate configuration files
   for config_name in default_configs.keys():
@@ -446,62 +470,106 @@ def initialize_server(args):
       }
     }, indent=2))
 
-  if is_first_initialize:
     log.info("Initialized server configuration.")
   else:
     log.info("Reinitialized server configuration.")
 
   return 0
 
+
+
+
+
 def install_server(args):
-  if is_active():
-    log.error(f"There's another MCServer processes running with process ID: {get_state()["process_id"]}")
+  # Checking current state
+  if state.is_active():
+    log.error(f"There's another active MCServer process running with process ID: {state.get_state()["process_id"]}")
     return 1
 
-  server_config = load_config("server")
-  launcher_config = load_config("launcher")
+  # Loading configs
+  server_config = config.load_config("server")
+  launcher_config = config.load_config("launcher")
 
   server_loader = server_config["loader"]
-  server_version = server_config["version"]
+  game_version = server_config["version"]
 
   loader_name = server_loader["name"]
   loader_version = server_loader["version"]
 
-  set_state("installing_server")
+  state.set_state("installing_server")
 
-  # Download Jarfile
+  # Downloading loader jarfile
   match loader_name:
     # Mod loaders
     case "fabric":
-      log.info(f"Downloading Fabric loader {loader_version} for Minecraft {server_version}...")
-      download(f"https://meta.fabricmc.net/v2/versions/loader/{server_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
+      log.info(f"Downloading Fabric loader {loader_version} for Minecraft version {game_version}...")
+      download(f"https://meta.fabricmc.net/v2/versions/loader/{game_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
 
     # Plugin loaders
+    case "paper":
+      log.info(f"Downloading Paper version {}")
+      download_prop = papermc_api.get_project_build("paper", game_version, loader_version)["download_props"]["server:default"]
     case "purpur":
-      log.info(f"Downloading Purpur version {loader_version} for Minecraft {server_version}...")
-      download(download_url("purpur", server_version, loader_version), launcher_config["jarfile"])
+      pass
 
     # Vanilla
     case "vanilla":
-      log.info("Getting Mojang game version manifest...")
-      version_manifest = json.loads(request("https://launchermeta.mojang.com/mc/game/version_manifest.json")["body"])
+      
 
-      selected_version_url = ""
-      for version in version_manifest["versions"]:
-        if version["id"] == server_version:
-          selected_version_url =  version["url"]
-          break
 
-      server_download = json.loads(request(selected_version_url)["body"])["downloads"]["server"]
-      log.info(f"Downloading jarfile for vanilla Minecraft server {server_version}...")
 
-      download(server_download["url"], launcher_config["jarfile"], hashes={
-        "sha1": server_download["sha1"]
-      })
-    case _:
-      raise InstallServerError(f"Server loader '{loader_name}' is not supported")
 
-  log.info("Server installation is complete.")
+
+
+# def install_server(args):
+#   if is_active():
+#     log.error(f"There's another MCServer processes running with process ID: {get_state()["process_id"]}")
+#     return 1
+
+#   server_config = load_config("server")
+#   launcher_config = load_config("launcher")
+
+#   server_loader = server_config["loader"]
+#   server_version = server_config["version"]
+
+#   loader_name = server_loader["name"]
+#   loader_version = server_loader["version"]
+
+#   set_state("installing_server")
+
+#   # Download Jarfile
+#   match loader_name:
+#     # Mod loaders
+#     case "fabric":
+#       log.info(f"Downloading Fabric loader {loader_version} for Minecraft {server_version}...")
+#       download(f"https://meta.fabricmc.net/v2/versions/loader/{server_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
+
+#     # Plugin loaders
+#     case "purpur":
+#       log.info(f"Downloading Purpur version {loader_version} for Minecraft {server_version}...")
+#       download(download_url("purpur", server_version, loader_version), launcher_config["jarfile"])
+
+#     # Vanilla
+#     case "vanilla":
+#       log.info("Getting Mojang game version manifest...")
+#       version_manifest = json.loads(request("https://launchermeta.mojang.com/mc/game/version_manifest.json")["body"])
+
+#       selected_version_url = ""
+#       for version in version_manifest["versions"]:
+#         if version["id"] == server_version:
+#           selected_version_url =  version["url"]
+#           break
+
+#       server_download = json.loads(request(selected_version_url)["body"])["downloads"]["server"]
+#       log.info(f"Downloading jarfile for vanilla Minecraft server {server_version}...")
+
+#       download(server_download["url"], launcher_config["jarfile"], hashes={
+#         "sha1": server_download["sha1"]
+#       })
+#     case _:
+#       raise InstallServerError(f"Server loader '{loader_name}' is not supported")
+
+#   log.info("Server installation is complete.")
 
 def list_projects(args) -> int:
   return 0
@@ -754,7 +822,7 @@ def main():
   # 'init' command
   parser_init = subparsers.add_parser("init", help="Initialize the server configurations")
 
-  parser_init.add_argument("--mc-version", default="latest", type=str, help="Minecraft version of the server", metavar="version")
+  parser_init.add_argument("--mc-version", default="latest-release", type=str, help="Minecraft version of the server", metavar="version")
 
   parser_init.add_argument("--loader", default="vanilla", type=str, choices=loaders_list, help="Loader for the server (vanilla for unmodded server)")
   parser_init.add_argument("--loader-version", default="latest", type=str, help="Version of the loader", metavar="version")
