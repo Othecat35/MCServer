@@ -52,7 +52,7 @@ def request(url: str, query: dict | None = None, data: dict | None = None, heade
       "status": response.status
     }
 
-def download(url: str, filename: str | Path, hashes: dict | None | None = None, headers: dict | None = None, timeout: int = 10):
+def download(url: str, filename: str | Path, hashes: dict | None = None, headers: dict | None = None, timeout: int = 10):
   filename = Path(filename)
   if hashes is None: hashes = {}
   if headers is None: headers = {}
@@ -75,6 +75,9 @@ def download(url: str, filename: str | Path, hashes: dict | None | None = None, 
   elif hashes.get("sha1"):
     hash_algorithm = hashlib.sha1()
     hash_name = "sha1"
+  elif hashes.get("md5"):
+    hash_algorithm = hashlib.md5()
+    hash_name = "md5"
 
   expected_hash = None
 
