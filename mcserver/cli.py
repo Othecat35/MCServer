@@ -10,7 +10,6 @@ from collections import deque
 from config import default_configs, generate_config, load_config
 from constants import __version__
 from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
-from mcserver.purpurmc_api import download_url
 from metadata import metadata_file
 from modrinth_api import get_project_versions, ProjectVersionDependency, modrinth_base_api
 from mojang_eula import check_eula_agreed, eula_agree

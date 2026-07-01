@@ -148,4 +148,4 @@ def print_status(message: str, dynamic: str | None = None):
     if message != last_status_message:
       print(message, flush=True)
 
-      last_status_message = message
+  last_status_message = message

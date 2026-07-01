@@ -22,6 +22,9 @@ def get_start_time(pid: int | str) -> int:
   return int((proc_path / "stat").read_text().split()[21])
 
 def get_state() -> dict:
+  if not state_file.exists():
+    state_file.write_text(json.dumps({}))
+
   return json.loads(state_file.read_text())
 
 def is_active() -> bool:
