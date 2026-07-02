@@ -476,6 +476,10 @@ def initialize_server(args):
 
   return 0
 
+def import_setup(args):
+  file = Path(args.file)
+  return 0
+
 def install_server(args):
   file = args.file
 
@@ -803,9 +807,13 @@ def main():
   parser_init.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibyte)", metavar="size")
   parser_init.set_defaults(func=initialize_server)
 
+  # 'import' command
+  parser_import = subparsers.add_parser("import", description="Import Modrinth modpack", help="Import Modrinth modpack")
+  parser_import.add_argument("file", type=str, help="File to be imported")
+  parser_import.set_defaults(func=import_setup)
+
   # 'install' command
   parser_install = subparsers.add_parser("install", description="Install the server", help="Install the server")
-  parser_install.add_argument("file", type="str", help="Modrinth modpack file to install")
   parser_install.set_defaults(func=install_server)
 
   # 'start' command
