@@ -477,6 +477,8 @@ def initialize_server(args):
   return 0
 
 def install_server(args):
+  file = args.file
+
   # Checking current state
   if state.is_active():
     log.error(f"There's another active MCServer process running with process ID: {state.get_state()["process_id"]}")
@@ -803,6 +805,7 @@ def main():
 
   # 'install' command
   parser_install = subparsers.add_parser("install", description="Install the server", help="Install the server")
+  parser_install.add_argument("file", type="str", help="Modrinth modpack file to install")
   parser_install.set_defaults(func=install_server)
 
   # 'start' command
