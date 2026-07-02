@@ -164,3 +164,17 @@ resolve_dependencies: ok, there's no more dependency. here you go "return the li
 user: why are there 129 mods 0_0
 
 thx chatgpt but I can't prove it yet
+
+- Mergw install command functionallity to the start commane
+- Add import command to import .mrpack ot future .mcservwr
+- Add export command
+- Make the downloader:
+  - Continue from where it left of
+  - Internet speed from five seconds history
+  - ETA
+  - Make the status update each seconds instead of every packet recieved
+- Please, somehow make the codebase morebmanageable ;-;
+- Review codes, especially TypedDict, because why not
+- Avoid making myself suffer in this project, potentially abandoning this cool project
+- I hate CurseForge personally.
+- And yet I still have no friend (to talk about my weird hobby of computer, including this)
