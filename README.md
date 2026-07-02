@@ -1,6 +1,6 @@
 # MCServer
 ## About
-A CLI tool to manage a Minecraft: Java Edition server.
+A CLI tool to manage Minecraft: Java Edition servers.
 
 ## Windows
 Windows is untested, try using this inside WSL instead.
