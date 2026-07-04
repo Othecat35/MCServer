@@ -29,7 +29,7 @@ read_chunk_size: int = 1024 * 64 # 64KiB
 tempfiles_dir = mcserver_dir / "tempfiles"
 
 #Functions
-def request(url: str, query: dict | None = None, data: dict | None = None, headers: dict | None = None, method: str = "GET", timeout: int = 10) -> ResponseObject:
+def request(url: str, query: dict | None = None, data: bytes | None = None, headers: dict | None = None, method: str = "GET", timeout: int = 10) -> ResponseObject:
   method = method.upper()
   if query is None: query = {}
   if headers is None: headers = {}

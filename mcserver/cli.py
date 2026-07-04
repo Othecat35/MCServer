@@ -11,7 +11,7 @@ from config import default_configs, generate_config, load_config
 from constants import __version__
 from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
 from metadata import metadata_file
-from modrinth_api import get_project_versions, ProjectVersionDependency, modrinth_base_api
+from modrinth_api import get_project_versions, VersionDependency, modrinth_base_api
 from networking import download, request
 from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
 from state import get_state, set_state, is_active
@@ -109,11 +109,12 @@ def set_loader_context(loader_name: str):
     loader_dir = plugins_dir
 
 # Resolve prejects dependencies
-def adapt_dependencies_data(dependencies: list[ProjectVersionDependency]) -> dict:
+def adapt_dependencies_data(dependencies: list[VersionDependency]) -> dict:
   dependencies_data = {}
   for dependency in dependencies:
-    if dependency["project_id"] is not None and dependency["dependency_type"] != version_dependency_types["embedded"]:
-      dependencies_data[dependency["project_id"]] = version_dependency_types[dependency["dependency_type"]]
+    if "project_id" in dependency:
+      if dependency["project_id"] is not None and dependency["dependency_type"] != version_dependency_types["embedded"]:
+        dependencies_data[dependency["project_id"]] = version_dependency_types[dependency["dependency_type"]]
 
   return dependencies_data
 
@@ -198,12 +199,17 @@ def resolve_projects(projects_id: list | str, game_version: str, loader_name: st
         log.debug(f"Keeping existing data")
         project_relationship["dependants"].update(existing_entry_relationship["dependants"])
 
-      project_metadata["version_id"] = version["version_id"]
-      project_metadata["version_name"] = version["version_name"]
-      project_metadata["version_number"] = version["version_number"]
-      project_metadata["file"] = version["primary_file"]
+      if "version_id" in version:
+        project_metadata["version_id"] = version["version_id"]
 
-      project_relationship["dependencies"] = adapt_dependencies_data(version["dependencies"])
+      if "version_name" in version:
+        project_metadata["version_name"] = version["version_name"]
+      
+      if "version_number" in version:
+        project_metadata["version_number"] = version["version_number"]
+
+      if "dependencies" in version:
+        project_relationship["dependencies"] = adapt_dependencies_data(version["dependencies"])
 
     for dependency_id, dependency_type in project_relationship["dependencies"].items():
       if dependency_id in resolved_data:
@@ -508,7 +514,18 @@ def import_setup(args):
   )
 
   initialize_server(args)
-  return 0
+
+  # Downloading files
+  for file in modpack_index["files"]:
+    mod_environment = file.get("mod_environment")
+
+    if mod_environment is not None:
+      match mod_environment["server_side"]:
+        case "unsupported":
+          log.debug(f"Ignoring '{file['file_path']}', server is unsupported")
+          continue
+        case "optional":
+          pass
 
 def list_projects(args) -> int:
   return 0

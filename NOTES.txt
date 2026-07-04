@@ -119,8 +119,8 @@ mod indexing, don't forget! don't remind me the... 3rd time?
 Gemini suggest adding "status" command and get ram usage info, sure but not now. oh good idea I guess
 
 .mcserver/
-- metadata.json # Not created yet
-- state.json # Not created yet
+- metadata.json
+- state.json
 - configs/
   - launcher.json
   - modrinth.json
@@ -179,3 +179,27 @@ thx chatgpt but I can't prove it yet
 - I hate CurseForge personally.
 - And yet I still have no friend (to talk about my weird hobby of computer, including this)
 - Add command such as 'whitelist add/remove/list', 'ban/unban/ban-list', and probably 'op/deop <player> <level>'
+
+MCServer™ Naming Convention: (the Trademark is just a joke)
+- is_*
+  The value is true or false
+  - Examples:
+    - is_featured
+    - is_primary
+- filename
+  Full file name with extension
+- file_path
+  The path of a file (relative to current working directory)
+- download_url
+  URL that can be downloaded
+- *_count
+  Return a number of something
+  - Examples:
+    - download_count
+    - follower_count
+- file_size
+  The size of the file in byte
+- file_hash
+  A hash or multiple hashes of the file
+- *_url:
+  Its an URL.
