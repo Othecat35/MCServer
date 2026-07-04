@@ -1,7 +1,8 @@
 #Modules
 # Standard
 import collections
-import typing
+
+from typing import Callable, Literal, TypedDict
 
 #Variables
 dependency_types = {
@@ -31,11 +32,12 @@ class DependencyConflictError(Exception):
     self.required_nodes = required_nodes
 
 #TypedDict
-class NodeData(typing.TypedDict):
+class NodeData(TypedDict):
   manual: bool
-  type: typing.Literal[0] | typing.Literal[1] | typing.Literal[2] | typing.Literal[3]
-  dependencies: dict[str, typing.Literal[0] | typing.Literal[1] | typing.Literal[2] | typing.Literal[3]]
-  dependants: dict[str, typing.Literal[0] | typing.Literal[1] | typing.Literal[2] | typing.Literal[3]]
+  type: Literal[0, 1, 2, 3]
+  dependencies: dict[str, Literal[0, 1, 2, 3]]
+  dependants: dict[str, Literal[0, 1, 2, 3]]
+  node_id: str
 
 # Functions
 def filter_dependencies_type(dependencies: dict, filter_dependency_type: int) -> list[str]:
@@ -46,21 +48,22 @@ def filter_dependencies_type(dependencies: dict, filter_dependency_type: int) ->
 
   return dependencies_list
 
-def get_dependency_data(node_id: str, game_versions: list[str] | str, loader_versions: list[str] | str) -> dict[str, typing.Literal[0] | typing.Literal[1] | typing.Literal[2] | typing.Literal[3]]:
+def get_dependency_data(node_id: str, game_versions: list[str] | str, loader_versions: list[str] | str) -> dict[str, Literal[0, 1,2, 3]]:
   if isinstance(game_versions, str): game_versions = [game_versions]
   if isinstance(loader_versions, str): loader_versions = [loader_versions]
   return {}
 
-def check_conflics(node_id: str, node_data: NodeData, dependant_id: str, dependant_type: typing.Literal[0] | typing.Literal[1] | typing.Literal[2] | typing.Literal[3]) -> None:
+def check_conflics(node_id: str, node_data: NodeData, dependant_id: str, dependant_type: Literal[0 ,1, 2, 3]) -> None:
   if node_data["type"] == dependency_types["required"] and dependant_type == dependency_types["incompatible"]:
     raise DependencyConflictError(node_id, dependant_id, filter_dependencies_type(node_data["dependants"], dependency_types["required"]))
   elif node_data["type"] == dependency_types["incompatible"] and dependant_type == dependency_types["required"]:
     raise DependencyConflictError(node_id, filter_dependencies_type(node_data["dependants"], dependency_types["incompatible"]), dependant_id)
 
-def resolve_dependencies(initial_seeds: list[str] | str, game_versions: list[str] | str, loader_versions: list[str] | str, get_dependency_data: typing.Callable, check_conflicts: typing.Callable) -> dict[str, NodeData]:
+def resolve_dependencies(initial_seeds: list[str] | str, get_dependency_data: Callable, check_conflicts: Callable, loader_versions: list[str] | str | None = None, game_versions: list[str] | str | None = None) -> list[NodeData]:
   if isinstance(initial_seeds, str): initial_seeds = [initial_seeds]
-  if isinstance(game_versions, str): game_versions = [game_versions]
+
   if isinstance(loader_versions, str): loader_versions = [loader_versions]
+  if isinstance(game_versions, str): game_versions = [game_versions]
 
   unresolved_nodes = collections.deque()
   resolved_nodes: set[str] = set()
@@ -83,6 +86,7 @@ def resolve_dependencies(initial_seeds: list[str] | str, game_versions: list[str
 
     dependencies = get_dependency_data(node_id, game_versions, loader_versions)
     resolved_data[node_id]["dependencies"] = dependencies
+
     for dependency_id, dependency_type in dependencies.items():
       if dependency_id in resolved_data:
         dependency_data = resolved_data[dependency_id]
@@ -108,4 +112,11 @@ def resolve_dependencies(initial_seeds: list[str] | str, game_versions: list[str
 
     resolved_nodes.add(node_id)
 
-  return resolved_data
+  node_list = []
+  for node_id, node_data in resolved_data.items():
+    node = dict(node_data)
+    node["node_id"] = node_id
+
+    node_list.append(node)
+
+  return node_list

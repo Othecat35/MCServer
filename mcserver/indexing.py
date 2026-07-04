@@ -13,8 +13,8 @@ slug_id_file = indexes_dir / ".slug_id.json"
 
 #Functions
 def create_project_index(project_id: str, metadata: dict | None = None, relationship: dict | None = None) -> None:
-  if metadata is None: new_metadata = {}
-  if relationship is None: new_relationship = {}
+  if metadata is None: metadata = {}
+  if relationship is None: relationship = {}
 
   project_index = indexes_dir / project_id
   project_metadata = project_index / "metadata.json"
