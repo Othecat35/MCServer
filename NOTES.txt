@@ -145,7 +145,7 @@ Gemini suggest adding "status" command and get ram usage info, sure but not now.
 - The `show` command could show which Minecraft version are in common, pls future me >:). either in each mod's entry or at the end as sumarry of some sort.
 - ChatGPT just told me about zipapp just now? Yes, it did.
 
-I got an idea about the dependency resolutionin this small project (line 111)
+I got an idea about the dependency resolution this small project (line 111)
 So, instead of a big resolve_projects that do almost everything, why don't we just split them?
 We can have a "data provider", function that when called will return the data that the resolver needs.
 The "rule", or just the conflict checker -_-
@@ -161,12 +161,12 @@ check_dependency_conflicts: no
 resolve_dependencies: ok... what are dependencies of mod b?
 (some dialogue later)
 resolve_dependencies: ok, there's no more dependency. here you go "return the list of dependencies"
-user: why are there 129 mods 0_0
+user: why are there 129 mods including dependencies 0_0
 
 thx chatgpt but I can't prove it yet
 
-- Mergw install command functionallity to the start commane
-- Add import command to import .mrpack ot future .mcservwr
+- Merge install command functionallity to the start command [Done; 2026/07/03]
+- Add import command to import .mrpack or future .mcserver
 - Add export command
 - Make the downloader:
   - Continue from where it left of
@@ -178,3 +178,4 @@ thx chatgpt but I can't prove it yet
 - Avoid making myself suffer in this project, potentially abandoning this cool project
 - I hate CurseForge personally.
 - And yet I still have no friend (to talk about my weird hobby of computer, including this)
+- Add command such as 'whitelist add/remove/list', 'ban/unban/ban-list', and probably 'op/deop <player> <level>'

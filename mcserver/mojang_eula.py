@@ -8,7 +8,7 @@ from pathlib import Path
 eula_file = Path("eula.txt")
 
 #Functions
-def check_eula_agreed():
+def is_eula_agreed() -> bool:
   try:
     for line in eula_file.read_text().split("\n"):
       if line.startswith("eula=true"):
@@ -18,7 +18,7 @@ def check_eula_agreed():
 
   return False
 
-def eula_agree():
+def eula_agree() -> None:
   timestamp = time.strftime("%a %b %d %H:%M:%S GMT %Y", time.gmtime())
   eula_file.write_text(f"""#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).
 #{timestamp}

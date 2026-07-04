@@ -25,7 +25,6 @@ Windows is untested, try using this inside WSL instead.
 
 ## Usage
 - Initialize the server: `mcserver init [options]`
-- Install the server: `mcserver install`
 - Search mods from Modrinth: `mcserver search [<query>] [options]`
 - Show mod information from Modrinth: `mcserver show <mods>`
 - Add mods (and its dependencies): `mcserver add <mods>`
@@ -34,9 +33,8 @@ Windows is untested, try using this inside WSL instead.
 ### Example
 ```bash
 mcserver init --mc-version=1.20.1 --loader=fabric --loader-version=0.19.3
-mcserver install
-mcserver search thdilos
-mcserver show thdilos-fox-origin
+mcserver search --no-filter thdilos
+mcserver show thdilos-fox-origin thdilos-fox-origins-expanded
 mcserver add thdilos-fox-origins-expanded lithium tick-stasis ferrite-core krypton
 mcserver start
 ```

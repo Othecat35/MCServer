@@ -12,14 +12,15 @@ from constants import __version__
 from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
 from metadata import metadata_file
 from modrinth_api import get_project_versions, ProjectVersionDependency, modrinth_base_api
-from mojang_eula import check_eula_agreed, eula_agree
 from networking import download, request
 from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
 from state import get_state, set_state, is_active
 
 import config, state
+import mojang_eula, mojang_manifest
+import modrinth_modpack
 import networking
-import mojang_manifest, papermc_api, purpurmc_api
+import papermc_api, purpurmc_api
 
 #Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
@@ -478,73 +479,35 @@ def initialize_server(args):
 
 def import_setup(args):
   file = Path(args.file)
-  return 0
 
-def install_server(args):
-  file = args.file
+  min_ram = args.min_ram
+  max_ram = args.max_ram
 
-  # Checking current state
-  if state.is_active():
-    log.error(f"There's another active MCServer process running with process ID: {state.get_state()["process_id"]}")
-    return 1
+  modpack_index = modrinth_modpack.read_index(file)
 
-  # Loading configs
-  server_config = config.load_config("server")
-  launcher_config = config.load_config("launcher")
-
-  server_loader = server_config["loader"]
-  game_version = server_config["version"]
-
-  loader_name = server_loader["name"]
-  loader_version = server_loader["version"]
-
-  state.set_state("installing_server")
-
-  # Downloading loader jarfile
-  match loader_name:
-    # Mod loaders
-    case "fabric":
-      log.info(f"Downloading Fabric loader {loader_version} for Minecraft version {game_version}...")
-      networking.download(f"https://meta.fabricmc.net/v2/versions/loader/{game_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
-
-    # Plugin loaders
-    case "paper":
-      log.info(f"Downloading Paper version {loader_version} for Minecraft version {game_version}...")
-      download_prop = papermc_api.get_project_build("paper", game_version, loader_version)["download_props"]["server:default"]
-      networking.download(download_prop["download_url"], launcher_config["jarfile"], dict(download_prop["checksums"]))
-    case "purpur":
-      log.info(f"Downloading Purpur version {loader_version} for Minecraft version {game_version}...")
-      networking.download(purpurmc_api.download_url("purpur", game_version, loader_version), launcher_config["jarfile"], {
-        "md5": purpurmc_api.get_project_build("purpur", game_version, loader_version)["artifact_md5"]
-      })
-
-    # Vanilla
-    case "vanilla":
-      log.debug("Getting Mojang version manifest file...")
-      version_manifest = mojang_manifest.get_version_manifest()["game_versions"]
-
-      selected_version_url = None
-      for version in version_manifest:
-        if version["version_id"] == game_version:
-          selected_version_url =  version["package_url"]
-          break
-
-      if selected_version_url is None:
-        log.error(f"Minecraft version {game_version} is not found.")
+  loader_name = ""
+  loader_version = ""
+  for dependency_name, dependency_version in modpack_index["dependencies"].items():
+    match dependency_name:
+      case "minecraft":
+        continue
+      case "fabric-loader":
+        loader_name = "fabric"
+        loader_version = dependency_version
+        break
+      case _:
+        log.error(f"Loader '{dependency_name}' is not supported")
         return 1
 
-      server_download = json.loads(networking.request(selected_version_url)["body"])["downloads"]["server"]
-      log.info(f"Downloading vanilla Minecraft version {game_version}...")
+  args = argparse.Namespace(
+    mc_version = modpack_index["dependencies"]["minecraft"],
+    loader = loader_name,
+    loader_version = loader_version,
+    min_ram = min_ram,
+    max_ram = max_ram
+  )
 
-      networking.download(server_download["url"], launcher_config["jarfile"], {
-        "sha1": server_download["sha1"]
-      })
-    
-    case _:
-      log.error(f"Loader '{loader_name}' is not supported.")
-      return 1
-
-  log.info("Server installation is completed.")
+  initialize_server(args)
   return 0
 
 def list_projects(args) -> int:
@@ -601,7 +564,8 @@ def search_projects(args):
 
   projects_list = response.get("hits", [])
   if not projects_list:
-    raise SearchProjectsError(f"No mod found.")
+    log.error(f"No {project_label} found.")
+    return 1
 
   server_side_width = 0
   client_side_width = 0
@@ -651,7 +615,7 @@ def search_projects(args):
 
     print(f"""{project_header}
 [ {server_side} | Client: {client_side} ] {downloads_follows}
-> https://modrinth.com/mod/{slug}
+> https://modrinth.com/{project_label}/{slug}
 {description}""", end="\n" if is_end_of_list else "\n\n")
 
 def show_projects(args):
@@ -689,7 +653,7 @@ def show_projects(args):
     license_id = wrap_ansi(project_license.get("id", "") or "LicenseRef-All-Rights-Reserved", "bold")
 
     project_homepage = project.get("slug", project["id"])
-    homepage = wrap_ansi(f"https://modrinth.com/mod/{project_homepage}", "bold")
+    homepage = wrap_ansi(f"https://modrinth.com/{project_label}/{project_homepage}", "bold")
 
     project_description = project.get('description', '<No Description>')
     description = wrap_string(f"Description: {wrap_ansi(project_description, 'bold')}", subsequent_indent=" ")
@@ -707,35 +671,91 @@ Homepage: {homepage}
 {description}""")
 
 def start_server(args):
-  launcher_config = load_config("launcher")
-  memory_limit = launcher_config["ram"]
-
-  jarfile = launcher_config['jarfile']
-
-  if is_active():
-    log.error(f"There's another MCServer processes running with process ID: {get_state()["process_id"]}")
+  # Checking current state
+  if state.is_active():
+    current_state = state.get_state()
+    log.error(f"There's another active MCServer process ({current_state["action"]}) running with process ID: {current_state["process_id"]}")
     return 1
 
+  state.set_state("running_server")
+
+  # Loading configs
+  server_config = config.load_config("server")
+  launcher_config = config.load_config("launcher")
+
+  server_loader = server_config["loader"]
+  game_version = server_config["version"]
+
+  loader_name = server_loader["name"]
+  loader_version = server_loader["version"]
+
+  jarfile = launcher_config["jarfile"]
+  memory_config = launcher_config["ram"]
+
+  # Download jarfile
   if not Path(jarfile).exists():
-    log.error(f"Couldn't find server jarfile '{jarfile}'")
-    return 1
+    match loader_name:
+      # Mod loaders
+      case "fabric":
+        log.info(f"Downloading Fabric loader {loader_version} for Minecraft version {game_version}...")
+        networking.download(f"https://meta.fabricmc.net/v2/versions/loader/{game_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
 
+      # Plugin loaders
+      case "paper":
+        log.info(f"Downloading Paper version {loader_version} for Minecraft version {game_version}...")
+        download_prop = papermc_api.get_project_build("paper", game_version, loader_version)["download_props"]["server:default"]
+        networking.download(download_prop["download_url"], launcher_config["jarfile"], dict(download_prop["checksums"]))
+      case "purpur":
+        log.info(f"Downloading Purpur version {loader_version} for Minecraft version {game_version}...")
+        networking.download(purpurmc_api.download_url("purpur", game_version, loader_version), launcher_config["jarfile"], {
+          "md5": purpurmc_api.get_project_build("purpur", game_version, loader_version)["artifact_md5"]
+        })
+
+      # Vanilla
+      case "vanilla":
+        log.debug("Getting Mojang version manifest file...")
+        version_manifest = mojang_manifest.get_version_manifest()["game_versions"]
+
+        selected_version_url = None
+        for version in version_manifest:
+          if version["version_id"] == game_version:
+            selected_version_url =  version["package_url"]
+            break
+
+        if selected_version_url is None:
+          log.error(f"Minecraft version {game_version} is not found.")
+          return 1
+
+        server_download = json.loads(networking.request(selected_version_url)["body"])["downloads"]["server"]
+        log.info(f"Downloading vanilla Minecraft version {game_version}...")
+
+        networking.download(server_download["url"], launcher_config["jarfile"], {
+          "sha1": server_download["sha1"]
+        })
+      
+      case _:
+        log.error(f"Loader '{loader_name}' is not supported.")
+        return 1
+
+  # Running the server
   if not shutil.which("java"):
-    log.error("Cannot find 'java' in PATH, is Java installed correctly?")
+    log.error("Cannot find 'java' in PATH, is Java Runtime Environment installed correctly?")
     return 1
 
-  if memory_limit["min"] > memory_limit["max"]:
+  if memory_config["min"] > memory_config["max"]:
     log.error(f"Minimum RAM cannot be larger that maximum RAM, please check configuration for `launcher`")
     return 1
 
+  #TODO: Implement the "free RAM" checker here
+
   try:
-    if not check_eula_agreed():
+    if not mojang_eula.is_eula_agreed():
       log.warning("You need to agree to Mojang's EULA in order to run the server: https://aka.ms/MinecraftEULA")
       log.info(f"Please type '{wrap_ansi(eula_agree_sentence, 'yellow')}' (case-insensitive) to agree with Mojang's EULA.")
       answer = input("> ")
 
-      if answer.lower() == eula_agree_sentence.lower():
-        eula_agree()
+      if answer.lower().strip() == eula_agree_sentence.lower().strip():
+        mojang_eula.eula_agree()
       else:
         log.error("Failed to start the Minecraft server: EULA not agreed")
         return 1
@@ -745,8 +765,8 @@ def start_server(args):
 
   java_command_argv = [
     "java",
-    f"-Xmx{memory_limit['max']}M",
-    f"-Xms{memory_limit['min']}M",
+    f"-Xmx{memory_config['max']}M",
+    f"-Xms{memory_config['min']}M",
     "-jar",
     launcher_config["jarfile"]
   ]
@@ -756,7 +776,6 @@ def start_server(args):
 
   log.info("Starting Minecraft server...")
 
-  set_state("starting_server")
   log.debug(f"Executing command: {' '.join(java_command_argv)}")
   os.execvp(java_command_argv[0], java_command_argv)
 
@@ -810,11 +829,10 @@ def main():
   # 'import' command
   parser_import = subparsers.add_parser("import", description="Import Modrinth modpack", help="Import Modrinth modpack")
   parser_import.add_argument("file", type=str, help="File to be imported")
-  parser_import.set_defaults(func=import_setup)
 
-  # 'install' command
-  parser_install = subparsers.add_parser("install", description="Install the server", help="Install the server")
-  parser_install.set_defaults(func=install_server)
+  parser_import.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for the server (in Mebibyte)", metavar="size")
+  parser_import.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibyte)", metavar="size")
+  parser_import.set_defaults(func=import_setup)
 
   # 'start' command
   parser_start = subparsers.add_parser("start", description="Start the server", help="Start the server")
