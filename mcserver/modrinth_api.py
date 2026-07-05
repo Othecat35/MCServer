@@ -76,12 +76,8 @@ def get_project_versions(project_id: str, loader_names: list[str] | str | None =
   }
 
   if featured is not None: query_parameter["featured"] = json.dumps(featured)
-
   response = networking.request(f"{modrinth_base_api}/v2/project/{project_id}/version", query=query_parameter)
   response_data = json.loads(response["body"])
-
-  if len(response_data) == 0:
-    raise Exception(f"Project '{project_id}' has no version")
 
   project_versions = []
   for version in response_data:

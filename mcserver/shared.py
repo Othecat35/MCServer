@@ -6,6 +6,7 @@ from pathlib import Path
 
 # MCServer
 from constants import iec_prefixes, si_prefixes
+from typing import Any
 
 #Variables
 special_plural = {
@@ -76,6 +77,14 @@ def format_number(number: str | float, unit_type: str = "si"):
     iteration += 1
 
   return f"{round(number, 2):g}{prefixes[iteration]}"
+
+def remap_keys(source: dict, mapping: dict[str, str]) -> dict:
+  remapped_source = {}
+  for target_key, source_key in mapping.items():
+    if source_key in source:
+      remapped_source[target_key] = source[source_key]
+
+  return remapped_source
 
 def merge_dict(base: dict, update: dict) -> dict:
   for key, value in update.items():

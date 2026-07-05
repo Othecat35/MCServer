@@ -17,6 +17,7 @@ from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_
 from state import get_state, set_state, is_active
 
 import config, state
+import fabricmc_meta
 import mojang_eula, mojang_manifest
 import modrinth_modpack
 import networking
@@ -413,12 +414,14 @@ def initialize_server(args):
     match loader_name:
       # Mod loaders
       case "fabric":
-        # TODO: make fabric actually have the special case, you (Othecat35) implement fabric
-        # as the only loader back then, for like 5 months straight! and yet you don't have
-        # 'special' latest for it. am I kidding me? but its fine, I get that the Fabric meta
-        # is a bit confusing, take your time.
-        log.error("Fabric doesn't have handler for latest version yet, considering manually use a version like 0.19.3.")
-        return 1
+        latest_loader_version = ""
+        for version in fabricmc_meta.get_loader_versions():
+          if version["is_stable"]:
+            latest_loader_version = version["loader_version"]
+            break
+
+        log.info(f"Latest Fabric Loader version is {latest_loader_version}")
+        loader_version = latest_loader_version
 
       # Plugin loaders
       case "paper":
