@@ -7,31 +7,31 @@ from typing import Literal, NotRequired, TypedDict
 
 #TYpedDict
 class FileHashes(TypedDict):
-    sha1: str     #original: sha1
+    sha1: str   #original: sha1
     sha512: str #original: sha512
 
 class ModEnvironment(TypedDict):
     client_side: Literal["required", "optional", "unsupported", "unknown"] #original: client
     server_side: Literal["required", "optional", "unsupported", "unknown"] #original: server
 
-class File(TypedDict):
-    file_path: Path                                                            #original: path
-    hashes: FileHashes                                                     #original: hashes
+class ModpackFile(TypedDict):
+    file_path: Path                              #original: path
+    hashes: FileHashes                           #original: hashes
     mod_environment: NotRequired[ModEnvironment] #original: env
-    download_urls: list[str]                                         #original: downloads
-    file_size: int                                                             #original: fileSize
+    download_urls: list[str]                     #original: downloads
+    file_size: int                               #original: fileSize
 
-class ModPackIndex(TypedDict):
-    format_version: int                         #original: formatVersion
+class ModpackIndex(TypedDict):
+    format_version: int             #original: formatVersion
     game_name: Literal["minecraft"] #original: game
-    version_id: str                                 #original: versionId
-    pack_name: str                                    #original: name
-    pack_summary: NotRequired[str]    #original: summary
-    files: list[File]                             #original: files
-    dependencies: dict[str, str]        #original: dependencies
+    version_id: str                 #original: versionId
+    pack_name: str                  #original: name
+    summary: NotRequired[str]       #original: summary
+    files: list[ModpackFile]        #original: files
+    dependencies: dict[str, str]    #original: dependencies
 
 #Functions
-def read_index(file_path: Path | str) -> ModPackIndex:
+def read_index(file_path: Path | str) -> ModpackIndex:
     file_path = Path(file_path)
 
     pack_index = {}
@@ -53,7 +53,7 @@ def read_index(file_path: Path | str) -> ModPackIndex:
         "game_name": pack_index["game"],
         "version_id": pack_index["versionId"],
         "pack_name": pack_index["name"],
-        "pack_summary": pack_index.get("summary"),
+        "summary": pack_index.get("summary"),
         "files": files,
         "dependencies": pack_index["dependencies"]
     }

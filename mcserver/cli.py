@@ -821,7 +821,7 @@ def main():
     # Parser
     parser = argparse.ArgumentParser(
         prog="mcserver",
-        description="A CLI tool for managing a Minecraft: Java Edition server.",
+        description="A CLI tool for managing Minecraft: Java Edition servers.",
         epilog="Not created for Windows.",
         allow_abbrev=False)
 
@@ -833,7 +833,20 @@ def main():
 
     subparsers = parser.add_subparsers(title="Commands")
 
-    #Setup
+    #Commands
+    # 'add' command
+    parser_add = subparsers.add_parser("add", description="Add Modrinth projects", help="Add Modrinth projects")
+    parser_add.add_argument("projects", nargs="+", type=str, help="Slug (or ID) of the projects")
+    parser_add.set_defaults(func=add_projects)
+
+    # 'import' command
+    parser_import = subparsers.add_parser("import", description="Import a Modrinth modpack", help="Import a Modrinth modpack")
+    parser_import.add_argument("file", type=str, help="File to be imported")
+
+    parser_import.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for the server (in Mebibytes)", metavar="size")
+    parser_import.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibytes)", metavar="size")
+    parser_import.set_defaults(func=import_setup)
+
     # 'init' command
     parser_init = subparsers.add_parser("init", help="Initialize the server configurations")
 
@@ -845,24 +858,6 @@ def main():
     parser_init.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for the server (in Mebibyte)", metavar="size")
     parser_init.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibyte)", metavar="size")
     parser_init.set_defaults(func=initialize_server)
-
-    # 'import' command
-    parser_import = subparsers.add_parser("import", description="Import Modrinth modpack", help="Import Modrinth modpack")
-    parser_import.add_argument("file", type=str, help="File to be imported")
-
-    parser_import.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for the server (in Mebibyte)", metavar="size")
-    parser_import.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibyte)", metavar="size")
-    parser_import.set_defaults(func=import_setup)
-
-    # 'start' command
-    parser_start = subparsers.add_parser("start", description="Start the server", help="Start the server")
-    parser_start.set_defaults(func=start_server)
-
-    #Mod management
-    # 'add' command
-    parser_add = subparsers.add_parser("add", description="Add project(s) from Modrinth", help="Add project(s) from Modrinth")
-    parser_add.add_argument("projects", nargs="+", type=str, help="Slug (or ID) of the project(s)")
-    parser_add.set_defaults(func=add_projects)
 
     # 'list' command
     parser_list = subparsers.add_parser("list", description="List downloaded projects", help="List downloaded projects")
@@ -883,8 +878,13 @@ def main():
     parser_show.add_argument("projects", nargs="+", type=str, help="Slug (or ID) of the project(s)")
     parser_show.set_defaults(func=show_projects)
 
+    # 'start' command
+    parser_start = subparsers.add_parser("start", description="Start the server", help="Start the server")
+    parser_start.set_defaults(func=start_server)
+
     args = parser.parse_args()
     sys.exit(args.func(args))
+
 
 ### This file used to be a one big script file, 1,200 lines. and the modularization happens after I found out
 ### about zipapp, silly me. The reason that I might "reinvent the wheel" is because I used to want it just
