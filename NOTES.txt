@@ -203,3 +203,7 @@ MCServer™ Naming Convention: (the Trademark is just a joke)
   A hash or multiple hashes of the file
 - *_url:
   Its an URL.
+
+  - The `get_`
+
+- Fix the "get_players_from_names" in minecraft_api.py. you mean, adding Content-Type: application/json?
