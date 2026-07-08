@@ -35,7 +35,10 @@ def get_players_from_names(player_names: list[str] | str) -> list[PlayerIdentity
         raise ValueError("Cannot query more than 10 players names at once")
 
     data_payload = json.dumps(player_names).encode("utf-8")
-    response = networking.request(f"{minecraft_base_api}/minecraft/profile/lookup/bulk/byname", data=data_payload, method="POST")
+    response = networking.request(f"{minecraft_base_api}/minecraft/profile/lookup/bulk/byname", data=data_payload, headers={
+        "Content-Type": "application/json"
+    }, method="POST")
+
     response_data = json.loads(response["body"])
 
     player_identities = []
