@@ -123,6 +123,66 @@
 
 
 
+#Modules
+# Standard
+from collections import deque
+from typing import Callable, Deque
+
+#Variables
+dependency_types = {
+    "embedded": 0,
+    "optional": 1,
+    "required": 2,
+    "incompatible": 3
+}
+
+#Functions
+def resolve_dependencies(initial_seeds: list[str] | str, get_dependencies: Callable) -> list:
+    if isinstance(initial_seeds, str): initial_seeds = [initial_seeds]
+
+    queued_nodes: Deque[str] = deque()
+    processed_nodes: set[str] = set()
+    dependency_graph = {}
+
+    for seed in initial_seeds:
+        if seed not in queued_nodes:
+            queued_nodes.append(seed)
+            dependency_graph[seed] = {
+                "is_manual": True,
+                "highest_type": dependency_types["required"],
+                "dependencies": {},
+                "dependents": {}
+            }
+
+    while queued_nodes:
+        node = queued_nodes.popleft()
+        if node in processed_nodes:
+            continue
+
+        dependency_data = get_dependencies(node)
+
+        processed_nodes.add(node)
+
+    resolved_dependencies = []
+    return resolved_dependencies
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
