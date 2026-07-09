@@ -207,3 +207,10 @@ MCServer™ Naming Convention: (the Trademark is just a joke)
   - The `get_`
 
 - Fix the "get_players_from_names" in minecraft_api.py. you mean, adding Content-Type: application/json? nvm I fixed it the same day anyway.
+
+- The player related commands:
+whitelist_players() = whitelist add/remove/list <player_names except list>
+ban_player() = ban <player_name> --reason=<str>
+unban_players = unban <player_names>
+op_player() = op <player_name> --level=<1-4> --bypass-player-limit=<bool>
+deop_players() = deop <player_names>
