@@ -839,6 +839,12 @@ def main():
     parser_add.add_argument("projects", nargs="+", type=str, help="Slug (or ID) of the projects")
     parser_add.set_defaults(func=add_projects)
 
+
+    parser_ban = subparsers.add_parser("ban", description="Command about players ban", help="Command about players ban")
+    parser_ban.add_argument("action", type=str, help="Action of the command")
+
+
+
     # 'import' command
     parser_import = subparsers.add_parser("import", description="Import a Modrinth modpack", help="Import a Modrinth modpack")
     parser_import.add_argument("file", type=str, help="File to be imported")
