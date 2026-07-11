@@ -11,17 +11,17 @@ from config import default_configs, generate_config, load_config
 from constants import __version__
 from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
 from metadata import metadata_file
-from modrinth_api import get_project_versions, VersionDependency, modrinth_base_api
+from modrinth.modrinth_api import get_project_versions, VersionDependency, modrinth_base_api
 from networking import download, request
 from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
 from state import get_state, set_state, is_active
 
 import config, state
-import fabricmc_meta
-import mojang_eula, mojang_manifest
-import modrinth_modpack
+import fabricmc.meta
+import mojang.eula, mojang.manifest
+import modrinth.modpack
 import networking
-import papermc_api, purpurmc_api
+import papermc.papermc_api, purpurmc.purpurmc_api
 
 #Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
@@ -401,11 +401,11 @@ def initialize_server(args):
     # Special latest game_version
     match game_version:
         case "latest" | "latest-release":
-            latest_release_version = mojang_manifest.get_latest_release_version()
+            latest_release_version = mojang.manifest.get_latest_release_version()
             log.info(f"Latest Minecraft release version is: {latest_release_version}")
             game_version = latest_release_version
         case "latest-snapshot":
-            latest_snapshot_version = mojang_manifest.get_latest_snapshot_version()
+            latest_snapshot_version = mojang.manifest.get_latest_snapshot_version()
             log.info(f"Latest Minecraft snapshot version is: {latest_snapshot_version}")
             game_version = latest_snapshot_version
 
@@ -415,7 +415,7 @@ def initialize_server(args):
             # Mod loaders
             case "fabric":
                 latest_loader_version = ""
-                for version in fabricmc_meta.get_loader_versions():
+                for version in fabricmc.meta.get_loader_versions():
                     if version["is_stable"]:
                         latest_loader_version = version["loader_version"]
                         break
@@ -425,11 +425,11 @@ def initialize_server(args):
 
             # Plugin loaders
             case "paper":
-                latest_build_version = papermc_api.get_latest_project_build("paper", game_version)["build_version"]
+                latest_build_version = papermc.papermc_api.get_latest_project_build("paper", game_version)["build_version"]
                 log.info(f"Latest Paper build version is: {latest_build_version}")
                 loader_version = latest_build_version
             case "purpur":
-                latest_build_version = purpurmc_api.get_latest_project_build("purpur", game_version)["build_version"]
+                latest_build_version = purpurmc.purpurmc_api.get_latest_project_build("purpur", game_version)["build_version"]
                 log.info(f"Latest Purpur build version is: {latest_build_version}")
                 loader_version = latest_build_version
 
@@ -492,7 +492,7 @@ def import_setup(args):
     min_ram = args.min_ram
     max_ram = args.max_ram
 
-    modpack_index = modrinth_modpack.read_index(file)
+    modpack_index = modrinth.modpack.read_index(file)
 
     loader_name = ""
     loader_version = ""
@@ -723,18 +723,18 @@ def start_server(args):
             # Plugin loaders
             case "paper":
                 log.info(f"Downloading Paper version {loader_version} for Minecraft version {game_version}...")
-                download_prop = papermc_api.get_project_build("paper", game_version, loader_version)["download_props"]["server:default"]
+                download_prop = papermc.papermc_api.get_project_build("paper", game_version, loader_version)["download_props"]["server:default"]
                 networking.download(download_prop["download_url"], launcher_config["jarfile"], dict(download_prop["checksums"]))
             case "purpur":
                 log.info(f"Downloading Purpur version {loader_version} for Minecraft version {game_version}...")
-                networking.download(purpurmc_api.download_url("purpur", game_version, loader_version), launcher_config["jarfile"], {
-                    "md5": purpurmc_api.get_project_build("purpur", game_version, loader_version)["artifact_md5"]
+                networking.download(purpurmc.purpurmc_api.download_url("purpur", game_version, loader_version), launcher_config["jarfile"], {
+                    "md5": purpurmc.purpurmc_api.get_project_build("purpur", game_version, loader_version)["artifact_md5"]
                 })
 
             # Vanilla
             case "vanilla":
                 log.debug("Getting Mojang version manifest file...")
-                version_manifest = mojang_manifest.get_version_manifest()["game_versions"]
+                version_manifest = mojang.manifest.get_version_manifest()["game_versions"]
 
                 selected_version_url = None
                 for version in version_manifest:
@@ -769,13 +769,13 @@ def start_server(args):
     #TODO: Implement the "free RAM" checker here
 
     try:
-        if not mojang_eula.is_eula_agreed():
+        if not mojang.eula.is_eula_agreed():
             log.warning("You need to agree to Mojang's EULA in order to run the server: https://aka.ms/MinecraftEULA")
             log.info(f"Please type '{wrap_ansi(eula_agree_sentence, 'yellow')}' (case-insensitive) to agree with Mojang's EULA.")
             answer = input("> ")
 
             if answer.lower().strip() == eula_agree_sentence.lower().strip():
-                mojang_eula.eula_agree()
+                mojang.eula.eula_agree()
             else:
                 log.error("Failed to start the Minecraft server: EULA not agreed")
                 return 1
@@ -842,8 +842,6 @@ def main():
 
     parser_ban = subparsers.add_parser("ban", description="Command about players ban", help="Command about players ban")
     parser_ban.add_argument("action", type=str, help="Action of the command")
-
-
 
     # 'import' command
     parser_import = subparsers.add_parser("import", description="Import a Modrinth modpack", help="Import a Modrinth modpack")

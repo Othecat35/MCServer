@@ -7,10 +7,11 @@ from typing import NotRequired, TypedDict
 # MCServer
 import networking
 from constants import minecraft_base_api
+from minecraft.player_identity import normalize_player_uuid, PlayerUUID
 
 #TypedDict
 class PlayerIdentity(TypedDict):
-    player_uuid: str
+    player_uuid: PlayerUUID
     player_name: str
     is_legacy: NotRequired[bool]
     is_demo: NotRequired[bool]
@@ -18,19 +19,25 @@ class PlayerIdentity(TypedDict):
 #Functions
 def get_player_from_name(player_name: str) -> PlayerIdentity:
     response = networking.request(f"{minecraft_base_api}/minecraft/profile/lookup/name/{player_name}")
-    response_data = json.loads(response["body"])
+    response_json = json.loads(response["body"])
 
     player_identity: PlayerIdentity = {
-        "player_uuid": response_data["id"],
-        "player_name": response_data["name"],
+        "player_uuid": normalize_player_uuid(response_json["id"]),
+        "player_name": response_json["name"],
     }
 
-    if "legacy" in response_data: player_identity["is_legacy"] = response_data["legacy"]
-    if "demo" in response_data: player_identity["is_demo"] = response_data["demo"]
+    if "legacy" in response_json:
+        player_identity["is_legacy"] = response_json["legacy"]
+
+    if "demo" in response_json:
+        player_identity["is_demo"] = response_json["demo"]
+
     return player_identity
 
 def get_players_from_names(player_names: list[str] | str) -> list[PlayerIdentity]:
-    if isinstance(player_names, str): player_names = [player_names]
+    if isinstance(player_names, str):
+        player_names = [player_names]
+
     if len(player_names) > 10:
         raise ValueError("Cannot query more than 10 players names at once")
 
@@ -39,12 +46,12 @@ def get_players_from_names(player_names: list[str] | str) -> list[PlayerIdentity
         "Content-Type": "application/json"
     }, method="POST")
 
-    response_data = json.loads(response["body"])
+    response_json = json.loads(response["body"])
 
     player_identities = []
-    for data in response_data:
+    for data in response_json:
         player_identity = {
-            "player_uuid": data["id"],
+            "player_uuid": normalize_player_uuid(data["id"]),
             "player_name": data["name"],
         }
 
@@ -54,12 +61,12 @@ def get_players_from_names(player_names: list[str] | str) -> list[PlayerIdentity
 
     return player_identities
 
-def get_player_from_uuid(player_uuid: str) -> PlayerIdentity:
+def get_player_from_uuid(player_uuid: PlayerUUID) -> PlayerIdentity:
     response = networking.request(f"{minecraft_base_api}/minecraft/profile/lookup/{player_uuid}")
     response_data = json.loads(response["body"])
 
     player_identity: PlayerIdentity = {
-        "player_uuid": response_data["id"],
+        "player_uuid": normalize_player_uuid(response_data["id"]),
         "player_name": response_data["name"],
     }
 
