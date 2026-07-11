@@ -890,8 +890,12 @@ def main():
     sys.exit(args.func(args))
 
 
-### This file used to be a one big script file, 1,200 lines. and the modularization happens after I found out
-### about zipapp, silly me. The reason that I might "reinvent the wheel" is because I used to want it just
-### downloadscript and run without the 'pip install -r requirements.txt' ritual, and that is way before I
-### knew about zipapp, so I can't bundle requests or something. but now? I technically can, but I'll just continue the
-### external-free code, for fun and learning :shrug:
+### This file used to be a one big script file, like 1,200 lines of codes.
+### and the modularization happens after I found out about zipapp, silly me.
+### The reason that I might "reinvent the wheel" is because I used to want it just
+### download script and run without the 'pip install -r requirements.txt' ritual
+### and that is way before I knew about zipapp, so I can't bundle requests or
+### something. blBut now? I technically can, but I'll just continue the
+### dependency-free code, for fun and learning :shrug:. that means 100% of the
+### projectis written by me. yep, absolutely every bit of this prpject, no
+### external code at all!
