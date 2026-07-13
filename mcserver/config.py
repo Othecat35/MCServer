@@ -1,7 +1,6 @@
 #Modules
 # Standard
 import copy, json
-
 import logging as log
 
 #MCServer

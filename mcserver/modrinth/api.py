@@ -5,7 +5,6 @@ from typing import Literal, TypedDict, NotRequired
 
 # MCServer
 import networking, shared
-
 from constants import modrinth_base_api
 
 #Errors

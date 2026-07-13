@@ -1,9 +1,11 @@
 #Modules
+# Standard
 import json
 from pathlib import Path
 from typing import TypedDict
 from uuid import UUID
 
+# MCServer
 from minecraft.player_identity import normalize_player_uuid, PlayerID, PlayerUUID
 
 #Paths

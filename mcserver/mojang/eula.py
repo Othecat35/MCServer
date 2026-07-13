@@ -1,7 +1,6 @@
 #Modules
 # Standard
 import time
-
 from pathlib import Path
 
 #Paths

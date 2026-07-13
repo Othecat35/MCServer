@@ -1,8 +1,7 @@
 #Modules
 # Standard
 import json
-
-from typing import Literal, TypedDict
+from typing import TypedDict
 
 # MCServer
 import networking

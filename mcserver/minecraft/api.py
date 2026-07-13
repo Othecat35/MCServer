@@ -1,7 +1,6 @@
 #Modules
 # Standard
 import json
-
 from typing import NotRequired, TypedDict
 
 # MCServer

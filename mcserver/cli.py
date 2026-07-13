@@ -11,7 +11,7 @@ from config import default_configs, generate_config, load_config
 from constants import __version__
 from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
 from metadata import metadata_file
-from modrinth.modrinth_api import get_project_versions, VersionDependency, modrinth_base_api
+from modrinth.api import get_project_versions, VersionDependency, modrinth_base_api
 from networking import download, request
 from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
 from state import get_state, set_state, is_active
@@ -21,7 +21,7 @@ import fabricmc.meta
 import mojang.eula, mojang.manifest
 import modrinth.modpack
 import networking
-import papermc.papermc_api, purpurmc.purpurmc_api
+import papermc.api, purpurmc.api
 
 #Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
@@ -425,11 +425,11 @@ def initialize_server(args):
 
             # Plugin loaders
             case "paper":
-                latest_build_version = papermc.papermc_api.get_latest_project_build("paper", game_version)["build_version"]
+                latest_build_version = papermc.api.get_latest_project_build("paper", game_version)["build_version"]
                 log.info(f"Latest Paper build version is: {latest_build_version}")
                 loader_version = latest_build_version
             case "purpur":
-                latest_build_version = purpurmc.purpurmc_api.get_latest_project_build("purpur", game_version)["build_version"]
+                latest_build_version = purpurmc.api.get_latest_project_build("purpur", game_version)["build_version"]
                 log.info(f"Latest Purpur build version is: {latest_build_version}")
                 loader_version = latest_build_version
 
@@ -723,12 +723,12 @@ def start_server(args):
             # Plugin loaders
             case "paper":
                 log.info(f"Downloading Paper version {loader_version} for Minecraft version {game_version}...")
-                download_prop = papermc.papermc_api.get_project_build("paper", game_version, loader_version)["download_props"]["server:default"]
+                download_prop = papermc.api.get_project_build("paper", game_version, loader_version)["download_props"]["server:default"]
                 networking.download(download_prop["download_url"], launcher_config["jarfile"], dict(download_prop["checksums"]))
             case "purpur":
                 log.info(f"Downloading Purpur version {loader_version} for Minecraft version {game_version}...")
-                networking.download(purpurmc.purpurmc_api.download_url("purpur", game_version, loader_version), launcher_config["jarfile"], {
-                    "md5": purpurmc.purpurmc_api.get_project_build("purpur", game_version, loader_version)["artifact_md5"]
+                networking.download(purpurmc.api.download_url("purpur", game_version, loader_version), launcher_config["jarfile"], {
+                    "md5": purpurmc.api.get_project_build("purpur", game_version, loader_version)["artifact_md5"]
                 })
 
             # Vanilla

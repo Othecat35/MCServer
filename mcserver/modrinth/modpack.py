@@ -1,7 +1,6 @@
 #Modules
 # Standard
 import json, zipfile
-
 from pathlib import Path
 from typing import Literal, NotRequired, TypedDict
 
