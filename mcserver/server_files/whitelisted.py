@@ -98,7 +98,7 @@ def remove_players(player_ids: list[PlayerID] | PlayerID) -> None:
 # TODO: add 'update_player' and 'update_players', just use plain dict.update() because it has no depth
 
 # List Players
-def list_player() -> list[WhitelistedPlayer]:
+def list_players() -> list[WhitelistedPlayer]:
     whitelisted_data: list[WhitelistedEntry] = json.loads(whitelisted_file.read_text())
     whitelisted_players: list[WhitelistedPlayer] = []
     for entry in whitelisted_data:

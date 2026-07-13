@@ -4,6 +4,7 @@ import json
 import logging as log
 from pathlib import Path
 from typing import Literal, TypedDict
+from uuid import UUID
 
 # MCServer
 from minecraft.player_identity import normalize_player_uuid, PlayerID, PlayerUUID
@@ -58,7 +59,7 @@ def add_players(banned_players: list[BannedPlayer] | BannedPlayer) -> None:
                 "uuid": player_uuid,
                 "name": player_name,
                 "created": player["created_time"],
-                "source": player["ban_reason"],
+                "source": player["ban_source"],
                 "expires": player["expires_time"],
                 "reason": ban_reason
             }
@@ -123,7 +124,7 @@ def list_players() -> list[BannedPlayer]:
     banned_players: list[BannedPlayer] = []
     for entry in banned_players_data:
         banned_player: BannedPlayer = {
-            "player_uuid": entry["uuid"],
+            "player_uuid": UUID(entry["uuid"]),
             "player_name": entry["name"],
             "created_time": entry["created"],
             "ban_source": entry["source"],
