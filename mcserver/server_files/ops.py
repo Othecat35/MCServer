@@ -25,6 +25,7 @@ class OperatorPlayer(TypedDict):
     bypasses_player_limit: bool
 
 #Functions
+# Add Players
 def add_player(player_uuid: PlayerUUID, player_name: str, permission_level: Literal[0, 1, 2, 3 ,4], bypasses_player_limit: bool = False) -> None:
     operator_player: OperatorPlayer = {
         "player_uuid": player_uuid,
@@ -60,6 +61,7 @@ def add_players(operator_players: list[OperatorPlayer] | OperatorPlayer) -> None
         json.dump(ops_data, file, indent=2)
         file.truncate()
 
+# Remove Players
 def remove_player(player_uuid: PlayerUUID | None = None, player_name: str | None = None) -> None:
     if player_uuid is None and player_name is None:
         raise ValueError("At least one of 'player_uuid' or 'player_name' must be provided")
@@ -88,9 +90,9 @@ def remove_players(player_ids: list[PlayerID] | PlayerID) -> None:
             player_names.add(player_id["player_name"])
 
     with open(ops_file, mode="r+") as file:
-        ops_data: list[OpsEntry] = json.load(file)
+        ops_data: list[OperatorEntry] = json.load(file)
 
-        new_ops_data: list[OpsEntry] = []
+        new_ops_data: list[OperatorEntry] = []
         for player in ops_data:
             if player["uuid"] in player_uuids or player["name"] in player_names:
                 continue
@@ -103,16 +105,18 @@ def remove_players(player_ids: list[PlayerID] | PlayerID) -> None:
 
 # TODO: add 'update_player' and 'update_players', just use plain dict.update() because it has no depth
 
+# List Players
 def list_players() -> list[OperatorPlayer]:
     ops_data: list[OperatorEntry] = json.loads(ops_file.read_text())
     operator_players: list[OperatorPlayer] = []
     for entry in ops_data:
-        operator_player: OperatorPlayer = 
-        operator_players.append({
+        operator_player: OperatorPlayer = {
             "player_uuid": UUID(entry["uuid"]),
             "player_name": entry["name"],
             "permission_level": entry["level"],
             "bypasses_player_limit": entry["bypassesPlayerLimit"]
-        })
+        }
+
+        operator_players.append(operator_player)
 
     return operator_players

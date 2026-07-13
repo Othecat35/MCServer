@@ -1,6 +1,7 @@
 #Modules
 # Standard
 import json
+import logging as log
 from pathlib import Path
 from typing import Literal, TypedDict
 
@@ -9,21 +10,22 @@ banned_ips_file = Path("banned-ips.json")
 
 #TypedDicts
 class BannedIPEntry(TypedDict):
-    ip: str      # IPv4 or IPv6
-    created: str # Time format: yyyy-MM-dd HH:mm:ss Z
+    ip: str | Literal["<unknown>"]    # IPv4 or IPv6
+    created: str                      # Time format: yyyy-MM-dd HH:mm:ss Z
     source: str
     expires: Literal["forever"] | str # Time Format:  yyyy-MM-dd HH:mm:ss Z
     reason: str
 
 class BannedIPRecord(TypedDict):
-    ip_address: str                        #IPv4 or IPv6
-    created_time: str                      #Time format: yyyy-MM-dd HH:mm:ss Z
+    ip_address: str                        # IPv4 or IPv6
+    created_time: str                 # Time format: yyyy-MM-dd HH:mm:ss Z
     ban_source: str
-    expires_time: Literal["forever"] | str #Time format: yyyy-MM-dd HH:mm:ss Z
+    expires_time: str | Literal["forever"] # Time format: yyyy-MM-dd HH:mm:ss Z
     ban_reason: str
 
 #Functions
-def add_ip_record(ip_address: str, created_time: str, ban_source: str, expires_time: Literal["forever"] | str, ban_reason: str) -> None:
+# Add IPs
+def add_ip(ip_address: str, created_time: str, ban_source: str, expires_time: str | Literal["forever"] = "forever", ban_reason: str = "Banned via MCServer.") -> None:
     banned_ip_record: BannedIPRecord = {
         "ip_address": ip_address,
         "created_time": created_time,
@@ -32,14 +34,14 @@ def add_ip_record(ip_address: str, created_time: str, ban_source: str, expires_t
         "ban_reason": ban_reason
     }
 
-    add_ips(banned_ip)
+    add_ips(banned_ip_record)
 
-def add_ip_records(banned_ip_records: list[BannedIPRecord] | BannedIPRecord) -> None:
+def add_ips(banned_ip_records: list[BannedIPRecord] | BannedIPRecord) -> None:
     if not isinstance(banned_ip_records, list):
         banned_ip_records = [banned_ip_records]
 
     with open(banned_ips_file, mode="r+") as file:
-        banned_ip_data = json.load(file)
+        banned_ips_data = json.load(file)
         for ip_record in banned_ip_records:
             banned_ip_entry: BannedIPEntry = {
                 "ip": ip_record["ip_address"],
@@ -55,7 +57,37 @@ def add_ip_records(banned_ip_records: list[BannedIPRecord] | BannedIPRecord) -> 
         json.dump(banned_ips_data, file, indent=2)
         file.truncate()
 
-def list_ip_records() -> list[BannedIPRecord]:
+# Remove IPs
+def remove_ip(ip_address: str) -> None:
+    remove_ips(ip_address)
+
+def remove_ips(ip_addresses: list[str] | str) -> None:
+    if not isinstance(ip_addresses, list):
+        ip_addresses = [ip_addresses]
+
+    unbanned_ip_addresses: set[str] = set()
+    for ip_address in ip_addresses:
+        unbanned_ip_addresses.add(ip_address)
+
+    with open(banned_ips_file, mode="r+") as file:
+        banned_ips_data: list[BannedIPEntry] = json.load(file)
+        new_banned_ips_data: list[BannedIPEntry] = []
+        for ip_entry in banned_ips_data:
+            ip_address = ip_entry["ip"]
+            if ip_address in unbanned_ip_addresses:
+                log.debug(f"Removed IP address '{ip_address}' from the banned IP address list")
+                continue
+
+            new_banned_ips_data.append(ip_entry)
+
+        file.seek(0)
+        json.dump(new_banned_ips_data, file, indent=2)
+        file.truncate()
+
+# TODO: add 'update_ip' and 'update_ips', just use plain dict.update() because it has no depth
+
+# List IPs
+def list_ips() -> list[BannedIPRecord]:
     banned_ip_data: list[BannedIPEntry] = json.loads(banned_ips_file.read_text())
     banned_ip_records: list[BannedIPRecord] = []
     for ip_entry in banned_ip_data:
@@ -64,7 +96,7 @@ def list_ip_records() -> list[BannedIPRecord]:
             "created_time": ip_entry["created"],
             "ban_source": ip_entry["source"],
             "expires_time": ip_entry["expires"],
-            "ban_reason": ip_entry["ban_reason"]
+            "ban_reason": ip_entry["reason"]
         }
 
         banned_ip_records.append(banned_ip_record)
