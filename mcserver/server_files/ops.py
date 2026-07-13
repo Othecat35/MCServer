@@ -2,7 +2,7 @@
 # Standard
 import json
 from pathlib import Path
-from typing import TypedDict
+from typing import Literal, TypedDict
 from uuid import UUID
 
 # MCServer
@@ -12,20 +12,20 @@ from minecraft.player_identity import normalize_player_uuid, PlayerID, PlayerUUI
 ops_file = Path("ops.json")
 
 #TypedDicts
-class OpsEntry(TypedDict):
+class OperatorEntry(TypedDict):
     uuid: str
     name: str
-    level: int
+    level: Literal[0, 1, 2 ,3 ,4]
     bypassesPlayerLimit: bool
 
 class OperatorPlayer(TypedDict):
     player_uuid: PlayerUUID
     player_name: str
-    permission_level: int
+    permission_level: Literal[0, 1 ,2 ,3 ,4]
     bypasses_player_limit: bool
 
 #Functions
-def add_player(player_uuid: PlayerUUID, player_name: str, permission_level: int, bypasses_player_limit: bool = False) -> None:
+def add_player(player_uuid: PlayerUUID, player_name: str, permission_level: Literal[0, 1, 2, 3 ,4], bypasses_player_limit: bool = False) -> None:
     operator_player: OperatorPlayer = {
         "player_uuid": player_uuid,
         "player_name": player_name,
@@ -40,15 +40,21 @@ def add_players(operator_players: list[OperatorPlayer] | OperatorPlayer) -> None
         operator_players = [operator_players]
 
     with open(ops_file, mode="r+") as file:
-        ops_data: list[OpsEntry] = json.load(file)
+        ops_data: list[OperatorEntry] = json.load(file)
 
         for player in operator_players:
-            ops_data.append({
+            permission_level = player["permission_level"]
+            if permission_level < 0 or permission_level > 4:
+                raise ValueError("Permission level must be between 0 and 4.")
+
+            operator_entry: OperatorEntry = {
                 "uuid": str(normalize_player_uuid(player["player_uuid"])),
                 "name": player["player_name"],
-                "level": player["permission_level"],
+                "level": permission_level,
                 "bypassesPlayerLimit": player["bypasses_player_limit"]
-            })
+            }
+
+            ops_data.append(operator_entry)
 
         file.seek(0)
         json.dump(ops_data, file, indent=2)
@@ -98,15 +104,15 @@ def remove_players(player_ids: list[PlayerID] | PlayerID) -> None:
 # TODO: add 'update_player' and 'update_players', just use plain dict.update() because it has no depth
 
 def list_players() -> list[OperatorPlayer]:
-    ops_data: list[OpsEntry] = json.loads(ops_file.read_text())
-
+    ops_data: list[OperatorEntry] = json.loads(ops_file.read_text())
     operator_players: list[OperatorPlayer] = []
-    for player in ops_data:
+    for entry in ops_data:
+        operator_player: OperatorPlayer = 
         operator_players.append({
-            "player_uuid": UUID(player["uuid"]),
-            "player_name": player["name"],
-            "permission_level": player["level"],
-            "bypasses_player_limit": player["bypassesPlayerLimit"]
+            "player_uuid": UUID(entry["uuid"]),
+            "player_name": entry["name"],
+            "permission_level": entry["level"],
+            "bypasses_player_limit": entry["bypassesPlayerLimit"]
         })
 
     return operator_players
