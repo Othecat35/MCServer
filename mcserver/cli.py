@@ -903,7 +903,7 @@ def main():
     op_grant_command.set_defaults(func=op_grant)
 
     op_grant_command.add_argument("players", nargs="+", help="Player names or UUIDs")
-    op_grant_command.add_argument("--level", type=int, help="Operator permission level (0-4)", metavar="level", dest="permission_level")
+    op_grant_command.add_argument("--level", type=int, choices=[0, 1, 2, 3 4], help="Operator permission level (0-4)", metavar="level", dest="permission_level")
     op_grant_command.add_argument("--bypass-player-limit", action="store_true", help="Can bypass player limit", dest="bypasses_player_limit")
 
     # 'op list'
@@ -939,7 +939,7 @@ def main():
     whitelist_command = commands.add_parser("whitelist", help="Manage whitelisted players", description="Manage whitelisted players")
     whitelist_command.set_defaults(func=print_help, parser=whitelist_command)
 
-    whitelist_subcommands = whitelist_command.add_subparsers(title="Subommands")
+    whitelist_subcommands = whitelist_command.add_subparsers(title="Subcommands")
 
     # 'whitelist add'
     whitelist_add_command = whitelist_subcommands.add_parser("add", help="Add players to the whitelist", description="Add players to the whitelist")
