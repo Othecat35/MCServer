@@ -126,7 +126,8 @@
 #Modules
 # Standard
 from collections import deque
-from typing import Callable, Deque
+from collections.abc import Callable
+from typing import Any
 
 #Variables
 dependency_types = {
@@ -137,33 +138,67 @@ dependency_types = {
 }
 
 #Functions
-def resolve_dependencies(initial_seeds: list[str] | str, get_dependencies: Callable) -> list:
-    if isinstance(initial_seeds, str): initial_seeds = [initial_seeds]
+def resolve_dependencies(node_ids: list[str] | str, get_dependencies: Callable, check_conflict: Callable) -> list:
+    if isinstance(node_ids, str):
+        node_ids = [node_ids]
 
-    queued_nodes: Deque[str] = deque()
+    queued_nodes: deque[str] = deque()
     processed_nodes: set[str] = set()
-    dependency_graph = {}
+    dependency_graph: dict[str, dict[str, Any]] = {} #I will use TypedDict later
 
-    for seed in initial_seeds:
-        if seed not in queued_nodes:
-            queued_nodes.append(seed)
-            dependency_graph[seed] = {
-                "is_manual": True,
-                "highest_type": dependency_types["required"],
-                "dependencies": {},
-                "dependents": {}
-            }
-
-    while queued_nodes:
-        node = queued_nodes.popleft()
-        if node in processed_nodes:
+    for node_id in node_ids:
+        if node_id in queued_nodes:
             continue
 
-        dependency_data = get_dependencies(node)
+        dependency_graph[node_id] = {
+            "is_manual": True,
+            "highest_type": dependency_types["required"],
+            "dependencies": {},
+            "dependents": {}
+        }
 
-        processed_nodes.add(node)
+        queued_nodes.append(node_id)
+
+    while queued_nodes:
+        node_id = queued_nodes.popleft()
+        if node_id in processed_nodes:
+            continue
+
+        dependency_data = get_dependencies(node_id)
+        dependency_graph[node_id]["dependencies"] = dependency_data
+
+        for dependency_id, dependency_type in dependency_data.items():
+            if dependency_id in dependency_graph: #dependency node already exists
+                dependency_node = dependency_graph[dependency_id]
+
+                check_conflict(dependency_id, dependency_node, node_id, dependency_type)
+
+                dependency_node["highest_type"] = max(dependency_node["highest_type"], dependency_type)
+                dependency_node["dependents"][node_id] = dependency_type
+
+                if dependency_node["highest_type"] <= dependency_types["optional"] and dependency_type == dependency_types["required"]:
+                    queued_nodes.append(dependency_id)
+            else:
+                dependency_graph[dependency_id] = {
+                    "is_manual": False,
+                    "highest_type": dependency_type,
+                    "dependencies": {},
+                    "dependents": {
+                        node_id: dependency_type
+                    }
+                }
+
+                if dependency_type == dependency_types["required"]:
+                    queued_nodes.append(dependency_id)
+
+        processed_nodes.add(node_id)
 
     resolved_dependencies = []
+    for node_id, node_data in dependency_graph.items():
+        node = dict(node_data)
+        node["node_id"] = node_id
+        resolved_dependencies.append(node)
+
     return resolved_dependencies
 
 
