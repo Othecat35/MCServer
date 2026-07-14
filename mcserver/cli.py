@@ -16,12 +16,14 @@ from networking import download, request
 from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
 from state import get_state, set_state, is_active
 
-import config, state
+import config
+import state
 import fabricmc.meta
 import mojang.eula, mojang.manifest
 import modrinth.modpack
 import networking
-import papermc.api, purpurmc.api
+import papermc.api
+import purpurmc.api
 
 #Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
@@ -533,6 +535,17 @@ def import_setup(args):
 def list_projects(args) -> int:
     return 0
 
+# 'op' commands
+def op_grant(args) -> int:
+    return 0
+
+def op_list(args) -> int:
+    return 0
+
+def op_revoke(args) -> int:
+    return 0
+
+
 def search_projects(args):
     query = " ".join(args.query)
     no_filter = args.no_filter
@@ -799,6 +812,15 @@ def start_server(args):
     log.debug(f"Executing command: {' '.join(java_command_argv)}")
     os.execvp(java_command_argv[0], java_command_argv)
 
+def whitelist_add(args) -> int:
+    return 0
+
+def whitelist_list(args) -> int:
+    return 0
+
+def whitelist_remove(args) -> int:
+    return 0
+
 #Log handler
 class ClearLineHandler(log.StreamHandler):
     def emit(self, record):
@@ -863,6 +885,30 @@ def main():
     parser_init.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibyte)", metavar="size")
     parser_init.set_defaults(func=initialize_server)
 
+    # 'op' commands
+    op_parser = subparsers.add_parser("op", description="Manage the operator statuses", help="Manage the operator statuses")
+    op_parser.set_defaults(func=print_help, parser=op_parser)
+
+    op_subparsers = op_parser.add_subparsers(title="Commands")
+
+    # 'op grant'
+    op_grant_parser = op_subparsers.add_parser("grant", description="Grant operator status to players", help="Grant operator status to players")
+    op_grant_parser.set_defaults(func=op_grant)
+
+    op_grant_parser.add_argument("players", nargs="+", help="Player names or UUIDs to be granted")
+    op_grant_parser.add_argument("--level", type=int, help="Operator permission level (0-4)", metavar="level")
+    op_grant_parser.add_argument("--bypass-player-limit", action="store_true", help="Can bypass player limit")
+
+    # 'op list'
+    op_list_parser = op_subparsers.add_parser("list", description="List all operators", help="List all operators")
+    op_list_parser.set_defaults(func=op_list)
+
+    # 'op revoke'
+    op_revoke_parser = op_subparsers.add_parser("revoke", description="Revoke operator status from players", help="Revoke operator status from players")
+    op_revoke_parser.set_defaults(func=op_revoke)
+
+    op_revoke_parser.add_argument("players", nargs="+", help="Player names or UUIDs to be revoked")
+
     # 'list' command
     parser_list = subparsers.add_parser("list", description="List downloaded projects", help="List downloaded projects")
     parser_list.set_defaults(func=list_projects)
@@ -885,6 +931,28 @@ def main():
     # 'start' command
     parser_start = subparsers.add_parser("start", description="Start the server", help="Start the server")
     parser_start.set_defaults(func=start_server)
+
+    # 'whitelist' command
+    parser_whitelist = subparsers.add_parser("whitelist", description="Manage whitelisted players", help="Manage whitelisted players")
+    parser_whitelist.set_defaults(func=print_help, parser=parser_whitelist)
+
+    whitelist_subparsers = parser_whitelist.add_subparsers(title="Commands")
+
+    # 'whitelist add'
+    subparser_whitelist_add = whitelist_subparsers.add_parser("add", description="Add players to the whitelist", help="Add players to the whitelist")
+    subparser_whitelist_add.set_defaults(func=whitelist_add)
+
+    subparser_whitelist_add.add_argument("players", help="Player names or UUIDs to be added", nargs="+")
+
+    # 'whitelist list'
+    subparser_whitelist_list = whitelist_subparsers.add_parser("list", description="List all whitelisted players", help="List all whitelisted players")
+    subparser_whitelist_list.set_defaults(func=whitelist_list)
+
+    # 'whitelist remove'
+    subparser_whitelist_remove = whitelist_subparsers.add_parser("remove", description="Remove players from the whitelist", help="Remove players from the whitelist")
+    subparser_whitelist_remove.set_defaults(func=whitelist_remove)
+
+    subparser_whitelist_remove.add_argument("players", help="Player names or UUID to be removed", nargs="+")
 
     args = parser.parse_args()
     sys.exit(args.func(args))
