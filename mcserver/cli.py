@@ -896,7 +896,7 @@ def main():
     op_command = commands.add_parser("op", help="Manage operator statuses", description="Manage operator statuses")
     op_command.set_defaults(func=print_help, parser=op_command)
 
-    op_subcommands = op_command.add_subparsers(title="Subommands")
+    op_subcommands = op_command.add_subparsers(title="Subcommands")
 
     # 'op grant'
     op_grant_command = op_subcommands.add_parser("grant", help="Grant operator status to players", description="Grant operator status to players")
@@ -939,13 +939,13 @@ def main():
     whitelist_command = commands.add_parser("whitelist", help="Manage whitelisted players", description="Manage whitelisted players")
     whitelist_command.set_defaults(func=print_help, parser=whitelist_command)
 
-    whitelist_subcommands = whitelist_command.add_subparsers(title="Commands")
+    whitelist_subcommands = whitelist_command.add_subparsers(title="Subommands")
 
     # 'whitelist add'
     whitelist_add_command = whitelist_subcommands.add_parser("add", help="Add players to the whitelist", description="Add players to the whitelist")
     whitelist_add_command.set_defaults(func=whitelist_add)
 
-    whitelist_add_command.add_argument("players", nargs="+", type=list, help="Player names or UUIDs")
+    whitelist_add_command.add_argument("players", nargs="+", help="Player names or UUIDs")
 
     # 'whitelist list'
     whitelist_list_command = whitelist_subcommands.add_parser("list", help="List all whitelisted players", description="List all whitelisted players")
@@ -955,7 +955,7 @@ def main():
     whitelist_remove_command = whitelist_subcommands.add_parser("remove", help="Remove players from the whitelist", description="Remove players from the whitelist")
     whitelist_remove_command.set_defaults(func=whitelist_remove)
 
-    whitelist_remove_command.add_argument("players", nargs="+", type=list, help="Player names or UUIDs")
+    whitelist_remove_command.add_argument("players", nargs="+", help="Player names or UUIDs")
 
     args = parser.parse_args()
     sys.exit(args.func(args))
