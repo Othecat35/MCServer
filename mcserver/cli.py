@@ -903,7 +903,7 @@ def main():
     op_grant_command.set_defaults(func=op_grant)
 
     op_grant_command.add_argument("players", nargs="+", help="Player names or UUIDs")
-    op_grant_command.add_argument("--level", type=int, choices=[0, 1, 2, 3 4], help="Operator permission level (0-4)", metavar="level", dest="permission_level")
+    op_grant_command.add_argument("--level", type=int, choices=[0, 1, 2, 3, 4], help="Operator permission level (0-4)", metavar="level", dest="permission_level")
     op_grant_command.add_argument("--bypass-player-limit", action="store_true", help="Can bypass player limit", dest="bypasses_player_limit")
 
     # 'op list'
