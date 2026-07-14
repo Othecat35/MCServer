@@ -537,14 +537,17 @@ def list_projects(args) -> int:
 
 # 'op' commands
 def op_grant(args) -> int:
+    players = args.players
+    permission_level = args.permission_level
+    bypasses_player_limit = args.bypasses_player_limit
     return 0
 
 def op_list(args) -> int:
     return 0
 
 def op_revoke(args) -> int:
+    players = args.players
     return 0
-
 
 def search_projects(args):
     query = " ".join(args.query)
@@ -813,12 +816,14 @@ def start_server(args):
     os.execvp(java_command_argv[0], java_command_argv)
 
 def whitelist_add(args) -> int:
+    players = args.players
     return 0
 
 def whitelist_list(args) -> int:
     return 0
 
 def whitelist_remove(args) -> int:
+    players = args.players
     return 0
 
 #Log handler
@@ -845,118 +850,115 @@ def main():
         prog="mcserver",
         description="A CLI tool for managing Minecraft: Java Edition servers.",
         epilog="Not created for Windows.",
-        allow_abbrev=False)
+        allow_abbrev=False,
+        suggest_on_error=True,
+        color=True)
 
     parser.set_defaults(func=print_help, parser=parser)
+
     parser.add_argument(
         "-v", "--version",
         action="version",
         version="%(prog)s " + __version__)
 
-    subparsers = parser.add_subparsers(title="Commands")
+    commands = parser.add_subparsers(title="Commands")
 
     #Commands
     # 'add' command
-    parser_add = subparsers.add_parser("add", description="Add Modrinth projects", help="Add Modrinth projects")
-    parser_add.add_argument("projects", nargs="+", type=str, help="Slug (or ID) of the projects")
-    parser_add.set_defaults(func=add_projects)
+    add_command = commands.add_parser("add", help="Add Modrinth projects", description="Add Modrinth projects")
+    add_command.set_defaults(func=add_projects)
 
-
-    parser_ban = subparsers.add_parser("ban", description="Command about players ban", help="Command about players ban")
-    parser_ban.add_argument("action", type=str, help="Action of the command")
+    add_command.add_argument("projects", nargs="+", type=str, help="Project slugs or IDs")
 
     # 'import' command
-    parser_import = subparsers.add_parser("import", description="Import a Modrinth modpack", help="Import a Modrinth modpack")
-    parser_import.add_argument("file", type=str, help="File to be imported")
+    import_command = commands.add_parser("import", description="Import a Modrinth modpack", help="Import a Modrinth modpack")
+    import_command.set_defaults(func=import_setup)
 
-    parser_import.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for the server (in Mebibytes)", metavar="size")
-    parser_import.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibytes)", metavar="size")
-    parser_import.set_defaults(func=import_setup)
+    import_command.add_argument("file", type=str, help="Modpack file")
+    import_command.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for the server (in Mebibytes)", metavar="size")
+    import_command.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibytes)", metavar="size")
 
     # 'init' command
-    parser_init = subparsers.add_parser("init", help="Initialize the server configurations")
+    init_command = commands.add_parser("init", help="Initialize server configurations")
+    init_command.set_defaults(func=initialize_server)
 
-    parser_init.add_argument("--mc-version", default="latest-release", type=str, help="Minecraft version of the server", metavar="version")
-
-    parser_init.add_argument("--loader", default="vanilla", type=str, choices=loaders_list, help="Loader for the server (vanilla for unmodded server)")
-    parser_init.add_argument("--loader-version", default="latest", type=str, help="Version of the loader", metavar="version")
-
-    parser_init.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for the server (in Mebibyte)", metavar="size")
-    parser_init.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibyte)", metavar="size")
-    parser_init.set_defaults(func=initialize_server)
-
-    # 'op' commands
-    op_parser = subparsers.add_parser("op", description="Manage the operator statuses", help="Manage the operator statuses")
-    op_parser.set_defaults(func=print_help, parser=op_parser)
-
-    op_subparsers = op_parser.add_subparsers(title="Commands")
-
-    # 'op grant'
-    op_grant_parser = op_subparsers.add_parser("grant", description="Grant operator status to players", help="Grant operator status to players")
-    op_grant_parser.set_defaults(func=op_grant)
-
-    op_grant_parser.add_argument("players", nargs="+", help="Player names or UUIDs to be granted")
-    op_grant_parser.add_argument("--level", type=int, help="Operator permission level (0-4)", metavar="level")
-    op_grant_parser.add_argument("--bypass-player-limit", action="store_true", help="Can bypass player limit")
-
-    # 'op list'
-    op_list_parser = op_subparsers.add_parser("list", description="List all operators", help="List all operators")
-    op_list_parser.set_defaults(func=op_list)
-
-    # 'op revoke'
-    op_revoke_parser = op_subparsers.add_parser("revoke", description="Revoke operator status from players", help="Revoke operator status from players")
-    op_revoke_parser.set_defaults(func=op_revoke)
-
-    op_revoke_parser.add_argument("players", nargs="+", help="Player names or UUIDs to be revoked")
+    init_command.add_argument("--mc-version", default="latest-release", type=str, help="Minecraft server version", metavar="version")
+    init_command.add_argument("--loader", default="vanilla", type=str, choices=loaders_list, help="Loader for the server (vanilla for unmodded server)")
+    init_command.add_argument("--loader-version", default="latest", type=str, help="Version of the loader", metavar="version")
+    init_command.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for the server (in Mebibyte)", metavar="size")
+    init_command.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibyte)", metavar="size")
 
     # 'list' command
-    parser_list = subparsers.add_parser("list", description="List downloaded projects", help="List downloaded projects")
-    parser_list.set_defaults(func=list_projects)
+    list_command = commands.add_parser("list", description="List downloaded projects", help="List downloaded projects")
+    list_command.set_defaults(func=list_projects)
+
+    # 'op' commands
+    op_command = commands.add_parser("op", help="Manage operator statuses", description="Manage operator statuses")
+    op_command.set_defaults(func=print_help, parser=op_command)
+
+    op_subcommands = op_command.add_subparsers(title="Subommands")
+
+    # 'op grant'
+    op_grant_command = op_subcommands.add_parser("grant", help="Grant operator status to players", description="Grant operator status to players")
+    op_grant_command.set_defaults(func=op_grant)
+
+    op_grant_command.add_argument("players", nargs="+", help="Player names or UUIDs")
+    op_grant_command.add_argument("--level", type=int, help="Operator permission level (0-4)", metavar="level", dest="permission_level")
+    op_grant_command.add_argument("--bypass-player-limit", action="store_true", help="Can bypass player limit", dest="bypasses_player_limit")
+
+    # 'op list'
+    op_list_command = op_subcommands.add_parser("list", help="List all operators", description="List all operators")
+    op_list_command.set_defaults(func=op_list)
+
+    # 'op revoke'
+    op_revoke_command = op_subcommands.add_parser("revoke", help="Revoke operator status from players", description="Revoke operator status from players")
+    op_revoke_command.set_defaults(func=op_revoke)
+
+    op_revoke_command.add_argument("players", nargs="+", help="Player names or UUIDs")
 
     # 'search' command
-    parser_search = subparsers.add_parser("search", description="Search projects in Modrinth", help="Search projects in Modrinth")
-    parser_search.add_argument("query", nargs="*", type=str, help="Query to search")
+    search_command = commands.add_parser("search", help="Search Modrinth projects", description="Search Modrinth projects")
+    search_command.set_defaults(func=search_projects)
 
-    parser_search.add_argument("-n", "--no-filter", action="store_true", help="No search filter from server configuration")
-
-    parser_search.add_argument("-p", "--page", default=1, type=int, help="Page number", metavar="N")
-    parser_search.add_argument("-s", "--sort-by", default="relevance", type=str, choices=["downloads", "follows", "newest", "relevance", "updated"], help="Sort the search result")
-    parser_search.set_defaults(func=search_projects)
+    search_command.add_argument("query", nargs="*", type=str, help="Search query")
+    search_command.add_argument("-n", "--no-filter", action="store_true", help="No search filter from server configuration")
+    search_command.add_argument("-p", "--page", default=1, type=int, help="Page number", metavar="N")
+    search_command.add_argument("-s", "--sort-by", default="relevance", type=str, choices=["downloads", "follows", "newest", "relevance", "updated"], help="Sort search result by")
 
     # 'show' command
-    parser_show = subparsers.add_parser("show", description="Show information about project(s) in Modrinth", help="Show information about project(s) in Modrinth")
-    parser_show.add_argument("projects", nargs="+", type=str, help="Slug (or ID) of the project(s)")
-    parser_show.set_defaults(func=show_projects)
+    show_command = commands.add_parser("show", help="Show project information", description="Show project information")
+    show_command.set_defaults(func=show_projects)
+
+    show_command.add_argument("projects", nargs="+", type=str, help="Project slugs or IDs")
 
     # 'start' command
-    parser_start = subparsers.add_parser("start", description="Start the server", help="Start the server")
-    parser_start.set_defaults(func=start_server)
+    start_command = commands.add_parser("start", description="Start the server", help="Start the server")
+    start_command.set_defaults(func=start_server)
 
     # 'whitelist' command
-    parser_whitelist = subparsers.add_parser("whitelist", description="Manage whitelisted players", help="Manage whitelisted players")
-    parser_whitelist.set_defaults(func=print_help, parser=parser_whitelist)
+    whitelist_command = commands.add_parser("whitelist", help="Manage whitelisted players", description="Manage whitelisted players")
+    whitelist_command.set_defaults(func=print_help, parser=whitelist_command)
 
-    whitelist_subparsers = parser_whitelist.add_subparsers(title="Commands")
+    whitelist_subcommands = whitelist_command.add_subparsers(title="Commands")
 
     # 'whitelist add'
-    subparser_whitelist_add = whitelist_subparsers.add_parser("add", description="Add players to the whitelist", help="Add players to the whitelist")
-    subparser_whitelist_add.set_defaults(func=whitelist_add)
+    whitelist_add_command = whitelist_subcommands.add_parser("add", help="Add players to the whitelist", description="Add players to the whitelist")
+    whitelist_add_command.set_defaults(func=whitelist_add)
 
-    subparser_whitelist_add.add_argument("players", help="Player names or UUIDs to be added", nargs="+")
+    whitelist_add_command.add_argument("players", nargs="+", type=list, help="Player names or UUIDs")
 
     # 'whitelist list'
-    subparser_whitelist_list = whitelist_subparsers.add_parser("list", description="List all whitelisted players", help="List all whitelisted players")
-    subparser_whitelist_list.set_defaults(func=whitelist_list)
+    whitelist_list_command = whitelist_subcommands.add_parser("list", help="List all whitelisted players", description="List all whitelisted players")
+    whitelist_list_command.set_defaults(func=whitelist_list)
 
     # 'whitelist remove'
-    subparser_whitelist_remove = whitelist_subparsers.add_parser("remove", description="Remove players from the whitelist", help="Remove players from the whitelist")
-    subparser_whitelist_remove.set_defaults(func=whitelist_remove)
+    whitelist_remove_command = whitelist_subcommands.add_parser("remove", help="Remove players from the whitelist", description="Remove players from the whitelist")
+    whitelist_remove_command.set_defaults(func=whitelist_remove)
 
-    subparser_whitelist_remove.add_argument("players", help="Player names or UUID to be removed", nargs="+")
+    whitelist_remove_command.add_argument("players", nargs="+", type=list, help="Player names or UUIDs")
 
     args = parser.parse_args()
     sys.exit(args.func(args))
-
 
 ### This file used to be a one big script file, like 1,200 lines of codes.
 ### and the modularization happens after I found out about zipapp, silly me.

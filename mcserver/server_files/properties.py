@@ -17,6 +17,9 @@ def loads(string: str) -> dict[str, str]:
 
     return parsed_properties
 
+def update() -> None:
+    pass
+
 def dumps(parsed_object: dict[str, str]) -> str:
     lines: list[str] = []
 
@@ -24,8 +27,3 @@ def dumps(parsed_object: dict[str, str]) -> str:
         lines.append(f"{key}={value}")
 
     return "\n".join(lines)
-
-print(loads("""#hello, there
-a=bcd
-b=jhsashjka
-"""))

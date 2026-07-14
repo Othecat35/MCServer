@@ -6,7 +6,7 @@ from typing import NotRequired, TypedDict
 # MCServer
 import networking
 from constants import minecraft_base_api
-from minecraft.player_identity import normalize_player_uuid, PlayerUUID
+from minecraft.player_identity import normalize_player_uuid, PlayerID, PlayerUUID
 
 #TypedDict
 class PlayerIdentity(TypedDict):

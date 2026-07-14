@@ -1,13 +1,18 @@
 import zipapp
 from pathlib import Path
 
-source_dir = Path("mcserver")
+source_dir = Path("mcserver/")
+print(f"- Source      : '{source_dir}'")
 
 target_dir = Path("dist")
-target_file = target_dir / "mcserver"
-
 target_dir.mkdir(exist_ok=True)
 
-print("Zipping app...")
-zipapp.create_archive(source_dir, target_file, "/usr/bin/env python3")
+target_file = target_dir / "mcserver"
+print(f"- Target      : '{target_file}'")
+
+python_interpreter = "/usr/bin/env python3"
+print(f"- Interpreter : '{python_interpreter}'")
+
+print("Creating archive...")
+zipapp.create_archive(source=source_dir, target=target_file, interpreter=python_interpreter)
 print("Done!")

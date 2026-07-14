@@ -1,6 +1,8 @@
 import sys
-if sys.version_info < (3, 12):
-    print("MCServer requires Python 3.12 or newer.")
+
+min_python_version = (3, 14)
+if sys.version_info < min_python_version:
+    print(f"MCServer requires Python {'.'.join(map(str, min_python_version))} or newer.")
     sys.exit(1)
 
 from cli import main
