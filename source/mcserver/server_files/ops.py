@@ -6,7 +6,7 @@ from typing import Literal, TypedDict
 from uuid import UUID
 
 # MCServer
-from minecraft.player_identity import normalize_player_uuid, PlayerID, PlayerUUID
+from mcserver.minecraft.player_identity import normalize_player_uuid, PlayerID, PlayerUUID
 
 #Paths
 ops_file = Path("ops.json")

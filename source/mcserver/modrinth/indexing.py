@@ -5,11 +5,11 @@ import json
 import logging as log
 
 # MCServer
-from shared import mcserver_dir, merge_dict
+from mcserver.shared import merge_dict
+from .shared import modrinth_dir
 
 #Paths
-indexes_dir = mcserver_dir / "indexes"
-slug_id_file = indexes_dir / ".slug_id.json"
+indexes_dir = modrinth_dir / "projects"
 
 #Functions
 def create_project_index(project_id: str, metadata: dict | None = None, relationship: dict | None = None) -> None:
@@ -60,15 +60,3 @@ def delete_project_index(project_id: str) -> None:
 
 def project_index_exists(project_id: str) -> bool:
     return (indexes_dir / project_id).exists()
-
-# Slug to ID
-slug_id = {}
-def slug_to_id(project_slug: str) -> str:
-    global slug_id
-    if not slug_id:
-        log.debug("Loading slug_id.json")
-        slug_id = json.loads(slug_id_file.read_text())
-
-    project_id = slug_id.get(project_slug, {"id": project_slug})["id"]
-    log.debug(f"Project slug '{project_slug}' is id '{project_id}'")
-    return project_id

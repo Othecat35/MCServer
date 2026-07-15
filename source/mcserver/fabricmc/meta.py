@@ -4,8 +4,8 @@ import json
 from typing import TypedDict
 
 # MCServer
-import networking
-from constants import fabricmc_base_api
+from mcserver import networking
+from mcserver.constants import fabricmc_base_api
 
 #TypedDict
 class LoaderVersion(TypedDict):

@@ -4,9 +4,9 @@ import json
 from typing import NotRequired, TypedDict
 
 # MCServer
-import networking
-from constants import minecraft_base_api
-from minecraft.player_identity import normalize_player_uuid, PlayerID, PlayerUUID
+from mcserver import networking
+from mcserver.constants import minecraft_base_api
+from .player_identity import normalize_player_uuid, PlayerUUID
 
 #TypedDict
 class PlayerIdentity(TypedDict):

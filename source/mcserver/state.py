@@ -1,14 +1,13 @@
 #Modules
 # Standard
 import json, os
-
 import logging as log
 
 from pathlib import Path
 from typing import TypedDict
 
 # MCServer
-from shared import mcserver_dir
+from .shared import mcserver_dir
 
 #TypedDict
 class State(TypedDict):

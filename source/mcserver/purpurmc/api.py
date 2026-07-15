@@ -4,8 +4,8 @@ import json
 from typing import Literal, TypedDict
 
 # MCServer
-from networking import request
-from constants import purpurmc_base_api
+from mcserver import networking
+from mcserver.constants import purpurmc_base_api
 
 #TypedDicts
 class BuildCommit(TypedDict):
@@ -28,7 +28,7 @@ class ProjectBuild(TypedDict):
 
 #Functions
 def get_project_build(project_name: str, game_version: str, build_version: int | Literal["latest"]) -> ProjectBuild:
-    response = request(f"{purpurmc_base_api}/v2/{project_name}/{game_version}/{build_version}")
+    response = networking.request(f"{purpurmc_base_api}/v2/{project_name}/{game_version}/{build_version}")
     response_data = json.loads(response["body"])
     
     build_commits = []

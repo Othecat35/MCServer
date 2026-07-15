@@ -9,8 +9,8 @@ from pathlib import Path
 from typing import    TypedDict
 
 # MCServer
-from constants import __version__
-from shared import current_dir, format_number, mcserver_dir, print_status
+from .constants import __version__
+from .shared import current_dir, format_number, mcserver_dir, print_status
 
 #TypedDict
 class ResponseObject(TypedDict):

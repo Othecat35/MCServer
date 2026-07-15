@@ -7,7 +7,7 @@ from typing import TypedDict
 from uuid import UUID
 
 # MCServer
-from minecraft.player_identity import normalize_player_uuid, PlayerID, PlayerUUID
+from mcserver.minecraft.player_identity import normalize_player_uuid, PlayerID, PlayerUUID
 
 #Paths
 whitelist_file = Path("whitelist.json")

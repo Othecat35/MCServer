@@ -1,12 +1,10 @@
 #Modules
 # Standard
 import sys
-
 from pathlib import Path
 
 # MCServer
-from constants import iec_prefixes, si_prefixes
-from typing import Any
+from .constants import iec_prefixes, si_prefixes
 
 #Variables
 special_plural = {

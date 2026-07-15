@@ -4,8 +4,8 @@ import json
 from typing import Literal, TypedDict
 
 # MCServer
-from networking import request
-from constants import mojang_manifest_base_url
+from mcserver import networking
+from mcserver.constants import mojang_manifest_base_url
 
 #TypedDict
 class LatestVersion(TypedDict):
@@ -26,7 +26,7 @@ class VersionManifest(TypedDict):
 
 #Functions
 def get_version_manifest() -> VersionManifest:
-    response = request(f"{mojang_manifest_base_url}/mc/game/version_manifest_v2.json")
+    response = networking.request(f"{mojang_manifest_base_url}/mc/game/version_manifest_v2.json")
     response_data = json.loads(response["body"])
 
     latest_version = response_data["latest"]

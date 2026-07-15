@@ -4,7 +4,7 @@ import copy, json
 import logging as log
 
 #MCServer
-from shared import mcserver_dir, merge_dict
+from .shared import mcserver_dir, merge_dict
 
 #Variables
 default_configs = {

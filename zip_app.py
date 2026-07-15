@@ -1,7 +1,7 @@
 import zipapp
 from pathlib import Path
 
-source_dir = Path("mcserver/")
+source_dir = Path("source/")
 print(f"- Source      : '{source_dir}'")
 
 target_dir = Path("dist")

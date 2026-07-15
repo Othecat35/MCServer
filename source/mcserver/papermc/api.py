@@ -4,8 +4,8 @@ import json
 from typing import Literal, TypedDict
 
 # MCServer
-from networking import request
-from constants import papermc_base_api
+from mcserver import networking
+from mcserver.constants import papermc_base_api
 
 #TypedDicts
 class DownloadChecksums(TypedDict):
@@ -31,7 +31,7 @@ class ProjectBuild(TypedDict):
 
 #Functions
 def get_project_build(project_name: str, game_version: str, build_id: int | Literal["latest"]) -> ProjectBuild:
-    response = request(f"{papermc_base_api}/v3/projects/{project_name}/versions/{game_version}/builds/{build_id}")
+    response = networking.request(f"{papermc_base_api}/v3/projects/{project_name}/versions/{game_version}/builds/{build_id}")
     response_data = json.loads(response["body"])
 
     build_commits = []

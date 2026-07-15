@@ -7,24 +7,27 @@ from pathlib import Path
 from collections import deque
 
 # MCServer
-from config import default_configs, generate_config, load_config
-from constants import __version__
-from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
-from metadata import metadata_file
-from modrinth.api import get_project_versions, VersionDependency, modrinth_base_api
-from networking import download, request
-from shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
-from state import get_state, set_state, is_active
+from .config import default_configs, generate_config, load_config
+from .constants import __version__
+#from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
+from .metadata import metadata_file
+from .modrinth.api import get_project_versions, VersionDependency, modrinth_base_api
+from .networking import download, request
+from .shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
+from .state import get_state, set_state, is_active
 
-import config
-import state
-import fabricmc.meta
-import mojang.eula, mojang.manifest
-import modrinth.modpack
-import networking
-import papermc.api
-import purpurmc.api
-import server_files.whitelist
+from . import config
+from . import state
+from . import networking
+
+from .fabricmc import meta as fabricmc_meta
+from .modrinth import modpack as modrinth_modpack
+from .papermc import api as papermc_api
+from .purpurmc import api as purpurmc_api
+from .server_files import whitelist as server_whitelist
+
+from .mojang import eula as mojang_eula
+from .mojang import manifest as mojang_manifest
 
 #Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
@@ -130,258 +133,259 @@ def filter_dependencies_type(dependencies: dict, filter_type: str):
 
     return dependencies_list
 
-def resolve_projects(projects_id: list | str, game_version: str, loader_name: str) -> dict:
-    projects_id = list(projects_id)
-    unresolved_ids = deque()
-    resolved_data = {}
+# def resolve_projects(projects_id: list | str, game_version: str, loader_name: str) -> dict:
+#     projects_id = list(projects_id)
+#     unresolved_ids = deque()
+#     resolved_data = {}
 
-    # Initial seeding
-    for project_id in projects_id:
-        project_id = slug_to_id(project_id)
+#     # Initial seeding
+#     for project_id in projects_id:
+#         project_id = slug_to_id(project_id)
 
-        log.debug(f"Adding project '{project_id}' as unresolved")
-        unresolved_ids.append(project_id)
-        resolved_data[project_id] = {
-            "metadata": {},
-            "relationship": {
-                "manual": True,
-                "type": version_dependency_types["required"],
-                "dependencies": {},
-                "dependants": {}
-            }
-        }
+#         log.debug(f"Adding project '{project_id}' as unresolved")
+#         unresolved_ids.append(project_id)
+#         resolved_data[project_id] = {
+#             "metadata": {},
+#             "relationship": {
+#                 "manual": True,
+#                 "type": version_dependency_types["required"],
+#                 "dependencies": {},
+#                 "dependants": {}
+#             }
+#         }
 
-    # Main code
-    while unresolved_ids:
-        project_id = unresolved_ids.popleft()
+#     # Main code
+#     while unresolved_ids:
+#         project_id = unresolved_ids.popleft()
 
-        project_data = resolved_data.pop(project_id)
-        project_metadata = project_data["metadata"]
-        project_relationship = project_data["relationship"]
+#         project_data = resolved_data.pop(project_id)
+#         project_metadata = project_data["metadata"]
+#         project_relationship = project_data["relationship"]
 
-        log.debug(f"Processing project '{project_id}'")
+#         log.debug(f"Processing project '{project_id}'")
 
-        skip_fetch_version = False
+#         skip_fetch_version = False
 
-        if project_index_exists(project_id):
-            project_index_data = read_project_index(project_id)
+#         if project_index_exists(project_id):
+#             project_index_data = read_project_index(project_id)
 
-            project_index_relationship = project_index_data["relationship"]
-            project_dependency_type = project_index_relationship["type"]
+#             project_index_relationship = project_index_data["relationship"]
+#             project_dependency_type = project_index_relationship["type"]
 
-            if project_dependency_type == version_dependency_types["incompatible"]:
-                project_dependants = project_index_relationship["dependants"]
+#             if project_dependency_type == version_dependency_types["incompatible"]:
+#                 project_dependants = project_index_relationship["dependants"]
 
-                incompatible_dependants = filter_dependencies_type(project_dependants, "incompatible")
-                required_dependants = filter_dependencies_type(project_dependants, "required")
-                raise ResolveProjectsConflictsError(project_id, incompatible_dependants, required_dependants)
+#                 incompatible_dependants = filter_dependencies_type(project_dependants, "incompatible")
+#                 required_dependants = filter_dependencies_type(project_dependants, "required")
+#                 raise ResolveProjectsConflictsError(project_id, incompatible_dependants, required_dependants)
 
-            log.debug("Project index exists, using it as cache")
-            project_index_relationship["dependants"].update(project_relationship["dependants"])
-            if project_relationship["manual"]:
-                project_index_relationship["manual"] = True
+#             log.debug("Project index exists, using it as cache")
+#             project_index_relationship["dependants"].update(project_relationship["dependants"])
+#             if project_relationship["manual"]:
+#                 project_index_relationship["manual"] = True
 
-            project_data = project_index_data
-            skip_fetch_version = True
+#             project_data = project_index_data
+#             skip_fetch_version = True
 
-        if not skip_fetch_version:
-            log.debug("Fetching project version")
-            version = get_project_versions(project_id, game_version, loader_name)[0]
-            project_id = version["project_id"]
+#         if not skip_fetch_version:
+#             log.debug("Fetching project version")
+#             version = get_project_versions(project_id, game_version, loader_name)[0]
+#             project_id = version["project_id"]
 
-            # Check if entry with project ID still exists (meaning we're still using slug)
-            if project_id in resolved_data:
-                log.debug(f"Found existing data with ID {project_id}")
-                existing_entry = resolved_data.pop(project_id)
-                existing_entry_relationship = existing_entry["relationship"]
+#             # Check if entry with project ID still exists (meaning we're still using slug)
+#             if project_id in resolved_data:
+#                 log.debug(f"Found existing data with ID {project_id}")
+#                 existing_entry = resolved_data.pop(project_id)
+#                 existing_entry_relationship = existing_entry["relationship"]
 
-                # Check if existing entry is marked as incompatible
-                if existing_entry_relationship["type"] == version_dependency_types["incompatible"]:
-                    incompatible_dependants = filter_dependencies_type(existing_entry_relationship["dependants"], "incompatible")
-                    raise ResolveProjectsConflictsError(project_id, incompatible_dependants)
+#                 # Check if existing entry is marked as incompatible
+#                 if existing_entry_relationship["type"] == version_dependency_types["incompatible"]:
+#                     incompatible_dependants = filter_dependencies_type(existing_entry_relationship["dependants"], "incompatible")
+#                     raise ResolveProjectsConflictsError(project_id, incompatible_dependants)
 
-                log.debug(f"Keeping existing data")
-                project_relationship["dependants"].update(existing_entry_relationship["dependants"])
+#                 log.debug(f"Keeping existing data")
+#                 project_relationship["dependants"].update(existing_entry_relationship["dependants"])
 
-            if "version_id" in version:
-                project_metadata["version_id"] = version["version_id"]
+#             if "version_id" in version:
+#                 project_metadata["version_id"] = version["version_id"]
 
-            if "version_name" in version:
-                project_metadata["version_name"] = version["version_name"]
+#             if "version_name" in version:
+#                 project_metadata["version_name"] = version["version_name"]
             
-            if "version_number" in version:
-                project_metadata["version_number"] = version["version_number"]
+#             if "version_number" in version:
+#                 project_metadata["version_number"] = version["version_number"]
 
-            if "dependencies" in version:
-                project_relationship["dependencies"] = adapt_dependencies_data(version["dependencies"])
+#             if "dependencies" in version:
+#                 project_relationship["dependencies"] = adapt_dependencies_data(version["dependencies"])
 
-        for dependency_id, dependency_type in project_relationship["dependencies"].items():
-            if dependency_id in resolved_data:
-                dependency_data = resolved_data[dependency_id]
-                dependency_data_relationship = dependency_data["relationship"]
+#         for dependency_id, dependency_type in project_relationship["dependencies"].items():
+#             if dependency_id in resolved_data:
+#                 dependency_data = resolved_data[dependency_id]
+#                 dependency_data_relationship = dependency_data["relationship"]
 
-                dependency_data_type = dependency_data_relationship["type"]
-                dependency_data_dependants = dependency_data_relationship["dependants"]
+#                 dependency_data_type = dependency_data_relationship["type"]
+#                 dependency_data_dependants = dependency_data_relationship["dependants"]
 
-                if dependency_type == version_dependency_types["required"]:
-                    if dependency_data_type == version_dependency_types["incompatible"]:
-                        incompatible_dependants = filter_dependencies_type(dependency_data_dependants, "incompatible")
-                        raise ResolveProjectsConflictsError(dependency_id, incompatible_dependants, project_id)
-                    elif dependency_data_type == version_dependency_types["optional"]:
-                        log.debug(f"Adding initially optional dependency '{project_id}' to unresolved")
-                        unresolved_ids.append(dependency_id)
-                elif dependency_type == version_dependency_types["incompatible"] and dependency_data_type == version_dependency_types["required"]:
-                    required_dependants = filter_dependencies_type(dependency_data_dependants, "required")
-                    raise ResolveProjectsConflictsError(dependency_id, project_id, required_dependants)
+#                 if dependency_type == version_dependency_types["required"]:
+#                     if dependency_data_type == version_dependency_types["incompatible"]:
+#                         incompatible_dependants = filter_dependencies_type(dependency_data_dependants, "incompatible")
+#                         raise ResolveProjectsConflictsError(dependency_id, incompatible_dependants, project_id)
+#                     elif dependency_data_type == version_dependency_types["optional"]:
+#                         log.debug(f"Adding initially optional dependency '{project_id}' to unresolved")
+#                         unresolved_ids.append(dependency_id)
+#                 elif dependency_type == version_dependency_types["incompatible"] and dependency_data_type == version_dependency_types["required"]:
+#                     required_dependants = filter_dependencies_type(dependency_data_dependants, "required")
+#                     raise ResolveProjectsConflictsError(dependency_id, project_id, required_dependants)
 
-                log.debug(f"Updating project data '{dependency_id}' with new '{dependency_type}' type dependant")
-                dependency_data_dependants[project_id] = dependency_type
-                dependency_data_relationship["type"] = max(dependency_data_relationship["type"], dependency_type)
-            else:
-                log.debug(f"Adding new project entry for dependency: {dependency_id}")
-                resolved_data[dependency_id] = {
-                    "metadata": {},
-                    "relationship": {
-                        "manual": False,
-                        "type": dependency_type,
-                        "dependencies": {},
-                        "dependants": {
-                            project_id: dependency_type
-                        }
-                    }
-                }
+#                 log.debug(f"Updating project data '{dependency_id}' with new '{dependency_type}' type dependant")
+#                 dependency_data_dependants[project_id] = dependency_type
+#                 dependency_data_relationship["type"] = max(dependency_data_relationship["type"], dependency_type)
+#             else:
+#                 log.debug(f"Adding new project entry for dependency: {dependency_id}")
+#                 resolved_data[dependency_id] = {
+#                     "metadata": {},
+#                     "relationship": {
+#                         "manual": False,
+#                         "type": dependency_type,
+#                         "dependencies": {},
+#                         "dependants": {
+#                             project_id: dependency_type
+#                         }
+#                     }
+#                 }
 
-                # Only process required mods
-                if dependency_type == version_dependency_types["required"]:
-                    unresolved_ids.append(dependency_id)
+#                 # Only process required mods
+#                 if dependency_type == version_dependency_types["required"]:
+#                     unresolved_ids.append(dependency_id)
 
-        resolved_data[project_id] = project_data
+#         resolved_data[project_id] = project_data
 
-    # Populate resolved_data with even more data
-    fetch_ids = []
-    for project_id, project_data in resolved_data.items():
-        #If project data doesn't have slug, fetch it
-        if not project_data["metadata"].get("project_slug"): fetch_ids.append(project_id)
+#     # Populate resolved_data with even more data
+#     fetch_ids = []
+#     for project_id, project_data in resolved_data.items():
+#         #If project data doesn't have slug, fetch it
+#         if not project_data["metadata"].get("project_slug"): fetch_ids.append(project_id)
 
-    if fetch_ids != []:
-        projects = json.loads(request(f"{modrinth_base_api}/v2/projects", query={
-            "ids": json.dumps(fetch_ids)
-        })["body"])
+#     if fetch_ids != []:
+#         projects = json.loads(request(f"{modrinth_base_api}/v2/projects", query={
+#             "ids": json.dumps(fetch_ids)
+#         })["body"])
 
-        for project in projects:
-            if resolved_data[project["id"]]["relationship"]["type"] in (version_dependency_types["required"], version_dependency_types["incompatible"]):
-                slug_id[project["slug"]] = {
-                    "id": project["id"]
-                }
+#         for project in projects:
+#             if resolved_data[project["id"]]["relationship"]["type"] in (version_dependency_types["required"], version_dependency_types["incompatible"]):
+#                 slug_id[project["slug"]] = {
+#                     "id": project["id"]
+#                 }
 
-            project_metadata = resolved_data[project["id"]]["metadata"]
+#             project_metadata = resolved_data[project["id"]]["metadata"]
 
-            project_metadata["project_slug"] = project["slug"]
-            project_metadata["project_title"] = project["title"]
-            project_metadata["project_description"] = project["description"]
-            project_metadata["project_license"] = project["license"]
-            project_metadata["loaders"] = project["loaders"]
+#             project_metadata["project_slug"] = project["slug"]
+#             project_metadata["project_title"] = project["title"]
+#             project_metadata["project_description"] = project["description"]
+#             project_metadata["project_license"] = project["license"]
+#             project_metadata["loaders"] = project["loaders"]
 
-        # Update with new slug to ID data
-        slug_id_file.write_text(json.dumps(slug_id, indent=2))
+#         # Update with new slug to ID data
+#         slug_id_file.write_text(json.dumps(slug_id, indent=2))
 
-    # Write project index
-    for project_id, project_data in resolved_data.items():
-        project_type = project_data["relationship"]["type"]
-        if project_type in (version_dependency_types["required"], version_dependency_types["incompatible"]):
-            log.debug(f"Indexing project '{project_id}' with type {project_type} and manual {project_data["relationship"]['manual']}")
-            #write_project_index(project_id, project_data)
-            if project_index_exists(project_id):
-                update_project_index(project_id, project_data["metadata"], project_data["relationship"])
-            else:
-                create_project_index(project_id, project_data["metadata"], project_data["relationship"])
+#     # Write project index
+#     for project_id, project_data in resolved_data.items():
+#         project_type = project_data["relationship"]["type"]
+#         if project_type in (version_dependency_types["required"], version_dependency_types["incompatible"]):
+#             log.debug(f"Indexing project '{project_id}' with type {project_type} and manual {project_data["relationship"]['manual']}")
+#             #write_project_index(project_id, project_data)
+#             if project_index_exists(project_id):
+#                 update_project_index(project_id, project_data["metadata"], project_data["relationship"])
+#             else:
+#                 create_project_index(project_id, project_data["metadata"], project_data["relationship"])
 
-    if debug_mode: print(json.dumps(resolved_data, indent=2))
-    return resolved_data
+#     if debug_mode: print(json.dumps(resolved_data, indent=2))
+#     return resolved_data
 
 #Command Functions
 def add_projects(args):
-    projects = args.projects
+    # projects = args.projects
 
-    if is_active():
-        log.error(f"There's another MCServer processes running with process ID: {get_state()["process_id"]}")
-        return 1
+    # if is_active():
+    #     log.error(f"There's another MCServer processes running with process ID: {get_state()["process_id"]}")
+    #     return 1
 
-    server_config = load_config("server")
-    server_loader = server_config["loader"]
+    # server_config = load_config("server")
+    # server_loader = server_config["loader"]
 
-    loader_name = server_loader["name"]
-    server_version = server_config["version"]
+    # loader_name = server_loader["name"]
+    # server_version = server_config["version"]
 
-    if server_loader["name"] == "vanilla":
-        log.error("Vanilla Minecraft server does not support mod")
-        return 1
+    # if server_loader["name"] == "vanilla":
+    #     log.error("Vanilla Minecraft server does not support mod")
+    #     return 1
 
-    set_loader_context(loader_name)
+    # set_loader_context(loader_name)
 
-    resolved_data = resolve_projects(projects, server_version, loader_name)
+    # resolved_data = resolve_projects(projects, server_version, loader_name)
 
-    # Get project IDs
-    total_size = 0
+    # # Get project IDs
+    # total_size = 0
 
-    required_project_name = []
-    optional_project_name = []
-    incompatible_project_name = []
+    # required_project_name = []
+    # optional_project_name = []
+    # incompatible_project_name = []
 
-    for project in resolved_data.values():
-        project_type = project["relationship"]["type"]
-        if project_type == version_dependency_types["required"]:
-            project_file = project["metadata"]["file"]
-            if (loader_dir / project_file["filename"]).exists(): continue
+    # for project in resolved_data.values():
+    #     project_type = project["relationship"]["type"]
+    #     if project_type == version_dependency_types["required"]:
+    #         project_file = project["metadata"]["file"]
+    #         if (loader_dir / project_file["filename"]).exists(): continue
 
-            total_size += project_file["file_size"]
-            required_project_name.append(f"{project["metadata"]['project_title']} ({project["metadata"]['project_slug']})")
-        elif project_type == version_dependency_types["optional"]:
-            optional_project_name.append(f"{project["metadata"]['project_title']} ({project["metadata"]['project_slug']})")
-        elif project_type == version_dependency_types["incompatible"]:
-            incompatible_project_name.append(f"{project["metadata"]['project_title']} ({project["metadata"]['project_slug']})")
+    #         total_size += project_file["file_size"]
+    #         required_project_name.append(f"{project["metadata"]['project_title']} ({project["metadata"]['project_slug']})")
+    #     elif project_type == version_dependency_types["optional"]:
+    #         optional_project_name.append(f"{project["metadata"]['project_title']} ({project["metadata"]['project_slug']})")
+    #     elif project_type == version_dependency_types["incompatible"]:
+    #         incompatible_project_name.append(f"{project["metadata"]['project_title']} ({project["metadata"]['project_slug']})")
 
-    if required_project_name:
-        required_project_count = len(required_project_name)
-        log.info(f"{required_project_count} {pluralize(project_label, required_project_count)} that {pluralize('is', required_project_count)} going to be downloaded:")
-        print(wrap_ansi(wrap_string(", ".join(required_project_name), initial_indent="    ", subsequent_indent="    "), "green"), end="\n\n")
+    # if required_project_name:
+    #     required_project_count = len(required_project_name)
+    #     log.info(f"{required_project_count} {pluralize(project_label, required_project_count)} that {pluralize('is', required_project_count)} going to be downloaded:")
+    #     print(wrap_ansi(wrap_string(", ".join(required_project_name), initial_indent="    ", subsequent_indent="    "), "green"), end="\n\n")
 
-    if optional_project_name:
-        optional_project_count = len(optional_project_name)
-        log.info(f"{optional_project_count} {pluralize(project_label, optional_project_count)} that {pluralize('is', optional_project_count)} optional:")
-        print(wrap_ansi(wrap_string(", ".join(optional_project_name), initial_indent="    ", subsequent_indent="    "), "yellow"), end="\n\n")
+    # if optional_project_name:
+    #     optional_project_count = len(optional_project_name)
+    #     log.info(f"{optional_project_count} {pluralize(project_label, optional_project_count)} that {pluralize('is', optional_project_count)} optional:")
+    #     print(wrap_ansi(wrap_string(", ".join(optional_project_name), initial_indent="    ", subsequent_indent="    "), "yellow"), end="\n\n")
 
-    if incompatible_project_name:
-        incompatible_project_count = len(incompatible_project_name)
-        log.warning(f"{incompatible_project_count} {pluralize(project_label, incompatible_project_count)} that {pluralize('is', incompatible_project_count)} INCOMPATIBLE:")
-        print(wrap_ansi(wrap_string(", ".join(incompatible_project_name), initial_indent=" ", subsequent_indent=" "), "red"), end="\n\n")
+    # if incompatible_project_name:
+    #     incompatible_project_count = len(incompatible_project_name)
+    #     log.warning(f"{incompatible_project_count} {pluralize(project_label, incompatible_project_count)} that {pluralize('is', incompatible_project_count)} INCOMPATIBLE:")
+    #     print(wrap_ansi(wrap_string(", ".join(incompatible_project_name), initial_indent=" ", subsequent_indent=" "), "red"), end="\n\n")
 
-    if required_project_name:
-        project_count = len(resolved_data)
-        log.info(f"Will download {format_number(total_size, 'iec')} worth of {pluralize(project_label, project_count)} {pluralize("file", project_count)}.")
-    else:
-        log.info(f"All requested {pluralize(project_label, len(projects))} has been downloaded, nothing to do!")
-        return 0
+    # if required_project_name:
+    #     project_count = len(resolved_data)
+    #     log.info(f"Will download {format_number(total_size, 'iec')} worth of {pluralize(project_label, project_count)} {pluralize("file", project_count)}.")
+    # else:
+    #     log.info(f"All requested {pluralize(project_label, len(projects))} has been downloaded, nothing to do!")
+    #     return 0
 
-    answer = confirmation_prompt("Do you want to continue?", True)
-    if not answer:
-        print("Cancelled")
-        return 1
+    # answer = confirmation_prompt("Do you want to continue?", True)
+    # if not answer:
+    #     print("Cancelled")
+    #     return 1
 
-    if not loader_dir:
-        log.error("Cannot create directory for non-defined project type")
-        return 1
+    # if not loader_dir:
+    #     log.error("Cannot create directory for non-defined project type")
+    #     return 1
 
-    set_state("adding_project")
+    # set_state("adding_project")
 
-    loader_dir.mkdir(exist_ok=True)
-    for project in resolved_data.values():
-        if project["relationship"]["type"] == version_dependency_types["required"]:
-            project_file = project["metadata"]["file"]
-            if (loader_dir / project_file["filename"]).exists(): continue
+    # loader_dir.mkdir(exist_ok=True)
+    # for project in resolved_data.values():
+    #     if project["relationship"]["type"] == version_dependency_types["required"]:
+    #         project_file = project["metadata"]["file"]
+    #         if (loader_dir / project_file["filename"]).exists(): continue
 
-            log.info(f"Downloading version {project["metadata"]['version_name']}...")
-            download(project_file["url"], loader_dir / project_file["filename"], hashes=project_file["hashes"])
+    #         log.info(f"Downloading version {project["metadata"]['version_name']}...")
+    #         download(project_file["url"], loader_dir / project_file["filename"], hashes=project_file["hashes"])
+    return 0
 
 def initialize_server(args):
     # Arguments
@@ -404,11 +408,11 @@ def initialize_server(args):
     # Special latest game_version
     match game_version:
         case "latest" | "latest-release":
-            latest_release_version = mojang.manifest.get_latest_release_version()
+            latest_release_version = mojang_manifest.get_latest_release_version()
             log.info(f"Latest Minecraft release version is: {latest_release_version}")
             game_version = latest_release_version
         case "latest-snapshot":
-            latest_snapshot_version = mojang.manifest.get_latest_snapshot_version()
+            latest_snapshot_version = mojang_manifest.get_latest_snapshot_version()
             log.info(f"Latest Minecraft snapshot version is: {latest_snapshot_version}")
             game_version = latest_snapshot_version
 
@@ -418,7 +422,7 @@ def initialize_server(args):
             # Mod loaders
             case "fabric":
                 latest_loader_version = ""
-                for version in fabricmc.meta.get_loader_versions():
+                for version in fabricmc_meta.get_loader_versions():
                     if version["is_stable"]:
                         latest_loader_version = version["loader_version"]
                         break
@@ -428,18 +432,18 @@ def initialize_server(args):
 
             # Plugin loaders
             case "paper":
-                latest_build_version = papermc.api.get_latest_project_build("paper", game_version)["build_version"]
+                latest_build_version = papermc_api.get_latest_project_build("paper", game_version)["build_version"]
                 log.info(f"Latest Paper build version is: {latest_build_version}")
                 loader_version = latest_build_version
             case "purpur":
-                latest_build_version = purpurmc.api.get_latest_project_build("purpur", game_version)["build_version"]
+                latest_build_version = purpurmc_api.get_latest_project_build("purpur", game_version)["build_version"]
                 log.info(f"Latest Purpur build version is: {latest_build_version}")
                 loader_version = latest_build_version
 
     # Creating the directories
     mcserver_dir.mkdir(exist_ok=True)
     configs_dir.mkdir(exist_ok=True)
-    indexes_dir.mkdir(exist_ok=True)
+    # indexes_dir.mkdir(exist_ok=True)
 
     tempfiles_dir.mkdir(exist_ok=True)
 
@@ -447,8 +451,8 @@ def initialize_server(args):
         loader_dir.mkdir(exist_ok=True)
 
     # Creating the files
-    if not slug_id_file.exists():
-        slug_id_file.write_text(json.dumps({}, indent=2))
+    # if not slug_id_file.exists():
+    #     slug_id_file.write_text(json.dumps({}, indent=2))
 
     # Generate configuration files
     for config_name in default_configs.keys():
@@ -495,7 +499,7 @@ def import_setup(args):
     min_ram = args.min_ram
     max_ram = args.max_ram
 
-    modpack_index = modrinth.modpack.read_index(file)
+    modpack_index = modrinth_modpack.read_index(file)
 
     loader_name = ""
     loader_version = ""
@@ -740,18 +744,18 @@ def start_server(args):
             # Plugin loaders
             case "paper":
                 log.info(f"Downloading Paper version {loader_version} for Minecraft version {game_version}...")
-                download_prop = papermc.api.get_project_build("paper", game_version, loader_version)["download_props"]["server:default"]
+                download_prop = papermc_api.get_project_build("paper", game_version, loader_version)["download_props"]["server:default"]
                 networking.download(download_prop["download_url"], launcher_config["jarfile"], dict(download_prop["checksums"]))
             case "purpur":
                 log.info(f"Downloading Purpur version {loader_version} for Minecraft version {game_version}...")
-                networking.download(purpurmc.api.download_url("purpur", game_version, loader_version), launcher_config["jarfile"], {
-                    "md5": purpurmc.api.get_project_build("purpur", game_version, loader_version)["artifact_md5"]
+                networking.download(purpurmc_api.download_url("purpur", game_version, loader_version), launcher_config["jarfile"], {
+                    "md5": purpurmc_api.get_project_build("purpur", game_version, loader_version)["artifact_md5"]
                 })
 
             # Vanilla
             case "vanilla":
                 log.debug("Getting Mojang version manifest file...")
-                version_manifest = mojang.manifest.get_version_manifest()["game_versions"]
+                version_manifest = mojang_manifest.get_version_manifest()["game_versions"]
 
                 selected_version_url = None
                 for version in version_manifest:
@@ -786,13 +790,13 @@ def start_server(args):
     #TODO: Implement the "free RAM" checker here
 
     try:
-        if not mojang.eula.is_eula_agreed():
+        if not mojang_eula.is_eula_agreed():
             log.warning("You need to agree to Mojang's EULA in order to run the server: https://aka.ms/MinecraftEULA")
             log.info(f"Please type '{wrap_ansi(eula_agree_sentence, 'yellow')}' (case-insensitive) to agree with Mojang's EULA.")
             answer = input("> ")
 
             if answer.lower().strip() == eula_agree_sentence.lower().strip():
-                mojang.eula.eula_agree()
+                mojang_eula.eula_agree()
             else:
                 log.error("Failed to start the Minecraft server: EULA not agreed")
                 return 1
@@ -821,7 +825,7 @@ def whitelist_add(args) -> int:
     return 0
 
 def whitelist_list(args) -> int:
-    whitelisted_players = server_files.whitelist.list_players()
+    whitelisted_players = server_whitelist.list_players()
     player_count = len(whitelisted_players)
     if player_count < 1:
         log.info("There is no whitelisted player")

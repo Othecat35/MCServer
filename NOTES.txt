@@ -118,19 +118,37 @@ You screwed up the add command lol, no I'm not >:c
 mod indexing, don't forget! don't remind me the... 3rd time?
 Gemini suggest adding "status" command and get ram usage info, sure but not now. oh good idea I guess
 
-.mcserver/
-- metadata.json
-- state.json
-- configs/
-  - launcher.json
-  - modrinth.json
-  - server.json
-- indexes/
-  - .slug_id.json
-  - <project_id>/
-    - metadata.json
-    - relationship.json
-- tempfiles/
+Things that MCServer can touch (In theory):
+Server Root
+- .mcserver/
+  - caches/
+    - modrinth/
+      - versions/
+        - <project_id>.json
+  - configs/
+    - launcher.json
+    - modrinth.json
+    - server.json
+  - modrinth/
+    - slug_index.json
+    - projects/
+      - <project_id>
+        - metadata.json
+        - relationships.json
+  - tempfiles/
+    - <file_hash>
+    - <url_hash> #if file hash does not exist, use hash from digesting the URL
+  - metadata.json
+  - state.json
+- banned-ips.json
+- banned-players.json
+- eula.txt
+- ops.json
+- server.properties
+- usercaches.json
+- whitelist.json
+- <jarfile_name>.jar
+
 
 - A good error message for UX is one that not only tell you what went wrong, but also how to fix that error (or at least tell what caused the error) | Not like I'm interested right now...
 - Consider to cache optional projects' bulk fetch data in resolved_projects even though we don't neccesearily process it?

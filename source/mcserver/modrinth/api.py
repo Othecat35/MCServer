@@ -4,8 +4,8 @@ import json
 from typing import Literal, TypedDict, NotRequired
 
 # MCServer
-import networking, shared
-from constants import modrinth_base_api
+from mcserver import networking, shared
+from mcserver.constants import modrinth_base_api
 
 #Errors
 #idk if I will do custom error or not
