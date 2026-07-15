@@ -24,6 +24,7 @@ import modrinth.modpack
 import networking
 import papermc.api
 import purpurmc.api
+import server_files.whitelist
 
 #Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
@@ -820,6 +821,19 @@ def whitelist_add(args) -> int:
     return 0
 
 def whitelist_list(args) -> int:
+    whitelisted_players = server_files.whitelist.list_players()
+    player_count = len(whitelisted_players)
+    if player_count < 1:
+        log.info("There is no whitelisted player")
+    else:
+       log.info(f"There {pluralize('is', player_count)} {player_count} whitelisted {pluralize("player", player_count)}:")
+
+    player_list: list[str] = []
+    for player in whitelisted_players:
+        player_list.append(f"{player['player_name']} ({player['player_uuid']})")
+
+    player_list.sort()
+    print("\n".join(player_list))
     return 0
 
 def whitelist_remove(args) -> int:
@@ -874,7 +888,7 @@ def main():
     import_command = commands.add_parser("import", description="Import a Modrinth modpack", help="Import a Modrinth modpack")
     import_command.set_defaults(func=import_setup)
 
-    import_command.add_argument("file", type=str, help="Modpack file")
+    import_command.add_argument("file", type=str, help="THe Modpack file")
     import_command.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for the server (in Mebibytes)", metavar="size")
     import_command.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibytes)", metavar="size")
 
