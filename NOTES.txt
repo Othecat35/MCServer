@@ -232,3 +232,7 @@ ban_player() = ban <player_name> --reason=<str>
 unban_players = unban <player_names>
 op_player() = op <player_name> --level=<1-4> --bypass-player-limit=<bool>
 deop_players() = deop <player_names>
+
+
+pls Othecat35, stop using AI.
+- Othecat35 (2026/07/16)

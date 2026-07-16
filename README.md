@@ -6,7 +6,7 @@ A CLI tool to manage Minecraft: Java Edition servers.
 Windows is untested, try using this inside WSL instead.
 
 ## Requirements
-- Python 3.12 or later
+- Python 3.14 or newer
 - JRE (depends on Minecraft version)
 
 ## How to install
