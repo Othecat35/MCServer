@@ -1,1 +1,1 @@
-__version__: tuple[int] = (3, 0, 0)
+__version__: tuple[int, int, int] = (3, 0, 0)
