@@ -236,3 +236,6 @@ deop_players() = deop <player_names>
 
 pls Othecat35, stop using AI.
 - Othecat35 (2026/07/16)
+
+(sadly) I could break that promise any seconds
+- Othecat35 (2026/07/16)
