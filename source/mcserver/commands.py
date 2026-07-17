@@ -33,6 +33,11 @@ def search_projects(args: argparseNamespace) -> int:
     print(query)
     return 0
 
+def show_projects(args: argparseNamespace) -> int:
+    projects: list[str] = args.projects
+    print(projects)
+    return 0
+
 def start_server(args: argparseNamespace) -> int:
     return 0
 

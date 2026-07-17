@@ -133,6 +133,21 @@ def main() -> int:
         type=str,
         help="Query to search")
 
+    # 'show' command
+    show_command = commands.add_parser(
+        "show",
+        help="Show Modrinth projects information",
+        description="Show Modrinth projects information")
+
+    from .commands import show_projects
+    show_command.set_defaults(func=show_projects)
+
+    show_command.add_argument(
+        "projects",
+        nargs="+",
+        type=str,
+        help="Project slugs or IDs")
+
     # 'start' command
     start_command = commands.add_parser(
         "start",
