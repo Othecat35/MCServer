@@ -1,6 +1,21 @@
 def main() -> int:
     import argparse
 
+    from . import __version__
+    from .commands import add_projects
+    from .commands import import_setup
+    from .commands import init_server
+    from .commands import list_projects
+    from .commands import op_grant
+    from .commands import op_list
+    from .commands import op_revoke
+    from .commands import search_projects
+    from .commands import show_projects
+    from .commands import start_server
+    from .commands import whitelist_add
+    from .commands import whitelist_list
+    from .commands import whitelist_remove
+
     def print_help(args: argparse.Namespace) -> int:
         parser: argparse.ArgumentParser = args.parser
         parser.print_help()
@@ -19,8 +34,6 @@ def main() -> int:
         color=True)
 
     parser.set_defaults(func=print_help, parser=parser)
-
-    from . import __version__
     parser.add_argument(
         "--version",
         action="version",
@@ -34,9 +47,7 @@ def main() -> int:
         help="Add Modrinth projects",
         description="Add Modrinth projects")
     
-    from .commands import add_projects
     add_command.set_defaults(func=add_projects)
-
     add_command.add_argument(
         "projects",
         nargs="+",
@@ -49,7 +60,6 @@ def main() -> int:
         help="Import Modrinth modpack",
         description="Import Modrinth modpack")
 
-    from .commands import import_setup
     import_command.set_defaults(func=import_setup)
 
     # 'init' command
@@ -58,7 +68,6 @@ def main() -> int:
         help="Initialize server configurations",
         description="Initialize server configurations")
 
-    from .commands import init_server
     init_command.set_defaults(func=init_server)
 
     # 'list' command
@@ -67,7 +76,6 @@ def main() -> int:
         help="List all downloaded projects",
         description="List all downloaded projects")
 
-    from .commands import list_projects
     list_command.set_defaults(func=list_projects)
 
     # 'op' command
@@ -84,10 +92,8 @@ def main() -> int:
         "grant",
         help="Grant players operator",
         description="Grant players operator")
-    
-    from .commands import op_grant
-    op_grant_command.set_defaults(func=op_grant)
 
+    op_grant_command.set_defaults(func=op_grant)
     op_grant_command.add_argument(
         "players",
         nargs="+",
@@ -100,7 +106,6 @@ def main() -> int:
         help="List all operator players",
         description="List all operator players")
 
-    from .commands import op_list
     op_list_command.set_defaults(func=op_list)
 
     # 'op revoke'
@@ -109,9 +114,7 @@ def main() -> int:
         help="Revoke operator players",
         description="Remove operator players")
 
-    from .commands import op_revoke
     op_revoke_command.set_defaults(func=op_revoke)
-
     op_revoke_command.add_argument(
         "players",
         nargs="+",
@@ -123,10 +126,8 @@ def main() -> int:
         "search",
         help="Search Modrinth projects",
         description="Search Modrinth projects")
-    
-    from .commands import search_projects
-    search_command.set_defaults(func=search_projects)
 
+    search_command.set_defaults(func=search_projects)
     search_command.add_argument(
         "query",
         nargs="*",
@@ -139,9 +140,7 @@ def main() -> int:
         help="Show Modrinth projects information",
         description="Show Modrinth projects information")
 
-    from .commands import show_projects
     show_command.set_defaults(func=show_projects)
-
     show_command.add_argument(
         "projects",
         nargs="+",
@@ -154,7 +153,6 @@ def main() -> int:
         help="Start the server",
         description="Start the server")
 
-    from .commands import start_server
     start_command.set_defaults(func=start_server)
 
      # 'whitelist' command
@@ -171,10 +169,8 @@ def main() -> int:
         "add",
         help="Add players to the whitelist",
         description="Add players to the whitelist")
-    
-    from .commands import whitelist_add
-    whitelist_add_command.set_defaults(func=whitelist_add)
 
+    whitelist_add_command.set_defaults(func=whitelist_add)
     whitelist_add_command.add_argument(
         "players",
         nargs="+",
@@ -187,7 +183,6 @@ def main() -> int:
         help="List all whitelisted players",
         description="List all whitelisted players")
 
-    from .commands import whitelist_list
     whitelist_list_command.set_defaults(func=whitelist_list)
 
     # 'whitelist remove'
@@ -196,7 +191,6 @@ def main() -> int:
         help="Remove players to the whitelist",
         description="Remove players from the whitelist")
 
-    from .commands import whitelist_remove
     whitelist_remove_command.set_defaults(func=whitelist_remove)
 
     whitelist_remove_command.add_argument(

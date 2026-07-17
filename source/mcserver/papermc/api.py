@@ -32,7 +32,7 @@ class ProjectBuild(TypedDict):
 #Functions
 def get_project_build(project_name: str, game_version: str, build_id: int | Literal["latest"]) -> ProjectBuild:
     response = networking.request(f"{papermc_base_api}/v3/projects/{project_name}/versions/{game_version}/builds/{build_id}")
-    response_data = json.loads(response["body"])
+    response_data = json.loads(response["text"])
 
     build_commits = []
     for commit in response_data["commits"]:

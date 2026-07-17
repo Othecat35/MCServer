@@ -18,7 +18,7 @@ class LoaderVersion(TypedDict):
 #Functions
 def get_loader_versions() -> list[LoaderVersion]:
     response = networking.request(f"{fabricmc_base_api}/v2/versions/loader")
-    response_data = json.loads(response["body"])
+    response_data = json.loads(response["text"])
 
     loader_versions = []
     for data in response_data:

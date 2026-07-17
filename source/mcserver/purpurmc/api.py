@@ -29,7 +29,7 @@ class ProjectBuild(TypedDict):
 #Functions
 def get_project_build(project_name: str, game_version: str, build_version: int | Literal["latest"]) -> ProjectBuild:
     response = networking.request(f"{purpurmc_base_api}/v2/{project_name}/{game_version}/{build_version}")
-    response_data = json.loads(response["body"])
+    response_data = json.loads(response["text"])
     
     build_commits = []
     for commit in response_data["commits"]:

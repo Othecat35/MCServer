@@ -18,7 +18,7 @@ class PlayerIdentity(TypedDict):
 #Functions
 def get_player_from_name(player_name: str) -> PlayerIdentity:
     response = networking.request(f"{minecraft_base_api}/minecraft/profile/lookup/name/{player_name}")
-    response_json = json.loads(response["body"])
+    response_json = json.loads(response["text"])
 
     player_identity: PlayerIdentity = {
         "player_uuid": normalize_player_uuid(response_json["id"]),
@@ -45,7 +45,7 @@ def get_players_from_names(player_names: list[str] | str) -> list[PlayerIdentity
         "Content-Type": "application/json"
     }, method="POST")
 
-    response_json = json.loads(response["body"])
+    response_json = json.loads(response["text"])
 
     player_identities = []
     for data in response_json:
@@ -62,7 +62,7 @@ def get_players_from_names(player_names: list[str] | str) -> list[PlayerIdentity
 
 def get_player_from_uuid(player_uuid: PlayerUUID) -> PlayerIdentity:
     response = networking.request(f"{minecraft_base_api}/minecraft/profile/lookup/{player_uuid}")
-    response_data = json.loads(response["body"])
+    response_data = json.loads(response["text"])
 
     player_identity: PlayerIdentity = {
         "player_uuid": normalize_player_uuid(response_data["id"]),

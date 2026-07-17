@@ -14,7 +14,7 @@ from .shared import current_dir, format_number, mcserver_dir, print_status
 
 #TypedDict
 class ResponseObject(TypedDict):
-    body: str
+    text: str
     headers: dict
     status: int
 
@@ -47,7 +47,7 @@ def request(url: str, query: dict | None = None, data: bytes | None = None, head
             response_headers[key.lower()] = value
 
         return {
-            "body": response.read().decode("utf-8"),
+            "text": response.read().decode("utf-8"),
             "headers": response_headers,
             "status": response.status
         }

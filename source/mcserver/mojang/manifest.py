@@ -27,7 +27,7 @@ class VersionManifest(TypedDict):
 #Functions
 def get_version_manifest() -> VersionManifest:
     response = networking.request(f"{mojang_manifest_base_url}/mc/game/version_manifest_v2.json")
-    response_data = json.loads(response["body"])
+    response_data = json.loads(response["text"])
 
     latest_version = response_data["latest"]
 
