@@ -1,2 +1,2 @@
-from .mcserver import app
+from mcserver import app
 app.main()
