@@ -8,6 +8,7 @@ from .. import networking
 from ..constants import modrinth_base_api
 
 #TypedDict
+# Project Version
 class FileHash(TypedDict):
     sha512: NotRequired[str]
     sha1: NotRequired[str]
@@ -45,14 +46,15 @@ class ProjectVersion(TypedDict):
     changelog_url: NotRequired[str | None]
     files: list[VersionFile]
 
+# Project Information
 class DonationPlatform(TypedDict):
     platform_id: NotRequired[str]
     platform_name: NotRequired[str]
-    dnation_url: NotRequired[str]
+    donation_url: NotRequired[str]
 
 class ModeratorMessage(TypedDict):
-    message: str
-    body: str
+    message: NotRequired[str]
+    body: NotRequired[str | None]
 
 class ProjectLicense(TypedDict):
     license_id: NotRequired[str]
@@ -64,10 +66,10 @@ class GalleryImage(TypedDict):
     is_featured: bool
     image_title: NotRequired[str | None]
     image_description: NotRequired[str | None]
-    created_time: str
-    image_index: NotRequired[int]
+    created_time: str                          # Time format: ISO-8601
+    image_order: NotRequired[int]
 
-class Project(TypedDict):
+class ProjectInformation(TypedDict):
     project_slug: NotRequired[str]
     project_title: NotRequired[str]
     summary: NotRequired[str]
@@ -77,7 +79,7 @@ class Project(TypedDict):
     description: NotRequired[str]
     status: NotRequired[Literal["approved", "archived", "rejected", "draft", "unlisted", "processing", "withheld", "scheduled", "private", "unknown"]]
     requested_status: NotRequired[Literal["approved", "archived", "unlisted", "private", "draft"] | None]
-    additional_categories: list[str]
+    additional_categories: NotRequired[list[str]]
     issues_url: NotRequired[str | None]
     source_url: NotRequired[str | None]
     wiki_url: NotRequired[str | None]
@@ -92,17 +94,17 @@ class Project(TypedDict):
     project_id: str
     team_id: str
     description_url: NotRequired[str | None]
-    moderator_message: NotRequired[ModeratorMessage]
-    published_time: NotRequired[str]
-    last_updated_time: NotRequired[str]
-    approved_time: NotRequired[str]
-    queued_time: NotRequired[str]
+    moderator_message: NotRequired[ModeratorMessage | None] # NOTE: The docs is misleading
+    published_time: str                    # Time format: ISO-8601
+    last_updated_time: str                 # Time format: ISO-8601
+    approved_time: NotRequired[str | None] # Time format: ISO-8601
+    queued_time: NotRequired[str | None]   # Time format: ISO-8601
     follower_count: int
     license: NotRequired[ProjectLicense]
     version_ids: NotRequired[list[str]]
     game_versions: NotRequired[list[str]]
     loader_names: NotRequired[list[str]]
-    image_gallery: list[GalleryImage]
+    project_gallery: NotRequired[list[GalleryImage]]
 
 #Functions
 def get_project_versions(project_id: str, loader_names: list[str] | str | None = None, game_versions: list[str] | str | None = None, featured: bool | None = None, include_changelog: bool = True) -> list[ProjectVersion]:
@@ -249,15 +251,182 @@ def get_versions_from_hashes(file_hashes: list[str] | str, hash_algorithm: Liter
 
     return hash_to_version_map
 
-def get_projects(project_ids: list[str] | str) -> ModrinthProject:
+def get_project_informations(project_ids: list[str] | str) -> list[ProjectInformation]:
     if isinstance(project_ids, str): project_ids = [project_ids]
 
-    query_parameters = {
+    query_parameters: dict[str, str] = {
         "ids": json.dumps(project_ids)
     }
 
     response = networking.request(f"{modrinth_base_api}/v2/projects", query=query_parameters)
     response_json = json.loads(response["text"])
 
-    projects
+    project_informations: list[ProjectInformation] = []
     for project in response_json:
+        client_side: Literal["required", "optional", "unsupported", "unknown"] = "unknown"
+        if "client_side" in project:
+            if project["client_side"] in ["required", "optional", "unsupported", "unknown"]:
+                client_side = project["client_side"]
+
+        server_side: Literal["required", "optional", "unsupported", "unknown"] = "unknown"
+        if "server_side" in project:
+            if project["server_side"] in ["required", "optional", "unsupported", "unknown"]:
+                server_side = project["server_side"]
+
+        status: Literal["approved", "archived", "rejected", "draft", "unlisted", "processing", "withheld", "scheduled", "private", "unknown"] = "unknown"
+        if "status" in project:
+            if project["status"] in ["approved", "archived", "rejected", "draft", "unlisted", "processing", "withheld", "scheduled", "private", "unknown"]:
+                status = project["status"]
+
+        requested_status: Literal["approved", "archived", "unlisted", "private", "draft"] | None = None
+        if "requested_status" in project:
+            requested_status_data = project["requested_status"]
+            if requested_status_data in ["approved", "archived", "unlisted", "private", "draft"] or requested_status_data is None:
+                requested_status = requested_status_data
+
+        monetization_status: Literal["monetized", "demonetized", "force-demonetized"] = "monetized"
+        if "monetization_status" in project:
+            if project["monetization_status"] in ["monetized", "demonetized", "force-demonetized"]:
+                monetization_status = project["monetization_status"]
+
+        donation_platforms: list[DonationPlatform] = []
+        if "donation_urls" in project:
+            for platform in project["donation_urls"]:
+                donation_platform: DonationPlatform = {}
+
+                if "id" in platform: donation_platform["platform_id"] = platform["id"]
+                if "platform" in platform: donation_platform["platform_name"] = platform["platform"]
+                if "url" in platform: donation_platform["donation_url"] = platform["url"]
+                donation_platforms.append(donation_platform)
+
+        moderator_message: ModeratorMessage | None = None
+        if "moderator_message" in project:
+            moderator_message_data = project["moderator_message"]
+            if moderator_message_data is None:
+                moderator_message = None
+            else:
+                # pls forgive me I was tired, maybe you fix it then
+                if moderator_message is None:
+                    moderator_message = {}
+
+                if "message" in moderator_message_data: moderator_message["message"] = moderator_message_data["message"]
+                if "body" in moderator_message_data: moderator_message["body"] = moderator_message_data["body"]
+
+        project_license: ProjectLicense = {}
+        if "license" in project:
+            license_data = project["license"]
+            if "id" in license_data: project_license["license_id"] = license_data["id"]
+            if "name" in license_data: project_license["license_name"] = license_data["name"]
+            if "url" in license_data: project_license["license_url"] = license_data["url"]
+
+        project_gallery: list[GalleryImage] = []
+        if "gallery" in project:
+            for image in project["gallery"]:
+                gallery_image: GalleryImage = {
+                    "image_url": image["url"],
+                    "is_featured": image["featured"],
+                    "created_time": image["created"]
+                }
+
+                if "title" in image: gallery_image["image_title"] = image["title"]
+                if "description" in image: gallery_image["image_description"] = image["description"]
+                if "ordering" in image: gallery_image["image_order"] = image["ordering"]
+                project_gallery.append(gallery_image)
+
+        project_information: ProjectInformation = {
+            "project_type": project["project_type"],
+            "download_count": project["downloads"],
+            "project_id": project["id"],
+            "team_id": project["team"],
+            "published_time": project["published"],
+            "last_updated_time": project["updated"],
+            "follower_count": project["followers"]
+        }
+
+        if "slug" in project:
+            project_information["project_slug"] = project["slug"]
+
+        if "title" in project:
+            project_information["project_title"] = project["title"]
+
+        if "description" in project:
+            project_information["summary"] = project["description"]
+
+        if "categories" in project:
+            project_information["categories"] = project["categories"]
+
+        if "client_side" in project:
+            project_information["client_side"] = client_side
+
+        if "server_side" in project:
+            project_information["server_side"] = server_side
+
+        if "body" in project:
+            project_information["description"] = project["body"]
+
+        if "status" in project:
+            project_information["status"] = status
+
+        if "requested_status" in project:
+            project_information["requested_status"] = requested_status
+
+        if "additional_categories" in project:
+            project_information["additional_categories"] = project["additional_categories"]
+
+        if "issues_url" in project:
+            project_information["issues_url"] = project["issues_url"]
+
+        if "source_url" in project:
+            project_information["source_url"] = project["source_url"]
+
+        if "wiki_url" in project:
+            project_information["wiki_url"] = project["wiki_url"]
+
+        if "discord_url" in project:
+            project_information["discord_url"] = project["discord_url"]
+
+        if "donation_urls" in project:
+            project_information["donation_platforms"] = donation_platforms
+
+        if "icon_url" in project:
+            project_information["icon_url"] = project["icon_url"]
+
+        if "color" in project:
+            project_information["icon_color"] = project["color"]
+
+        if "thread_id" in project:
+            project_information["thread_id"] = project["thread_id"]
+
+        if "monetization_status" in project:
+            project_information["monetization_status"] = monetization_status
+
+        if "body_url" in project:
+            project_information["description_url"] = project["body_url"]
+
+        if "moderator_message" in project:
+            project_information["moderator_message"] = moderator_message
+
+        if "approved" in project:
+            project_information["approved_time"] = project["approved"]
+
+        if "queued" in project:
+            project_information["queued_time"] = project["queued"]
+
+        if "license" in project:
+            project_information["license"] = project_license
+
+        if "versions" in project:
+            project_information["version_ids"] = project["versions"]
+
+        if "game_versions" in project:
+            project_information["game_versions"] = project["game_versions"]
+
+        if "loaders" in project:
+            project_information["loader_names"] = project["loaders"]
+
+        if "gallery" in project:
+            project_information["project_gallery"] = project_gallery
+
+        project_informations.append(project_information)
+
+    return project_informations
