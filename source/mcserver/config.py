@@ -4,34 +4,7 @@ import copy, json
 import logging as log
 
 #MCServer
-from .shared import mcserver_dir, merge_dict
-
-#Variables
-default_configs = {
-    "launcher": {
-        "ram": {
-            "_comment": "Memory size in MebiByte (MiB)",
-            "min": 512,
-            "max": 2_048
-        },
-
-        "jarfile": "Launcher.jar",
-        "hide_gui": True
-    },
-
-    "modrinth": {
-        "search_limit": 20,
-        "sort_by": "relevance"
-    },
-
-    "server": {
-        "version": "", # Auto-fetched the latest version when init without --mc-version
-        "loader": {
-            "name": "vanilla",
-            "version": ""
-        }
-    }
-}
+from .shared import mcserver_dir, merge_dict, default_configs
 
 #Paths
 configs_dir = mcserver_dir / "configs"

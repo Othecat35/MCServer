@@ -41,7 +41,7 @@ def add_players(whitelist_players: list[WhitelistPlayer] | WhitelistPlayer) -> N
         for player in whitelist_players:
             whitelist_entry: WhitelistEntry = {
                 "uuid": str(normalize_player_uuid(player["player_uuid"])),
-                "name": player["player_name"]
+                "name": player.get("player_name", "")
             }
 
             whitelist_data.append(whitelist_entry)
@@ -100,12 +100,31 @@ def remove_players(player_ids: list[PlayerID] | PlayerID) -> None:
 # List Players
 def list_players() -> list[WhitelistPlayer]:
     whitelist_data: list[WhitelistEntry] = json.loads(whitelist_file.read_text())
+
     whitelist_players: list[WhitelistPlayer] = []
     for entry in whitelist_data:
-        whitelist_player: WhitelistPlayer = {
-            "player_uuid": UUID(entry["uuid"]),
-            "player_name": entry["name"]
-        }
+        player_uuid: str | None = entry.get("uuid", None)
+        player_name: str | None = entry.get("name", None)
+
+        if player_uuid is None or player_name is None:
+            error_message = f"Invalid whitelist entry!"
+            if player_uuid:
+                error_message += f" UUID: '{player_uuid}'"
+
+            if player_name:
+                error_message += f" Name: '{player_name}'"
+
+            log.error(error_message)
+            continue
+
+        try:
+            whitelist_player: WhitelistPlayer = {
+                "player_uuid": UUID(player_uuid),
+                "player_name": entry["name"]
+            }
+        except ValueError:
+            log.error(f"Invalid UUID in whitelist: '{player_uuid}'")
+            continue
 
         whitelist_players.append(whitelist_player)
 

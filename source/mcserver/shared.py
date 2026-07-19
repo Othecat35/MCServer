@@ -30,6 +30,32 @@ ansi_codes = {
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
 last_status_message = ""
 
+default_configs = {
+    "launcher": {
+        "ram": {
+            "_comment": "Memory size in MebiByte (MiB)",
+            "min": 512,
+            "max": 2_048
+        },
+
+        "jarfile": "Launcher.jar",
+        "hide_gui": True
+    },
+
+    "modrinth": {
+        "search_limit": 20,
+        "sort_by": "relevance"
+    },
+
+    "server": {
+        "version": "", # Auto-fetched the latest version when init without --mc-version
+        "loader": {
+            "name": "vanilla",
+            "version": ""
+        }
+    }
+}
+
 #Paths
 current_dir: Path = Path.cwd()
 mcserver_dir: Path = Path(".mcserver")

@@ -3,6 +3,8 @@
 import logging as log
 
 from argparse import Namespace as argparseNamespace
+from pathlib import Path
+from uuid import UUID
 
 # MCServer
 from .shared import pluralize
@@ -29,6 +31,28 @@ def op_grant(args: argparseNamespace) -> int:
     return 0
 
 def op_list(args: argparseNamespace) -> int:
+    from .server_files import ops
+
+    if not ops.ops_file.exists():
+        log.error(f"File '{ops.ops_file}' not found.")
+        return 1
+
+    operator_players = ops.list_players()
+
+    players: list[str] = []
+    for player in operator_players:
+        players.append(f"{player['player_name']} ({player['player_uuid']}) Level: {player["permission_level"]}")
+
+    players.sort()
+    sorted_players = "\n".join(players)
+
+    player_count = len(operator_players)
+    if player_count == 0:
+        log.info("There's no operator player.")
+        return 0
+
+    log.info(f"All {player_count} operator {pluralize("player", player_count)}:")
+    print(sorted_players)
     return 0
 
 def op_revoke(args: argparseNamespace) -> int:
@@ -49,6 +73,9 @@ def show_projects(args: argparseNamespace) -> int:
 def start_server(args: argparseNamespace) -> int:
     return 0
 
+def stop_server(args: argparseNamespace) -> int:
+    return 0
+
 # Whitelist
 def whitelist_add(args: argparseNamespace) -> int:
     players: list[str] = args.players
@@ -59,21 +86,24 @@ def whitelist_list(args: argparseNamespace) -> int:
     from .server_files import whitelist
 
     if not whitelist.whitelist_file.exists():
-        log.error("No 'whitelist.json' file found")
+        log.error(f"File '{whitelist.whitelist_file}' not found.")
         return 1
 
     whitelisted_players = whitelist.list_players()
 
-    player_ids: list[str] = []
+    player_list: list[str] = []
     for player in whitelisted_players:
-        player_ids.append(f"{player['player_name']} ({player['player_uuid']})")
+        player_list.append(f"{player['player_name']} ({player['player_uuid']})")
 
-    player_ids.sort()
-    sorted_player_ids = "\n".join(player_ids)
+    player_count: int = len(player_list)
+    if player_count == 0:
+        log.info("There are no whitelisted player.")
+        return 0
+    else:
+        log.info(f"There {pluralize('is', player_count)} whitelisted {pluralize('player', player_count)}:")
 
-    player_count = len(whitelisted_players)
-    log.info(f"All {player_count} whitelisted {pluralize("player", player_count)}:")
-    print(sorted_player_ids)
+    player_list.sort()
+    print("\n".join(player_list))
     return 0
 
 def whitelist_remove(args: argparseNamespace) -> int:
