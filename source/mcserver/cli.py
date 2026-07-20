@@ -57,10 +57,14 @@ def main() -> int:
     # 'import' command
     import_command = commands.add_parser(
         "import",
-        help="Import Modrinth modpack",
-        description="Import Modrinth modpack")
+        help="Import a Modrinth modpack",
+        description="Import a Modrinth modpack")
 
     import_command.set_defaults(func=import_setup)
+    import_command.add_argument(
+        "file",
+        type=str,
+        help="Modrinth modpack file")
 
     # 'init' command
     init_command = commands.add_parser(
@@ -73,8 +77,8 @@ def main() -> int:
     # 'list' command
     list_command = commands.add_parser(
         "list",
-        help="List all downloaded projects",
-        description="List all downloaded projects")
+        help="List added projects",
+        description="List added projects")
 
     list_command.set_defaults(func=list_projects)
 
@@ -90,8 +94,8 @@ def main() -> int:
     # 'op grant'
     op_grant_command = op_subcommands.add_parser(
         "grant",
-        help="Grant players operator",
-        description="Grant players operator")
+        help="Grant operator to players",
+        description="Grant operator to players")
 
     op_grant_command.set_defaults(func=op_grant)
     op_grant_command.add_argument(
@@ -103,16 +107,16 @@ def main() -> int:
     # 'op list'
     op_list_command = op_subcommands.add_parser(
         "list",
-        help="List all operator players",
-        description="List all operator players")
+        help="List operator players",
+        description="List operator players")
 
     op_list_command.set_defaults(func=op_list)
 
     # 'op revoke'
     op_revoke_command = op_subcommands.add_parser(
         "revoke",
-        help="Revoke operator players",
-        description="Remove operator players")
+        help="Revoke operator from players",
+        description="Revoke operator from players")
 
     op_revoke_command.set_defaults(func=op_revoke)
     op_revoke_command.add_argument(
@@ -137,8 +141,8 @@ def main() -> int:
     # 'show' command
     show_command = commands.add_parser(
         "show",
-        help="Show Modrinth projects information",
-        description="Show Modrinth projects information")
+        help="Show Modrinth project informations",
+        description="Show Modrinth project informations")
 
     show_command.set_defaults(func=show_projects)
     show_command.add_argument(
@@ -167,8 +171,8 @@ def main() -> int:
     # 'whitelist add'
     whitelist_add_command = whitelist_subcommands.add_parser(
         "add",
-        help="Add players to the whitelist",
-        description="Add players to the whitelist")
+        help="Add players to whitelist",
+        description="Add players to whitelist")
 
     whitelist_add_command.set_defaults(func=whitelist_add)
     whitelist_add_command.add_argument(
@@ -180,19 +184,18 @@ def main() -> int:
     # 'whitelist list'
     whitelist_list_command = whitelist_subcommands.add_parser(
         "list",
-        help="List all whitelisted players",
-        description="List all whitelisted players")
+        help="List whitelisted players",
+        description="List whitelisted players")
 
     whitelist_list_command.set_defaults(func=whitelist_list)
 
     # 'whitelist remove'
     whitelist_remove_command = whitelist_subcommands.add_parser(
         "remove",
-        help="Remove players to the whitelist",
-        description="Remove players from the whitelist")
+        help="Remove players from whitelist",
+        description="Remove players from whitelist")
 
     whitelist_remove_command.set_defaults(func=whitelist_remove)
-
     whitelist_remove_command.add_argument(
         "players",
         nargs="+",
