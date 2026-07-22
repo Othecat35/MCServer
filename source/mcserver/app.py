@@ -1,4 +1,4 @@
-def main():
+def main() -> None:
     import sys
 
     from .mysterious import nothing_to_see_here_move_along
