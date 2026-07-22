@@ -138,15 +138,15 @@ dependency_types = {
 }
 
 #Functions
-def resolve_dependencies(node_ids: list[str] | str, get_dependencies: Callable, check_conflict: Callable) -> list:
-    if isinstance(node_ids, str):
-        node_ids = [node_ids]
+def resolve_dependencies(project_ids: list[str] | str, get_project_dependencies: Callable, check_conflicts: Callable) -> list:
+    if isinstance(project_ids, str):
+        project_ids = [project_ids]
 
-    queued_nodes: deque[str] = deque()
-    processed_nodes: set[str] = set()
+    queued_ids: deque[str] = deque()
+    processed_ids: set[str] = set()
     dependency_graph: dict[str, dict[str, Any]] = {} #I will use TypedDict later
 
-    for node_id in node_ids:
+    for project_id in project_ids:
         if node_id in queued_nodes:
             continue
 

@@ -2,8 +2,10 @@
 ## About
 A CLI tool to manage Minecraft: Java Edition servers.
 
-## Windows
-Windows is untested, try using this inside WSL instead.
+## Platform
+Supported platforms:
+- Linux
+- and Termux.
 
 ## Requirements
 - Python 3.14 or newer
@@ -24,20 +26,24 @@ Windows is untested, try using this inside WSL instead.
    - Run `fish_add_path ~/bin` if you're using FISH
 
 ## Usage
+- Add mods (and its dependencies): `mcserver add <mods>`
+- Import a modpack: `mcserver import [file]`
 - Initialize the server: `mcserver init [options]`
+- Manage operator status: `mcserver op`
 - Search mods from Modrinth: `mcserver search [<query>] [options]`
 - Show mod information from Modrinth: `mcserver show <mods>`
-- Add mods (and its dependencies): `mcserver add <mods>`
 - Start the server: `mcserver start`
+- Stop the server: `mcserver stop`
+- Manage the whitelist: `mcserver whitelist`
 
 ### Example
 ```bash
 mcserver init --mc-version=1.20.1 --loader=fabric --loader-version=0.19.3
 mcserver search --no-filter thdilos
-mcserver show thdilos-fox-origin thdilos-fox-origins-expanded
-mcserver add thdilos-fox-origins-expanded lithium tick-stasis ferrite-core krypton
+mcserver show thdilos-fox-origin thdilos-fox-origin-expanded
+mcserver add thdilos-fox-origin-expanded lithium tick-stasis ferrite-core krypton
 mcserver start
 ```
 
 ## Note
-This is a **personal project** that I use to learn while developing it. and yes, Termux is fully supported.
+This is a **Personal Project**, things may be unstable.

@@ -6,6 +6,8 @@ from argparse import Namespace as argparseNamespace
 from pathlib import Path
 from uuid import UUID
 
+from source.mcserver.state import is_active
+
 # MCServer
 from .shared import pluralize
 
@@ -74,7 +76,39 @@ def start_server(args: argparseNamespace) -> int:
     return 0
 
 def stop_server(args: argparseNamespace) -> int:
-    return 0
+    force_stop: bool = args.force_stop
+
+    import os
+    import time
+
+    from signal import SIGKILL, SIGTERM
+
+    from . import state
+
+    if not state.is_active():
+        log.error("Server is not running.")
+        return 1
+
+    current_state = state.get_state()
+
+    log.info("Stopping server...")
+    os.kill(current_state["process_id"], SIGTERM)
+
+    time.sleep(15)
+
+    if state.is_active():
+        return 0
+
+    if not force_stop:
+        log.warning("Server appears to still be running, you may stop the server manually.")
+        return 1
+
+    current_state = state.get_state()
+
+    log.warning("Server process still running, force stopping the server...")
+    os.kill(current_state["process_id"], SIGKILL)
+
+    return 1
 
 # Whitelist
 def whitelist_add(args: argparseNamespace) -> int:
@@ -97,7 +131,7 @@ def whitelist_list(args: argparseNamespace) -> int:
 
     player_count: int = len(player_list)
     if player_count == 0:
-        log.info("There are no whitelisted player.")
+        log.info("There are no whitelisted players.")
         return 0
     else:
         log.info(f"There {pluralize('is', player_count)} whitelisted {pluralize('player', player_count)}:")

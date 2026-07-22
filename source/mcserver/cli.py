@@ -15,6 +15,7 @@ def main() -> int:
     from .commands import whitelist_add
     from .commands import whitelist_list
     from .commands import whitelist_remove
+    from .shared import loader_list
 
     def print_help(args: argparse.Namespace) -> int:
         parser: argparse.ArgumentParser = args.parser
@@ -24,7 +25,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         prog="mcserver",
         description="A CLI tool for managing Minecraft: Java Edition servers.",
-        epilog="Not created for Windows",
+        epilog="Only created for Linux.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         prefix_chars="-",
         add_help=True,
@@ -45,8 +46,8 @@ def main() -> int:
     add_command = commands.add_parser(
         "add",
         help="Add Modrinth projects",
-        description="Add Modrinth projects")
-    
+        description="Add Modrinth projects and their required dependencies.")
+
     add_command.set_defaults(func=add_projects)
     add_command.add_argument(
         "projects",
@@ -58,27 +59,59 @@ def main() -> int:
     import_command = commands.add_parser(
         "import",
         help="Import a Modrinth modpack",
-        description="Import a Modrinth modpack")
+        description="Import a Modrinth modpack from a file.")
 
     import_command.set_defaults(func=import_setup)
     import_command.add_argument(
-        "file",
+        "modpack",
         type=str,
-        help="Modrinth modpack file")
+        help="The Modrinth modpack file")
 
     # 'init' command
     init_command = commands.add_parser(
         "init",
         help="Initialize server configurations",
-        description="Initialize server configurations")
+        description="Initialize the server configurations.")
 
     init_command.set_defaults(func=init_server)
+    init_command.add_argument("--mc-version",
+        default="latest-release",
+        type=str,
+        help="Minecraft version of the server",
+        metavar="Version")
+
+    init_command.add_argument("--loader",
+        default="vanilla",
+        type=str,
+        choices=loader_list,
+        help="Loader for the server",
+        metavar="Loader")
+
+    init_command.add_argument("--loader-version",
+        default="latest",
+        type=str,
+        help="Version of the loader",
+        metavar="Version")
+
+    init_command.add_argument(
+        "--min-ram",
+        default=512,
+        type=int,
+        help="Minimum RAM for the server (in MebiBytes)",
+        metavar="Size")
+
+    init_command.add_argument(
+        "--max-ram",
+        default=2048,
+        type=int,
+        help="Maximum RAM for the server (in MebiBytes)",
+        metavar="Size")
 
     # 'list' command
     list_command = commands.add_parser(
         "list",
-        help="List added projects",
-        description="List added projects")
+        help="List all added projects",
+        description="List all added projects.")
 
     list_command.set_defaults(func=list_projects)
 
@@ -86,7 +119,7 @@ def main() -> int:
     op_command = commands.add_parser(
         "op",
         help="Manage operator players",
-        description="Manage operator players")
+        description="Manage the operator status.")
 
     op_command.set_defaults(func=print_help, parser=op_command)
     op_subcommands = op_command.add_subparsers(title="Subcommands")
@@ -95,7 +128,7 @@ def main() -> int:
     op_grant_command = op_subcommands.add_parser(
         "grant",
         help="Grant operator to players",
-        description="Grant operator to players")
+        description="Grant operator status to players.")
 
     op_grant_command.set_defaults(func=op_grant)
     op_grant_command.add_argument(
@@ -108,7 +141,7 @@ def main() -> int:
     op_list_command = op_subcommands.add_parser(
         "list",
         help="List operator players",
-        description="List operator players")
+        description="List all operator players.")
 
     op_list_command.set_defaults(func=op_list)
 
@@ -116,7 +149,7 @@ def main() -> int:
     op_revoke_command = op_subcommands.add_parser(
         "revoke",
         help="Revoke operator from players",
-        description="Revoke operator from players")
+        description="Revoke operator status from players.")
 
     op_revoke_command.set_defaults(func=op_revoke)
     op_revoke_command.add_argument(
@@ -129,7 +162,7 @@ def main() -> int:
     search_command = commands.add_parser(
         "search",
         help="Search Modrinth projects",
-        description="Search Modrinth projects")
+        description="Search projects from Modrinth.")
 
     search_command.set_defaults(func=search_projects)
     search_command.add_argument(
@@ -141,8 +174,8 @@ def main() -> int:
     # 'show' command
     show_command = commands.add_parser(
         "show",
-        help="Show Modrinth project informations",
-        description="Show Modrinth project informations")
+        help="Show Modrinth project information",
+        description="Show information about Modrinth projects.")
 
     show_command.set_defaults(func=show_projects)
     show_command.add_argument(
@@ -155,7 +188,7 @@ def main() -> int:
     start_command = commands.add_parser(
         "start",
         help="Start the server",
-        description="Start the server")
+        description="Install and start the server.")
 
     start_command.set_defaults(func=start_server)
 
@@ -163,7 +196,7 @@ def main() -> int:
     whitelist_command = commands.add_parser(
         "whitelist",
         help="Manage whitelisted players",
-        description="Manage whitelisted players")
+        description="Manage the whitelisted players.")
 
     whitelist_command.set_defaults(func=print_help, parser=whitelist_command)
     whitelist_subcommands = whitelist_command.add_subparsers(title="Subcommands")
@@ -172,7 +205,7 @@ def main() -> int:
     whitelist_add_command = whitelist_subcommands.add_parser(
         "add",
         help="Add players to whitelist",
-        description="Add players to whitelist")
+        description="Add players to the whitelist.")
 
     whitelist_add_command.set_defaults(func=whitelist_add)
     whitelist_add_command.add_argument(
@@ -185,7 +218,7 @@ def main() -> int:
     whitelist_list_command = whitelist_subcommands.add_parser(
         "list",
         help="List whitelisted players",
-        description="List whitelisted players")
+        description="List all whitelisted playeers.")
 
     whitelist_list_command.set_defaults(func=whitelist_list)
 
@@ -193,7 +226,7 @@ def main() -> int:
     whitelist_remove_command = whitelist_subcommands.add_parser(
         "remove",
         help="Remove players from whitelist",
-        description="Remove players from whitelist")
+        description="Remove players from the whitelist.")
 
     whitelist_remove_command.set_defaults(func=whitelist_remove)
     whitelist_remove_command.add_argument(
