@@ -8,7 +8,7 @@ from .shared import mcserver_dir
 from .shared import merge_dict
 
 #Paths
-configs_dir: Path = mcserver_dir / "configs"
+configs_dir = mcserver_dir / "configs"
 
 #Functions
 def generate_config(config_name: str, config_data: dict[str, Any]) -> None:
@@ -35,7 +35,7 @@ def update_config(config_name: str, new_data: dict[str, Any]) -> None:
     with open(config_path, mode="r+") as file:
         config_data = json.load(file)
         merge_dict(config_data, new_data)
-        jso.dump(
+        json.dump(
             config_data,
             file,
             indent=2)

@@ -14,12 +14,12 @@ class Hashes(TypedDict):
     sha512: str
 
 class LoaderVersion(TypedDict):
-    separator: str        #this is the separator for the loader version
+    separator: str      #this is the separator for the loader version
     build_id: int
     maven_id: str
-    loader_version: str
+    loader_version: str 
     file_size: int
-    hashes: VersionHashes #what's this?
+    hashes: Hashes      #what hash is this for? I don't know, please future me figure it out :>
 
 # Functions
 def get_loader_versions() -> list[LoaderVersion]:
@@ -28,10 +28,12 @@ def get_loader_versions() -> list[LoaderVersion]:
 
     loader_versions: list[LoaderVersion] = []
     for version in response_json:
-        hashes: Hashes = {}
-        for hash_algorithm, hash_value in version["hashes"].items():
-            if hash_algorithm in ["sha1", "sha256", "sha512"]:
-                hashes[hash_algorithm] = hash_value
+        version_hash = version["hashes"]
+        hashes: Hashes = {
+            "sha1": version_hash["sha1"],
+            "sha256": version_hash["sha256"],
+            "sha512": version_hash["sha512"]
+        }
 
         loader_version: LoaderVersion = {
             "separator": version["separator"],

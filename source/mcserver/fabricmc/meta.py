@@ -4,30 +4,32 @@ import json
 from typing import TypedDict
 
 # MCServer
-from mcserver import networking
-from mcserver.constants import fabricmc_meta_url
+from .. import networking
+from ..constants import fabricmc_meta_url
 
 #TypedDict
 class LoaderVersion(TypedDict):
     separator: str
-    build_number: int
-    maven: str
+    build_id: int
+    maven_id: str
     loader_version: str
     is_stable: bool
 
 #Functions
 def get_loader_versions() -> list[LoaderVersion]:
     response = networking.request(f"{fabricmc_meta_url}/v2/versions/loader")
-    response_data = json.loads(response["text"])
+    response_json = json.loads(response["text"])
 
-    loader_versions = []
-    for data in response_data:
-        loader_versions.append({
-            "separator": data["separator"],
-            "build_number": data["build"],
-            "maven": data["maven"],
-            "loader_version": data["version"],
-            "is_stable": data["stable"]
-        })
+    loader_versions: list[LoaderVersion] = []
+    for version in response_json:
+        loader_version: LoaderVersion = {
+            "separator": version["separator"],
+            "build_id": version["build"],
+            "maven_id": version["maven"],
+            "loader_version": version["version"],
+            "is_stable": version["stable"]
+        }
+
+        loader_versions.append(loader_version)
 
     return loader_versions

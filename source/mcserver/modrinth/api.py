@@ -120,7 +120,7 @@ def get_project_versions(project_id: str, loader_names: list[str] | str | None =
     # NOTE: 'featured' is trinary
     if featured is not None: query_parameter["featured"] = json.dumps(featured)
 
-    response = networking.request(f"{modrinth_base_api}/v2/project/{project_id}/version", query=query_parameter)
+    response = networking.request(f"{modrinth_api_url}/v2/project/{project_id}/version", query=query_parameter)
     response_json = json.loads(response["text"])
 
     project_versions = []
@@ -188,7 +188,7 @@ def get_versions_from_hashes(file_hashes: list[str] | str, hash_algorithm: Liter
         "algorithm": hash_algorithm
     }).encode("utf-8")
 
-    response = networking.request(f"{modrinth_base_api}/v2/version_files", data=request_body, headers={
+    response = networking.request(f"{modrinth_api_url}/v2/version_files", data=request_body, headers={
         "Content-Type": "application/json"
     }, method="POST")
 
@@ -258,7 +258,7 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
         "ids": json.dumps(project_ids)
     }
 
-    response = networking.request(f"{modrinth_base_api}/v2/projects", query=query_parameters)
+    response = networking.request(f"{modrinth_api_url}/v2/projects", query=query_parameters)
     response_json = json.loads(response["text"])
 
     project_informations: list[ProjectInformation] = []
