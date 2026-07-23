@@ -251,7 +251,7 @@ def get_versions_from_hashes(file_hashes: list[str] | str, hash_algorithm: Liter
 
     return hash_to_version_map
 
-def get_project_informations(project_ids: list[str] | str) -> list[ProjectInformation]:
+def get_project_information(project_ids: list[str] | str) -> list[ProjectInformation]:
     if isinstance(project_ids, str): project_ids = [project_ids]
 
     query_parameters: dict[str, str] = {

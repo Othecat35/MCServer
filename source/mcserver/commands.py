@@ -67,7 +67,13 @@ def search_projects(args: argparseNamespace) -> int:
 
 def show_projects(args: argparseNamespace) -> int:
     projects: list[str] = args.projects
-    print(projects)
+
+    from .modrinth import api as modrinth_api
+
+    project_information = modrinth_api.get_project_information(projects)
+    for project in project_information:
+        print(project)
+
     return 0
 
 def start_server(args: argparseNamespace) -> int:
