@@ -6,8 +6,6 @@ from argparse import Namespace as argparseNamespace
 from pathlib import Path
 from uuid import UUID
 
-from source.mcserver.state import is_active
-
 # MCServer
 from .shared import pluralize
 
@@ -73,6 +71,13 @@ def show_projects(args: argparseNamespace) -> int:
     return 0
 
 def start_server(args: argparseNamespace) -> int:
+    from . import state
+    
+    if state.is_active():
+        current_state = state.get_state()
+        log.error(f"There's another active MCServer process ({current_state["action"]}) running with process ID: {current_state["process_id"]}")
+        return 1
+
     return 0
 
 def stop_server(args: argparseNamespace) -> int:

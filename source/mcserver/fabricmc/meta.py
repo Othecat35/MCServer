@@ -5,7 +5,7 @@ from typing import TypedDict
 
 # MCServer
 from mcserver import networking
-from mcserver.constants import fabricmc_base_api
+from mcserver.constants import fabricmc_meta_url
 
 #TypedDict
 class LoaderVersion(TypedDict):
@@ -17,7 +17,7 @@ class LoaderVersion(TypedDict):
 
 #Functions
 def get_loader_versions() -> list[LoaderVersion]:
-    response = networking.request(f"{fabricmc_base_api}/v2/versions/loader")
+    response = networking.request(f"{fabricmc_meta_url}/v2/versions/loader")
     response_data = json.loads(response["text"])
 
     loader_versions = []

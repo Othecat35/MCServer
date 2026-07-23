@@ -5,7 +5,7 @@ from typing import Literal, NotRequired, TypedDict
 
 # MCServer
 from .. import networking
-from ..constants import modrinth_base_api
+from ..constants import modrinth_api_url
 
 #TypedDict
 # Project Version
