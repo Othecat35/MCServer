@@ -1,5 +1,6 @@
 def main() -> int:
     import argparse
+    import copy
 
     from . import __version__
     from .commands import add_projects
@@ -15,6 +16,8 @@ def main() -> int:
     from .commands import whitelist_add
     from .commands import whitelist_list
     from .commands import whitelist_remove
+
+    from .shared import default_configs
     from .shared import loader_list
 
     def print_help(args: argparse.Namespace) -> int:
@@ -45,8 +48,8 @@ def main() -> int:
     # 'add' command
     add_command = commands.add_parser(
         "add",
-        help="Add Modrinth projects",
-        description="Add Modrinth projects and their required dependencies.")
+        help="Add mods/projects",
+        description="Add mods/plugins and their dependencies.")
 
     add_command.set_defaults(func=add_projects)
     add_command.add_argument(
