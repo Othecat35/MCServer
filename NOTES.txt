@@ -217,7 +217,7 @@ MCServer™ Naming Convention: (the Trademark is just a joke)
     - follower_count
 - file_size
   The size of the file in byte
-- file_hash
+- file_hashes
   A hash or multiple hashes of the file
 - *_url:
   Its an URL.
