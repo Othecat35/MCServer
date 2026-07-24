@@ -52,7 +52,7 @@ default_configs = {
     },
 
     "server": {
-        "version": "", # Auto-fetched the latest version when init without --mc-version
+        "game_version": "", # Auto-fetched the latest version when init without --mc-version
         "loader": {
             "name": "vanilla",
             "version": ""

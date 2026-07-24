@@ -81,14 +81,16 @@ def main() -> int:
         default="latest-release",
         type=str,
         help="Minecraft version of the server",
-        metavar="Version")
+        metavar="Version",
+        dest="game_version")
 
     init_command.add_argument("--loader",
         default="vanilla",
         type=str,
         choices=loader_list,
         help="Loader for the server",
-        metavar="Loader")
+        metavar="Loader",
+        dest="loader_name")
 
     init_command.add_argument("--loader-version",
         default="latest",

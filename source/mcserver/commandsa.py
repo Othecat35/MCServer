@@ -408,13 +408,11 @@ def initialize_server(args):
     # Special latest game_version
     match game_version:
         case "latest" | "latest-release":
-            latest_release_version = mojang_manifest.get_latest_release_version()
-            log.info(f"Latest Minecraft release version is: {latest_release_version}")
-            game_version = latest_release_version
+            game_version = mojang_manifest.get_latest_release_version()
+            log.info(f"Latest Minecraft release version is: {game_version}")
         case "latest-snapshot":
-            latest_snapshot_version = mojang_manifest.get_latest_snapshot_version()
-            log.info(f"Latest Minecraft snapshot version is: {latest_snapshot_version}")
-            game_version = latest_snapshot_version
+            game_version = mojang_manifest.get_latest_snapshot_version()
+            log.info(f"Latest Minecraft snapshot version is: {game_version}")
 
     # Special latest loader_version
     if loader_version == "latest":
