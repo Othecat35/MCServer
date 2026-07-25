@@ -33,19 +33,13 @@ def init_server(args: argparseNamespace) -> int:
 
     from . import __version__
     from . import config
+    from . import shared
     from . import state
-
-    from .shared import default_configs
-    from .shared import merge_dict
-    from .shared import set_loader_context
-
-    from .shared import loader_dir
-    from .shared import mcserver_dir
-    from .shared import tempfiles_dir
 
     from .metadata import metadata_file
     from .metadata import set_metadata
 
+    # Special loader version
     if loader_name == "vanilla":
         loader_version = None
 
@@ -97,20 +91,19 @@ def init_server(args: argparseNamespace) -> int:
 
     # Is first initializing
     is_first_initialize = not metadata_file.exists()
-    set_loader_context(loader_name)
+    shared.set_loader_context(loader_name)
 
-    mcserver_dir.mkdir(exist_ok=True)
+    shared.mcserver_dir.mkdir(exist_ok=True)
     state.set_state("initializing_server")
 
     config.configs_dir.mkdir(exist_ok=True)
-    tempfiles_dir.mkdir(exist_ok=True)
-
-    if loader_dir is not None:
-        loader_dir.mkdir(exist_ok=True)
+    shared.tempfiles_dir.mkdir(exist_ok=True)
+    if shared.loader_context["project_directory"] is not None:
+        shared.loader_context["project_directory"].mkdir(exist_ok=True)
 
     # Write configuration to file
-    for config_name in default_configs.keys():
-        default_config = copy.deepcopy(default_configs[config_name])
+    for config_name in shared.default_configs.keys():
+        default_config = copy.deepcopy(shared.default_configs[config_name])
 
         config_override = {}
         match config_name:
@@ -131,7 +124,7 @@ def init_server(args: argparseNamespace) -> int:
                     }
                 }
 
-        config_data = merge_dict(default_config, config_override)
+        config_data = shared.merge_dict(default_config, config_override)
         try:
             config.generate_config(config_name, config_data)
         except FileExistsError:
@@ -139,9 +132,10 @@ def init_server(args: argparseNamespace) -> int:
 
     if is_first_initialize:
         set_metadata(__version__)
-        log.info("Initialized server")
+        log.info("Initialized server configurations.")
     else:
-        log.info("Reinitialized server.")
+        log.info("Reinitialized server configurations.")
+
     return 0
 
 def list_projects(args: argparseNamespace) -> int:

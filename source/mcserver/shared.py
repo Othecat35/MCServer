@@ -11,6 +11,11 @@ mods_loader = ["fabric", "quilt"]
 plugins_loader = ["paper", "purpur"]
 loader_list = ["vanilla"] + mods_loader + plugins_loader
 
+loader_context = {
+    "project_directory": None,
+    "project_label": "project"
+}
+
 special_plural = {
     "is": "are",
     "this": "these"
@@ -60,9 +65,6 @@ default_configs = {
     }
 }
 
-project_label = "project"
-loader_dir = None
-
 #Paths
 current_dir: Path = Path.cwd()
 mcserver_dir: Path = Path(".mcserver")
@@ -70,7 +72,6 @@ tempfiles_dir: Path = mcserver_dir / "tempfiles"
 
 mods_dir: Path = Path("mods")
 plugins_dir: Path = Path("plugins")
-loader_dir: Path | None = None
 
 #Functions
 def pluralize(singular: str, count: int = 0, plural: str = ""):
@@ -154,16 +155,19 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
         case _:
             return False
 
-def set_loader_context(loader_name: str):
-    global project_label
-    global loader_dir
+def set_loader_context(loader_name: str) -> None:
+    global loader_context
 
     if loader_name in mods_loader:
-        project_label = "mod"
-        loader_dir = mods_dir
+        loader_context = {
+            "project_directory": mods_dir,
+            "project_label": "mod"
+        }
     elif loader_name in plugins_loader:
-        project_label = "plugin"
-        loader_dir = plugins_dir
+        loader_context = {
+            "project_directory": plugins_dir,
+            "project_label": "plugin"
+        }
 
 # ANSI
 def ansi(name: str):
