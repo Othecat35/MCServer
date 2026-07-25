@@ -47,7 +47,7 @@ default_configs = {
             "max": 2_048
         },
 
-        "jarfile": "Launcher.jar",
+        "jarfile": "Server.jar",
         "hide_gui": True
     },
 
@@ -60,7 +60,7 @@ default_configs = {
         "game_version": "", # Auto-fetched the latest version when init without --mc-version
         "loader": {
             "name": "vanilla",
-            "version": ""
+            "version": None
         }
     }
 }
