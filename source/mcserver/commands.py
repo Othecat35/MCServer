@@ -1,13 +1,5 @@
 #Modules
-# Standard
-import logging as log
-
 from argparse import Namespace as argparseNamespace
-from pathlib import Path
-from uuid import UUID
-
-# MCServer
-from .shared import pluralize
 
 #Fucntions
 def add_projects(args: argparseNamespace) -> int:
@@ -30,6 +22,7 @@ def init_server(args: argparseNamespace) -> int:
 
     # Imports
     import copy
+    import logging as log
 
     from . import __version__
     from . import config
@@ -148,7 +141,9 @@ def op_grant(args: argparseNamespace) -> int:
     return 0
 
 def op_list(args: argparseNamespace) -> int:
+    import logging as log
     from .server_files import ops
+    from .shared import pluralize
 
     if not ops.ops_file.exists():
         log.error(f"File '{ops.ops_file}' not found.")
@@ -194,6 +189,7 @@ def show_projects(args: argparseNamespace) -> int:
     return 0
 
 def start_server(args: argparseNamespace) -> int:
+    import logging as log
     from . import state
     
     current_state = state.get_state()
@@ -208,6 +204,7 @@ def stop_server(args: argparseNamespace) -> int:
 
     import os
     import time
+    import logging as log
 
     from signal import SIGKILL, SIGTERM
 
@@ -242,7 +239,9 @@ def whitelist_add(args: argparseNamespace) -> int:
     return 0
 
 def whitelist_list(args: argparseNamespace) -> int:
+    import logging as log
     from .server_files import whitelist
+    from .shared import pluralize
 
     if not whitelist.whitelist_file.exists():
         log.error(f"File '{whitelist.whitelist_file}' not found.")
