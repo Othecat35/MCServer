@@ -208,7 +208,6 @@ def main() -> int:
     stop_command.add_argument(
         "--force-stop",
         action="store_true",
-        type=bool,
         help="Force stop the server")
 
      # 'whitelist' command

@@ -3,8 +3,6 @@
 import sys
 from pathlib import Path
 
-from source.mcserver import metadata
-
 # MCServer
 from .constants import iec_prefixes, si_prefixes
 

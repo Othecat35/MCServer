@@ -139,8 +139,9 @@ def init_server(args: argparseNamespace) -> int:
 
     if is_first_initialize:
         set_metadata(__version__)
-
-    print(game_version, loader_name, loader_version, min_ram, max_ram)
+        log.info("Initialized server")
+    else:
+        log.info("Reinitialized server.")
     return 0
 
 def list_projects(args: argparseNamespace) -> int:
