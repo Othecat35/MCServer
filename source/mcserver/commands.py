@@ -31,10 +31,20 @@ def init_server(args: argparseNamespace) -> int:
     # Imports
     import copy
 
+    from . import __version__
     from . import config
+    from . import state
+
     from .shared import default_configs
-    from .shared import mcserver_dir
     from .shared import merge_dict
+    from .shared import set_loader_context
+
+    from .shared import loader_dir
+    from .shared import mcserver_dir
+    from .shared import tempfiles_dir
+
+    from .metadata import metadata_file
+    from .metadata import set_metadata
 
     if loader_name == "vanilla":
         loader_version = None
@@ -85,10 +95,20 @@ def init_server(args: argparseNamespace) -> int:
                 log.error(f"Unknown loader: {loader_name}")
                 return 1
 
-    # Creating the directories
-    mcserver_dir.mkdir(exist_ok=True)
-    config.configs_dir.mkdir(exist_ok=True)
+    # Is first initializing
+    is_first_initialize = not metadata_file.exists()
+    set_loader_context(loader_name)
 
+    mcserver_dir.mkdir(exist_ok=True)
+    state.set_state("initializing_server")
+
+    config.configs_dir.mkdir(exist_ok=True)
+    tempfiles_dir.mkdir(exist_ok=True)
+
+    if loader_dir is not None:
+        loader_dir.mkdir(exist_ok=True)
+
+    # Write configuration to file
     for config_name in default_configs.keys():
         default_config = copy.deepcopy(default_configs[config_name])
 
@@ -112,7 +132,13 @@ def init_server(args: argparseNamespace) -> int:
                 }
 
         config_data = merge_dict(default_config, config_override)
-        config.generate_config(config_name, config_data)
+        try:
+            config.generate_config(config_name, config_data)
+        except FileExistsError:
+            log.debug(f"Configuration file {config_name} already exists")
+
+    if is_first_initialize:
+        set_metadata(__version__)
 
     print(game_version, loader_name, loader_version, min_ram, max_ram)
     return 0
@@ -175,8 +201,8 @@ def show_projects(args: argparseNamespace) -> int:
 def start_server(args: argparseNamespace) -> int:
     from . import state
     
-    if state.is_active():
-        current_state = state.get_state()
+    current_state = state.get_state()
+    if current_state["is_active"]:
         log.error(f"There's another active MCServer process ({current_state["action"]}) running with process ID: {current_state["process_id"]}")
         return 1
 
@@ -192,29 +218,26 @@ def stop_server(args: argparseNamespace) -> int:
 
     from . import state
 
-    if not state.is_active():
+    current_state = state.get_state()
+    if not current_state["is_active"]:
         log.error("Server is not running.")
         return 1
-
-    current_state = state.get_state()
 
     log.info("Stopping server...")
     os.kill(current_state["process_id"], SIGTERM)
 
     time.sleep(15)
 
-    if state.is_active():
+    current_state = state.get_state()
+    if current_state["is_active"]:
         return 0
 
     if not force_stop:
         log.warning("Server appears to still be running, you may stop the server manually.")
         return 1
 
-    current_state = state.get_state()
-
     log.warning("Server process still running, force stopping the server...")
     os.kill(current_state["process_id"], SIGKILL)
-
     return 1
 
 # Whitelist

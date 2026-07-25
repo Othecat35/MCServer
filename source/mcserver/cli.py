@@ -13,6 +13,7 @@ def main() -> int:
     from .commands import search_projects
     from .commands import show_projects
     from .commands import start_server
+    from .commands import stop_server
     from .commands import whitelist_add
     from .commands import whitelist_list
     from .commands import whitelist_remove
@@ -196,6 +197,19 @@ def main() -> int:
         description="Install and start the server.")
 
     start_command.set_defaults(func=start_server)
+
+    # "stop" command
+    stop_command = commands.add_parser(
+        "stop",
+        help="Stop the server",
+        description="Stop the running server")
+
+    stop_command.set_defaults(func=stop_server)
+    stop_command.add_argument(
+        "--force-stop",
+        action="store_true",
+        type=bool,
+        help="Force stop the server")
 
      # 'whitelist' command
     whitelist_command = commands.add_parser(

@@ -3,6 +3,8 @@
 import sys
 from pathlib import Path
 
+from source.mcserver import metadata
+
 # MCServer
 from .constants import iec_prefixes, si_prefixes
 
@@ -60,9 +62,17 @@ default_configs = {
     }
 }
 
+project_label = "project"
+loader_dir = None
+
 #Paths
 current_dir: Path = Path.cwd()
 mcserver_dir: Path = Path(".mcserver")
+tempfiles_dir: Path = mcserver_dir / "tempfiles"
+
+mods_dir: Path = Path("mods")
+plugins_dir: Path = Path("plugins")
+loader_dir: Path | None = None
 
 #Functions
 def pluralize(singular: str, count: int = 0, plural: str = ""):
@@ -145,6 +155,17 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
             return default_option
         case _:
             return False
+
+def set_loader_context(loader_name: str):
+    global project_label
+    global loader_dir
+
+    if loader_name in mods_loader:
+        project_label = "mod"
+        loader_dir = mods_dir
+    elif loader_name in plugins_loader:
+        project_label = "plugin"
+        loader_dir = plugins_dir
 
 # ANSI
 def ansi(name: str):
