@@ -214,7 +214,7 @@ def main() -> int:
     whitelist_command = commands.add_parser(
         "whitelist",
         help="Manage whitelisted players",
-        description="Manage the whitelisted players.")
+        description="Manage the player whitelist.")
 
     whitelist_command.set_defaults(func=print_help, parser=whitelist_command)
     whitelist_subcommands = whitelist_command.add_subparsers(title="Subcommands")
@@ -236,7 +236,7 @@ def main() -> int:
     whitelist_list_command = whitelist_subcommands.add_parser(
         "list",
         help="List whitelisted players",
-        description="List all whitelisted playeers.")
+        description="List all whitelisted players.")
 
     whitelist_list_command.set_defaults(func=whitelist_list)
 
