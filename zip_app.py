@@ -1,7 +1,7 @@
 import zipapp
 from pathlib import Path
 
-source_dir = Path("source/")
+source_dir = Path("src/")
 print(f"- Source      : '{source_dir}'")
 
 target_dir = Path("dist")
