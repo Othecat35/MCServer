@@ -98,7 +98,7 @@ def init_server(args: argparseNamespace) -> int:
     for config_name in shared.default_configs.keys():
         default_config = copy.deepcopy(shared.default_configs[config_name])
 
-        config_override = {}
+        config_override: dict = {}
         match config_name:
             case "launcher":
                 config_override = {
