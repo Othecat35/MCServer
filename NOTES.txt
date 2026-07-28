@@ -246,3 +246,4 @@ I definitely broke my promise. (oops)
 
 - Command like `mcserver config <set/get> <option>` and option probably just those options in init,
   so "mc_version" can mean <server.json>.game_version.
+  - init command could take some sort of "target dir"
