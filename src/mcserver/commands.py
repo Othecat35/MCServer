@@ -244,7 +244,7 @@ def start_server(args: argparseNamespace) -> int:
                 from .papermc import api as papermc_api
                 log.info(f"Downloading Paper build {loader_version} for Minecraft version {game_version}...")
                 download_prop = papermc_api.get_project_build("paper", game_version, loader_version)["download_props"]["server:default"]
-                nrtworking.download(download_prop["download_url"], )
+                networking.download(download_prop["download_url"], jarfile)
             case "purpur":
                 from .purpurmc import api as purpurmc_api
                 log.info(f"Downloading Purpur build {loader_version} for Minecraft version {game_version}...")
@@ -265,7 +265,7 @@ def start_server(args: argparseNamespace) -> int:
                     log.error(f"Minecraft version not found: {game_version}")
                     return 1
 
-                package_data = networking.request(package_url)
+                package_data = networking.request(package_url)["text"]
                 package_json = json.loads(package_data)
                 version_download = package_json["body"]["downloads"]["server"]
                 networking.download(version_download["url"], jarfile, hashes={
