@@ -197,13 +197,16 @@ def start_server(args: argparseNamespace) -> int:
     from . import networking
     from . import state
 
+    from .fabricmc import meta as fabricmc_meta
+    from .mojang import manifest as mojang_manifest
+    from .papermc import api ad papermc_api
+    from .purpurmc import api as purpurmc_api
+
     # Check current state
     current_state = state.get_state()
     if current_state["is_active"]:
         log.error(f"There's another active MCServer process ({current_state["action"]}) running with process ID: {current_state["process_id"]}")
         return 1
-
-    state.set_state("downloading_server")
 
     # Load configs
     server_config = config.load_config("server")
@@ -218,12 +221,15 @@ def start_server(args: argparseNamespace) -> int:
     jarfile = Path(launcher_config["jarfile"])
     memory_config = launcher_config["ram"]
 
-    if jarfile.exists():
+    # Download jarfile
+    if not jarfile.exists():
+        state.set_state("downloading_server")
+
         match loader_name:
             # Mod loaders
             case "fabric":
                 log.info(f"Downloading Fabric loader {loader_version} for Minecraft version {game_version}...")
-                networking.download(f"https://meta.fabricmc.net/v2/versions/loader/{game_version}/{loader_version}/1.1.1/server/jar", jarfile)
+                networking.download(fabricmc_meta.server_download_url(game_version, loader_version, "1.0.1"), jarfile)
             
 #            case "quilt":
 #                log.info(f"Downloading Quilt loader {loader_version} for Minecraft version {game_version}...")
@@ -234,13 +240,15 @@ def start_server(args: argparseNamespace) -> int:
 
             # Plugin loaders
             case "paper":
-                pass
+                log.info()
             case "purpur":
-                pass
+                log.info(f"Downloading Purpur {loader_version} for Minecraft version {game_version}...")
+                networking.download(purpurmc_api.download_url("purpur", game_version, loader_version), jarfile)
 
             # Vanilla
             case "vanilla":
-                pass
+                version_manifest
+                log.info(f"Downloading vanilla Minecraft version {game_version}...")
 
     # Check stuff
     if memory_config["min"] > memory_config["max"]:
@@ -252,15 +260,16 @@ def start_server(args: argparseNamespace) -> int:
         f"-Xmx{memory_config['max']}M",
         f"-Xms{memory_config['min']}M",
         "-jar",
-        jarfile
+        str(jarfile)
     ]
 
     if launcher_config["is_nogui"]:
-        java_command_argv.append("--nogui")
+        java_command_argv.append("nogui")
 
-    state.set_state("running_server")
-
+    # Execute java
     log.debug(f"Executing command: {' '.join(java_command_argv)}")
+
+    state.set_state("server_running")
     os.execvp(java_command_argv[0], java_command_argv)
 
 def stop_server(args: argparseNamespace) -> int:
@@ -269,7 +278,6 @@ def stop_server(args: argparseNamespace) -> int:
     import os
     import time
     import logging as log
-
     from signal import SIGKILL, SIGTERM
 
     from . import state
