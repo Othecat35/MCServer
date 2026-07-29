@@ -189,24 +189,24 @@ def show_projects(args: argparseNamespace) -> int:
     return 0
 
 def start_server(args: argparseNamespace) -> int:
+    # Check MCServer status
+    from . import state
+    current_state = state.get_state()
+    if current_state["is_active"]:
+        log.error(f"There's another active MCServer process ({current_state["action"]}) running with process ID: {current_state["process_id"]}")
+        return 1
+
+    # Set state
+    state.set_state("running_server")
+
+    import json
     import os
+    import shutil
     import logging as log
     from pathlib import Path
 
     from . import config
     from . import networking
-    from . import state
-
-    from .fabricmc import meta as fabricmc_meta
-    from .mojang import manifest as mojang_manifest
-    from .papermc import api as papermc_api
-    from .purpurmc import api as purpurmc_api
-
-    # Check current state
-    current_state = state.get_state()
-    if current_state["is_active"]:
-        log.error(f"There's another active MCServer process ({current_state["action"]}) running with process ID: {current_state["process_id"]}")
-        return 1
 
     # Load configs
     server_config = config.load_config("server")
@@ -228,8 +228,9 @@ def start_server(args: argparseNamespace) -> int:
         match loader_name:
             # Mod loaders
             case "fabric":
+                from .fabricmc import meta as fabricmc_meta
                 log.info(f"Downloading Fabric loader {loader_version} for Minecraft version {game_version}...")
-                networking.download(fabricmc_meta.server_download_url(game_version, loader_version, "1.0.1"), jarfile)
+                networking.download(fabricmc_meta.download_url(game_version, loader_version, "1.0.1"), jarfile)
             
 #            case "quilt":
 #                log.info(f"Downloading Quilt loader {loader_version} for Minecraft version {game_version}...")
@@ -240,19 +241,47 @@ def start_server(args: argparseNamespace) -> int:
 
             # Plugin loaders
             case "paper":
-                log.info()
+                from .papermc import api as papermc_api
+                log.info(f"Downloading Paper build {loader_version} for Minecraft version {game_version}...")
+                download_prop = papermc_api.get_project_build("paper", game_version, loader_version)["download_props"]["server:default"]
+                nrtworking.download(download_prop["download_url"], )
             case "purpur":
-                log.info(f"Downloading Purpur {loader_version} for Minecraft version {game_version}...")
+                from .purpurmc import api as purpurmc_api
+                log.info(f"Downloading Purpur build {loader_version} for Minecraft version {game_version}...")
                 networking.download(purpurmc_api.download_url("purpur", game_version, loader_version), jarfile)
 
             # Vanilla
             case "vanilla":
-                version_manifest
+                from .mojang import manifest as mojang_manifest
                 log.info(f"Downloading vanilla Minecraft version {game_version}...")
+                version_manifest = mojang_manifest.get_version_manifest()["game_vwrsions"]
+                package_url = None
+                for version in version_manifest:
+                    if version["version_id"] == game_version:
+                        package_url = version["package_url"]
+                        break
+
+                if package_url is None:
+                    log.error(f"Minecraft version not found: {game_version}")
+                    return 1
+
+                package_data = networking.request(package_url)
+                package_json = json.loads(package_data)
+                version_download = package_json["body"]["downloads"]["server"]
+                networking.download(version_download["url"], jarfile, hashes={
+                    "sha1": version_download["sha1"]
+                })
+            case _:
+                log.error(f"Loader is not supported: {loader_name}")
 
     # Check stuff
+    if not shutil.which("java"):
+        log.error("Java is not installed in PATH")
+        return 1
+
     if memory_config["min"] > memory_config["max"]:
-        log.error("Maximum RAM")
+        log.error("Minimum RAM is bigger than maximum RAM")
+        return 1
 
     # Run the server
     java_command_argv = [
