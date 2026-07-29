@@ -1,8 +1,9 @@
 def main() -> None:
     import sys
 
-    from .mysterious import nothing_to_see_here_move_along
-    if ((sys.argv[1] if len(sys.argv) > 1 else "") == "cake"): nothing_to_see_here_move_along()
+    if ((sys.argv[1] if len(sys.argv) > 1 else "") == "cake"):
+        from .mysterious import nothing_to_see_here_move_along
+        nothing_to_see_here_move_along()
 
     MIN_PYTHON_VERSION: tuple[int, int] = (3, 14)
     if sys.version_info < MIN_PYTHON_VERSION:
