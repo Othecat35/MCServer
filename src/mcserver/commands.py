@@ -199,7 +199,7 @@ def start_server(args: argparseNamespace) -> int:
 
     from .fabricmc import meta as fabricmc_meta
     from .mojang import manifest as mojang_manifest
-    from .papermc import api ad papermc_api
+    from .papermc import api as papermc_api
     from .purpurmc import api as purpurmc_api
 
     # Check current state
