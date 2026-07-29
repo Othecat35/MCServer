@@ -254,7 +254,7 @@ def start_server(args: argparseNamespace) -> int:
             case "vanilla":
                 from .mojang import manifest as mojang_manifest
                 log.info(f"Downloading vanilla Minecraft version {game_version}...")
-                version_manifest = mojang_manifest.get_version_manifest()["game_vwrsions"]
+                version_manifest = mojang_manifest.get_version_manifest()["game_versions"]
                 package_url = None
                 for version in version_manifest:
                     if version["version_id"] == game_version:
@@ -267,7 +267,7 @@ def start_server(args: argparseNamespace) -> int:
 
                 package_data = networking.request(package_url)["text"]
                 package_json = json.loads(package_data)
-                version_download = package_json["body"]["downloads"]["server"]
+                version_download = package_json["downloads"]["server"]
                 networking.download(version_download["url"], jarfile, hashes={
                     "sha1": version_download["sha1"]
                 })
