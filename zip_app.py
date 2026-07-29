@@ -21,7 +21,7 @@ Target      : '{target_file}'
 # Filter function
 def filter_file(file: Path) -> bool:
     if file.name in ["__pycache__"]:
-        print(f"Ignoring path: '{source_dir}/{file}'")
+        print(f"Excluding Path : '{source_dir}/{file}'")
         return False
 
     return True
