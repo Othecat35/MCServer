@@ -189,15 +189,79 @@ def show_projects(args: argparseNamespace) -> int:
     return 0
 
 def start_server(args: argparseNamespace) -> int:
+    import os
     import logging as log
+    from pathlib import Path
+
+    from . import config
+    from . import networking
     from . import state
-    
+
+    # Check current state
     current_state = state.get_state()
     if current_state["is_active"]:
         log.error(f"There's another active MCServer process ({current_state["action"]}) running with process ID: {current_state["process_id"]}")
         return 1
 
-    return 0
+    state.set_state("downloading_server")
+
+    # Load configs
+    server_config = config.load_config("server")
+    launcher_config = config.load_config("launcher")
+
+    game_version = server_config["game_version"]
+    server_loader = server_config["loader"]
+
+    loader_name = server_loader["name"]
+    loader_version = server_loader["version"]
+
+    jarfile = Path(launcher_config["jarfile"])
+    memory_config = launcher_config["ram"]
+
+    if jarfile.exists():
+        match loader_name:
+            # Mod loaders
+            case "fabric":
+                log.info(f"Downloading Fabric loader {loader_version} for Minecraft version {game_version}...")
+                networking.download(f"https://meta.fabricmc.net/v2/versions/loader/{game_version}/{loader_version}/1.1.1/server/jar", jarfile)
+            
+#            case "quilt":
+#                log.info(f"Downloading Quilt loader {loader_version} for Minecraft version {game_version}...")
+#                networking.download(f"https://")
+
+#            case "legacy-fabric":
+#                pass
+
+            # Plugin loaders
+            case "paper":
+                pass
+            case "purpur":
+                pass
+
+            # Vanilla
+            case "vanilla":
+                pass
+
+    # Check stuff
+    if memory_config["min"] > memory_config["max"]:
+        log.error("Maximum RAM")
+
+    # Run the server
+    java_command_argv = [
+        "java",
+        f"-Xmx{memory_config['max']}M",
+        f"-Xms{memory_config['min']}M",
+        "-jar",
+        jarfile
+    ]
+
+    if launcher_config["is_nogui"]:
+        java_command_argv.append("--nogui")
+
+    state.set_state("running_server")
+
+    log.debug(f"Executing command: {' '.join(java_command_argv)}")
+    os.execvp(java_command_argv[0], java_command_argv)
 
 def stop_server(args: argparseNamespace) -> int:
     force_stop: bool = args.force_stop
