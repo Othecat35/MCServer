@@ -29,7 +29,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         prog="mcserver",
         description="A CLI tool for managing Minecraft: Java Edition servers.",
-        epilog="Only created for Linux.",
+        epilog="Created for Linux and Termux only.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         prefix_chars="-",
         add_help=True,
