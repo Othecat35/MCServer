@@ -97,21 +97,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 make it nicer (imposible)
-- what am I doing making this project? my school has nothing to do with it. Me being self-deprecating and having Impostor Syndrome while coding is apparently normal? how? #TODO: comment-out this line
-paper? later. I mean it is close to being worked on ;)
-progress bar: whats that
+#- what am I doing making this project? my school has nothing to do with it. Me being self-deprecating and having Impostor Syndrome while coding is apparently normal? how? #TODO: comment-out this line
+#paper? later. I mean it is close to being worked on ;)
+#progress bar: whats that
 warn client only mod because as the name suggest, it is designed for server! client already have too much attention ;/
-fabric installer, be dynamic (but sadly coding is not that magical that I can command the computer easily :insert_smile_with_tears_emoji:)
+#fabric installer, be dynamic (but sadly coding is not that magical that I can command the computer easily :insert_smile_with_tears_emoji:)
 add init options for search because I felt like it: future/present me here. I, in fact, don't actually felt like it.
 Lol the data-driven backup >:(
-pid lock I guess, what? .mcserver/.lock
+#pid lock I guess, what? .mcserver/.lock
 be a good API citizen and implement ratelimit check >:)
 auto download sometimes, when there's no optional or incompatible mods, or the size is "reasonable": what are you talking about?
 haha, the scope will grow even more when you implement that rdepends >:)
 oh hell nah, I already implemented that rdepends? how so quick? I have AI as helper, if you know rubberducking, that is exactly what I'm doing! not vibecoding I swear.
-Before that, fix my data migration logic first to make every single entry uses id as the key and don't leave any slug left! done, lol
+#Before that, fix my data migration logic first to make every single entry uses id as the key and don't leave any slug left! done, lol
 After that, also implement a conflict check pls, like if you request this mod and that mod, and they met as "incompatible", whatever. you are kinda responsible for that, not really but nice to have, and make yourself comoareable to Prism >:). by "you" I mean myself. there, pls update your mcserver
-And then? hahaha, the hole of the rabbithole for dependency resolution didn't end there, you have to index them. why? because I said so. nah jk, because we should know that we already have Fabric API installed so we don't redownload it again. wdym?
+#And then? hahaha, the hole of the rabbithole for dependency resolution didn't end there, you have to index them. why? because I said so. nah jk, because we should know that we already have Fabric API installed so we don't redownload it again. wdym?
 remove? list? update? clean? check? yep, btw clean means remove orphaned mods, and check? I guess that can be used to scan for any manual .jar added in mods/
 now make any mod that are incompatible ripples down to the source, only stopped by an optional mod -_-, wait, why I'm bother to fetch optional mods? just make it required only! idk I'm in the middle of refactoring rn
 You screwed up the add command lol, no I'm not >:c
@@ -149,7 +149,6 @@ Server Root
 - whitelist.json
 - <jarfile_name>.jar
 
-
 - A good error message for UX is one that not only tell you what went wrong, but also how to fix that error (or at least tell what caused the error) | Not like I'm interested right now...
 - Consider to cache optional projects' bulk fetch data in resolved_projects even though we don't neccesearily process it?
 - Delete cache if we don't install it (like dry run)
@@ -179,7 +178,7 @@ check_dependency_conflicts: no
 resolve_dependencies: ok... what are dependencies of mod b?
 (some dialogue later)
 resolve_dependencies: ok, there's no more dependency. here you go "return the list of dependencies"
-user: why are there 129 mods including dependencies 0_0
+user: why are there 29 mods including dependencies 0_0
 
 thx chatgpt but I can't prove it yet
 
@@ -221,18 +220,9 @@ MCServer™ Naming Convention: (the Trademark is just a joke)
   A hash or multiple hashes of the file
 - *_url:
   Its an URL.
-
   - The `get_`
 
 - Fix the "get_players_from_names" in minecraft_api.py. you mean, adding Content-Type: application/json? nvm I fixed it the same day anyway.
-
-- The player related commands:
-whitelist_players() = whitelist add/remove/list <player_names except list>
-ban_player() = ban <player_name> --reason=<str>
-unban_players = unban <player_names>
-op_player() = op <player_name> --level=<1-4> --bypass-player-limit=<bool>
-deop_players() = deop <player_names>
-
 
 pls Othecat35, stop using AI.
 - Othecat35 (2026/07/16)
@@ -246,5 +236,5 @@ I definitely broke my promise. (oops)
 
 - Command like `mcserver config <set/get> <option>` and option probably just those options in init,
   so "mc_version" can mean <server.json>.game_version.
-  - init command could take some sort of "target dir"
+- init command could take some sort of "target dir"
 - make src/mcserver/modrinth/projects.py into a dir, ans inside it we have metadata.py and relationship.py

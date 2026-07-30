@@ -1,16 +1,18 @@
 #Modules
 # Standard
 import hashlib, shutil
-
 import urllib.parse, urllib.request
 import logging as log
 
 from pathlib import Path
-from typing import    TypedDict
+from typing import TypedDict
 
 # MCServer
-from .constants import __version__
-from .shared import current_dir, format_number, mcserver_dir, print_status
+from . import __version__
+from .shared import current_dir
+from .shared import format_number
+from .shared import mcserver_dir
+from .shared import print_status
 
 #TypedDict
 class ResponseObject(TypedDict):
