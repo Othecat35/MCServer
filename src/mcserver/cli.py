@@ -1,6 +1,5 @@
 def main() -> int:
     import argparse
-    import copy
 
     from . import __version__
     from .commands import add_projects
@@ -18,7 +17,6 @@ def main() -> int:
     from .commands import whitelist_list
     from .commands import whitelist_remove
 
-    from .shared import default_configs
     from .shared import loader_list
 
     def print_help(args: argparse.Namespace) -> int:
