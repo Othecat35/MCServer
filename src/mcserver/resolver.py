@@ -1,6 +1,11 @@
 import logging as log
 from collections import deque
-from typing import Callable
+from typing import Callable, TypedDict
+
+class NodeData(TypedDict):
+    is_manual: bool
+    dependencies: dict[str, str]
+    dependents: dict[str, str]
 
 def resolve_dependencies(project_ids: list[str] | str, get_dependencies: Callable, check_conflict: Callable):
     if isinstance(project_ids, str):
@@ -8,16 +13,18 @@ def resolve_dependencies(project_ids: list[str] | str, get_dependencies: Callabl
 
     queued_nodes: deque[str] = deque()
     visited_nodes: set[str] = set()
-    dependency_graph: dict = {}
+    dependency_graph: dict[str, NodeData] = {}
 
     for project_id in project_ids:
         log.debug(f"Adding project ID '{project_id}' to queued nodes")
         queued_nodes.append(project_id)
-        dependency_graph[project_id] = {
+        node_data: NodeData = {
             "is_manual": True,
             "dependencies": {},
             "dependents": {}
         }
+
+        dependency_graph[project_id] = node_data
 
     while queued_nodes:
         project_id = queued_nodes.popleft()
