@@ -106,6 +106,39 @@ class ProjectInformation(TypedDict):
     loader_names: NotRequired[list[str]]
     project_gallery: NotRequired[list[GalleryImage]]
 
+#I'm a happy strict type hinter, especially in API wrappers
+class SearchHit(TypedDict):
+    project_slug: NotRequired[str]
+    project_title: NotRequired[str]
+    short_description: NotRequired[str]
+    categories: NotRequired[list[str]]
+    client_side: NotRequired[Literal["required", "optional", "unsupported", "unknown"]]
+    server_side: NotRequired[Literal["required", "optional", "unsupported", "unknown"]]
+    project_type: Literal["mod", "modpack", "resourcepack", "shader"]
+    download_count: int
+    icon_url: NotRequired[str | None]
+    icon_color: NotRequired[int | None]
+    thread_id: NotRequired[str]
+    monetization_status: NotRequired[Literal["monetized", "demonetized", "force-demonetized"]]
+    project_id: str
+    all_project_types: list[str]
+    author_username: str
+    display_categories: NotRequired[list[str]]
+    game_versions: list[str]
+    follower_count: int
+    created_time: str  # Time Format: ISO-8601
+    modified_time: str # Time Format: ISO-8601
+    latest_game_version: NotRequired[str]
+    license_id: str
+    gallery_images: NotRequired[list[str]]
+    featured_galeery: NotRequired[str | None]
+
+class SearchResult(TypedDict):
+    hits: list[SearchHit]
+    offset: int
+    limit: int
+    total_hits: int
+
 #Functions
 def get_project_versions(project_id: str, loader_names: list[str] | str | None = None, game_versions: list[str] | str | None = None, featured: bool | None = None, include_changelog: bool = True) -> list[ProjectVersion]:
     if isinstance(loader_names, str): loader_names = [loader_names]
@@ -430,3 +463,7 @@ def get_project_information(project_ids: list[str] | str) -> list[ProjectInforma
         project_informations.append(project_information)
 
     return project_informations
+
+def search_projects(query: str, facets: list[list[str]], index: Literal["relevance", "downloads", "follows", "newest", "updated"] = "relevance", offset: int = 0, limit: int = 10) -> SearchResult:
+    search_result: SearchResult = {}
+    return search_result
