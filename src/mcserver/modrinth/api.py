@@ -106,7 +106,6 @@ class ProjectInformation(TypedDict):
     loader_names: NotRequired[list[str]]
     project_gallery: NotRequired[list[GalleryImage]]
 
-#I'm a happy strict type hinter, especially in API wrappers
 class SearchHit(TypedDict):
     project_slug: NotRequired[str]
     project_title: NotRequired[str]
