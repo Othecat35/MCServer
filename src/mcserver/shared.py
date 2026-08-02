@@ -48,7 +48,8 @@ default_configs = {
         },
 
         "jarfile": "Server.jar",
-        "hide_gui": True
+        "hide_gui": True,
+        "force_stop": 5
     },
 
     "modrinth": {

@@ -330,8 +330,6 @@ def stop_server(args: argparseNamespace) -> int:
     log.info("Stopping server...")
     os.kill(current_state["process_id"], SIGTERM)
 
-    time.sleep(15)
-
     current_state = state.get_state()
     if current_state["is_active"]:
         return 0
@@ -339,6 +337,10 @@ def stop_server(args: argparseNamespace) -> int:
     if not force_stop:
         log.warning("Server appears to still be running, you may stop the server manually.")
         return 1
+
+    from . import config
+    launcher_config = config.load_config("loader")
+    time.sleep(launcher_config["force_stop"])
 
     log.warning("Server process still running, force stopping the server...")
     os.kill(current_state["process_id"], SIGKILL)
