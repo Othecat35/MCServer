@@ -339,7 +339,7 @@ def stop_server(args: argparseNamespace) -> int:
         return 1
 
     from . import config
-    launcher_config = config.load_config("loader")
+    launcher_config = config.load_config("launcher")
     time.sleep(launcher_config["force_stop"])
 
     log.warning("Server process still running, force stopping the server...")

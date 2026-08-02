@@ -48,7 +48,7 @@ default_configs = {
         },
 
         "jarfile": "Server.jar",
-        "hide_gui": True,
+        "is_nogui": True,
         "force_stop": 5
     },
 
