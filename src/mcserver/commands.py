@@ -1,16 +1,21 @@
 #Modules
-from argparse import Namespace as argparseNamespace
+import argparse
 
 #Fucntions
-def add_projects(args: argparseNamespace) -> int:
+def add_projects(args: argparse.Namespace) -> int:
     projects: list[str] = args.projects
     print(projects)
     return 0
 
-def import_setup(args: argparseNamespace) -> int:
+def print_help(args: argparse.Namespace) -> int:
+    parser: argparse.ArgumentParser = args.parser
+    parser.print_help()
     return 0
 
-def init_server(args: argparseNamespace) -> int:
+def import_setup(args: argparse.Namespace) -> int:
+    return 0
+
+def init_server(args: argparse.Namespace) -> int:
     # CLI Arguments
     game_version: str = args.game_version
 
@@ -131,16 +136,16 @@ def init_server(args: argparseNamespace) -> int:
 
     return 0
 
-def list_projects(args: argparseNamespace) -> int:
+def list_projects(args: argparse.Namespace) -> int:
     return 0
 
 # Operators
-def op_grant(args: argparseNamespace) -> int:
+def op_grant(args: argparse.Namespace) -> int:
     players: list[str] = args.players
     print(players)
     return 0
 
-def op_list(args: argparseNamespace) -> int:
+def op_list(args: argparse.Namespace) -> int:
     import logging as log
     from .server_files import ops
     from .shared import pluralize
@@ -167,17 +172,17 @@ def op_list(args: argparseNamespace) -> int:
     print(sorted_players)
     return 0
 
-def op_revoke(args: argparseNamespace) -> int:
+def op_revoke(args: argparse.Namespace) -> int:
     players: list[str] = args.players
     print(players)
     return 0
 
-def search_projects(args: argparseNamespace) -> int:
+def search_projects(args: argparse.Namespace) -> int:
     query: list[str] = args.query
     print(query)
     return 0
 
-def show_projects(args: argparseNamespace) -> int:
+def show_projects(args: argparse.Namespace) -> int:
     projects: list[str] = args.projects
 
     from .modrinth import api as modrinth_api
@@ -199,7 +204,7 @@ def show_projects(args: argparseNamespace) -> int:
 
     return 0
 
-def start_server(args: argparseNamespace) -> int:
+def start_server(args: argparse.Namespace) -> int:
     import logging as log
     from . import state
 
@@ -323,7 +328,7 @@ def start_server(args: argparseNamespace) -> int:
     state.set_state("server_running")
     os.execvp(java_command_argv[0], java_command_argv)
 
-def stop_server(args: argparseNamespace) -> int:
+def stop_server(args: argparse.Namespace) -> int:
     force_stop: bool = args.force_stop
 
     import os
@@ -358,12 +363,12 @@ def stop_server(args: argparseNamespace) -> int:
     return 1
 
 # Whitelist
-def whitelist_add(args: argparseNamespace) -> int:
+def whitelist_add(args: argparse.Namespace) -> int:
     players: list[str] = args.players
     print(players)
     return 0
 
-def whitelist_list(args: argparseNamespace) -> int:
+def whitelist_list(args: argparse.Namespace) -> int:
     import logging as log
     from .server_files import whitelist
     from .shared import pluralize
@@ -389,7 +394,7 @@ def whitelist_list(args: argparseNamespace) -> int:
     print("\n".join(player_list))
     return 0
 
-def whitelist_remove(args: argparseNamespace) -> int:
+def whitelist_remove(args: argparse.Namespace) -> int:
     players: list[str] = args.players
     print(players)
     return 0
