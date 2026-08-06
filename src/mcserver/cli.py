@@ -17,8 +17,8 @@ def main() -> int:
                 from .commands import print_help
                 return print_help(args)
             case "init":
-                from .commands import init_server
-                return init_server(args)
+                from .commands import initialize_server
+                return initialize_server(args)
             case "list":
                 from .commands import list_projects
                 return list_projects(args)
@@ -188,7 +188,7 @@ def main() -> int:
         help="Revoke operator from players",
         description="Revoke operator status from players.")
 
-    op_revoke_command.set_defaults(commamd_name="op_revoke")
+    op_revoke_command.set_defaults(command_name="op_revoke")
     op_revoke_command.add_argument(
         "players",
         nargs="+",
