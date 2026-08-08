@@ -9,12 +9,12 @@ from ..constants import modrinth_api_url
 
 #TypedDict
 # Project Version
-class FileHash(TypedDict):
+class FileHashes(TypedDict):
     sha512: NotRequired[str]
     sha1: NotRequired[str]
 
 class VersionFile(TypedDict):
-    file_hash: FileHash
+    file_hashes: FileHashes
     download_url: str
     filename: str
     is_primary: bool
@@ -41,7 +41,7 @@ class ProjectVersion(TypedDict):
     version_id: str
     project_id: str
     author_id: str
-    published_time: str
+    published_time: str # Time format: ISO-8601
     download_count: int
     changelog_url: NotRequired[str | None]
     files: list[VersionFile]
@@ -140,8 +140,11 @@ class SearchResult(TypedDict):
 
 #Functions
 def get_project_versions(project_id: str, loader_names: list[str] | str | None = None, game_versions: list[str] | str | None = None, featured: bool | None = None, include_changelog: bool = True) -> list[ProjectVersion]:
-    if isinstance(loader_names, str): loader_names = [loader_names]
-    if isinstance(game_versions, str): game_versions = [game_versions]
+    if isinstance(loader_names, str):
+        loader_names = [loader_names]
+
+    if isinstance(game_versions, str):
+        game_versions = [game_versions]
 
     query_parameter = {
         "loaders": json.dumps(loader_names),
@@ -150,7 +153,8 @@ def get_project_versions(project_id: str, loader_names: list[str] | str | None =
     }
 
     # NOTE: 'featured' is trinary
-    if featured is not None: query_parameter["featured"] = json.dumps(featured)
+    if featured is not None:
+        query_parameter["featured"] = json.dumps(featured)
 
     response = networking.request(f"{modrinth_api_url}/v2/project/{project_id}/version", query=query_parameter)
     response_json = json.loads(response["text"])
@@ -172,13 +176,13 @@ def get_project_versions(project_id: str, loader_names: list[str] | str | None =
         files = []
         for file in version["files"]:
             #Overcomplicate now because yes
-            file_hash = {}
+            file_hashes = {}
             for hash_algorithm, hash_value in file["hashes"].items():
                 if hash_algorithm in ["sha512", "sha1"]:
-                    file_hash[hash_algorithm] = hash_value
+                    file_hashes[hash_algorithm] = hash_value
 
             version_file = {
-                "file_hash": file_hash,
+                "file_hashes": file_hashes,
                 "download_url": file["url"],
                 "filename": file["filename"],
                 "is_primary": file["primary"],
@@ -188,7 +192,7 @@ def get_project_versions(project_id: str, loader_names: list[str] | str | None =
             if "file_type" in file: version_file["file_type"] = file["file_type"]
             files.append(version_file)
 
-        version = {
+        project_version = {
             "version_id": version["id"],
             "project_id": version["project_id"],
             "author_id": version["author_id"],
@@ -197,23 +201,46 @@ def get_project_versions(project_id: str, loader_names: list[str] | str | None =
             "files": files
         }
 
-        if "name" in version: version["version_name"] = version["name"]
-        if "version_number" in version: version["version_number"] = version["version_number"]
-        if "changelog" in version: version["changelog"] = version["changelog"]
-        if "dependencies" in version: version["dependencies"] = dependencies
-        if "game_versions" in version: version["game_versions"] = version["game_versions"]
-        if "version_type" in version: version["version_type"] = version["version_type"]
-        if "loaders" in version: version["loader_names"] = version["loaders"]
-        if "featured" in version: version["is_featured"] = version["featured"]
-        if "status" in version: version["status"] = version["status"]
-        if "requested_status" in version: version["requested_status"] = version["requested_status"]
-        if "changelog_url" in version: version["changelog_url"] = version["changelog_url"]
-        project_versions.append(version)
+        if "name" in version:
+            project_version["version_name"] = version["name"]
+
+        if "version_number" in version:
+            project_version["version_number"] = version["version_number"]
+
+        if "changelog" in version:
+            project_version["changelog"] = version["changelog"]
+
+        if "dependencies" in version:
+            project_version["dependencies"] = dependencies
+
+        if "game_versions" in version:
+            project_version["game_versions"] = version["game_versions"]
+
+        if "version_type" in version:
+            project_version["version_type"] = version["version_type"]
+
+        if "loaders" in version:
+            project_version["loader_names"] = version["loaders"]
+
+        if "featured" in version:
+            project_version["is_featured"] = version["featured"]
+
+        if "status" in version:
+            project_version["status"] = version["status"]
+
+        if "requested_status" in version:
+            project_version["requested_status"] = version["requested_status"]
+
+        if "changelog_url" in version:
+            project_version["changelog_url"] = version["changelog_url"]
+
+        project_versions.append(project_version)
 
     return project_versions
 
 def get_versions_from_hashes(file_hashes: list[str] | str, hash_algorithm: Literal["sha1", "sha512"]) -> dict[str, ProjectVersion]:
-    if isinstance(file_hashes, str): file_hashes = [file_hashes]
+    if isinstance(file_hashes, str):
+        file_hashes = [file_hashes]
 
     request_body = json.dumps({
         "hashes": file_hashes,
@@ -226,7 +253,7 @@ def get_versions_from_hashes(file_hashes: list[str] | str, hash_algorithm: Liter
 
     response_json = json.loads(response["text"])
 
-    hash_to_version_map = {}
+    hash_to_version = {}
     for hash_value, version in response_json.items():
         dependencies = []
         if "dependencies" in version:
@@ -235,9 +262,15 @@ def get_versions_from_hashes(file_hashes: list[str] | str, hash_algorithm: Liter
                     "dependency_type": dependency["dependency_type"]
                 }
 
-                if "version_id" in dependency: version_dependency["version_id"] = dependency["version_id"]
-                if "project_id" in dependency: version_dependency["project_id"] = dependency["project_id"]
-                if "file_name" in dependency: version_dependency["filename"] = dependency["file_name"]
+                if "version_id" in dependency:
+                    version_dependency["version_id"] = dependency["version_id"]
+
+                if "project_id" in dependency:
+                    version_dependency["project_id"] = dependency["project_id"]
+
+                if "file_name" in dependency:
+                    version_dependency["filename"] = dependency["file_name"]
+
                 dependencies.append(version_dependency)
 
         files = []
@@ -268,23 +301,46 @@ def get_versions_from_hashes(file_hashes: list[str] | str, hash_algorithm: Liter
             "files": files
         }
 
-        if "name" in version: project_version["version_name"] = version["name"]
-        if "version_number" in version: project_version["version_number"] = version["version_number"]
-        if "changelog" in version: project_version["changelog"] = version["changelog"]
-        if "dependencies" in version: project_version["dependencies"] = dependencies
-        if "game_versions" in version: project_version["game_versions"] = version["game_versions"]
-        if "version_type" in version: project_version["version_type"] = version["version_type"]
-        if "loaders" in version: project_version["loader_names"] = version["loaders"]
-        if "featured" in version: project_version["is_featured"] = version["featured"]
-        if "status" in version: project_version["status"] = version["status"]
-        if "requested_status" in version: project_version["requested_status"] = version["requested_status"]
-        if "changelog_url" in version: project_version["changelog_url"] = version["changelog_url"]
-        hash_to_version_map[hash_value] = project_version
+        if "name" in version:
+            project_version["version_name"] = version["name"]
 
-    return hash_to_version_map
+        if "version_number" in version:
+            project_version["version_number"] = version["version_number"]
+
+        if "changelog" in version:
+            project_version["changelog"] = version["changelog"]
+
+        if "dependencies" in version:
+            project_version["dependencies"] = dependencies
+
+        if "game_versions" in version:
+            project_version["game_versions"] = version["game_versions"]
+
+        if "version_type" in version:
+            project_version["version_type"] = version["version_type"]
+
+        if "loaders" in version:
+            project_version["loader_names"] = version["loaders"]
+
+        if "featured" in version:
+            project_version["is_featured"] = version["featured"]
+
+        if "status" in version:
+            project_version["status"] = version["status"]
+
+        if "requested_status" in version:
+            project_version["requested_status"] = version["requested_status"]
+
+        if "changelog_url" in version:
+            project_version["changelog_url"] = version["changelog_url"]
+
+        hash_to_version[hash_value] = project_version
+
+    return hash_to_version
 
 def get_project_information(project_ids: list[str] | str) -> list[ProjectInformation]:
-    if isinstance(project_ids, str): project_ids = [project_ids]
+    if isinstance(project_ids, str):
+        project_ids = [project_ids]
 
     query_parameters: dict[str, str] = {
         "ids": json.dumps(project_ids)
