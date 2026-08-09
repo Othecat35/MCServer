@@ -1,24 +1,19 @@
 import logging as log
 from collections import deque
-from typing import Callable, TypedDict
+from collections.abc import Callable
 
-class NodeData(TypedDict):
-    is_manual: bool
-    dependencies: dict[str, str]
-    dependents: dict[str, str]
-
-def resolve_dependencies(project_ids: list[str] | str, get_dependencies: Callable, check_conflict: Callable):
-    if isinstance(project_ids, str):
-        project_ids = [project_ids]
+def resolve_dependencies(initial_nodes: list[str] | str, get_dependencies: Callable, check_conflict: Callable) -> list:
+    if isinstance(initial_nodes, str):
+        initial_nodes = [initial_nodes]
 
     queued_nodes: deque[str] = deque()
     visited_nodes: set[str] = set()
-    dependency_graph: dict[str, NodeData] = {}
+    dependency_graph: dict[str, dict] = {}
 
-    for project_id in project_ids:
-        log.debug(f"Adding project ID '{project_id}' to queued nodes")
-        queued_nodes.append(project_id)
-        node_data: NodeData = {
+    for node in initial_nodes:
+        log.debug(f"Adding node '{project_id}' to queued nodes")
+        queued_nodes.append(node_id)
+        node_data = {
             "is_manual": True,
             "dependencies": {},
             "dependents": {}
