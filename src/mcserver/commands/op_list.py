@@ -1,6 +1,9 @@
 from argparse import Namespace as argparseNamespace
+
+
 def main(args: argparseNamespace) -> int:
     import logging as log
+
     from ..server_files import ops
     from ..shared import pluralize
 
@@ -12,7 +15,9 @@ def main(args: argparseNamespace) -> int:
 
     players: list[str] = []
     for player in operator_players:
-        players.append(f"{player['player_name']} ({player['player_uuid']}) Level: {player["permission_level"]}")
+        players.append(
+            f"{player['player_name']} ({player['player_uuid']}) Level: {player["permission_level"]}"
+        )
 
     players.sort()
     sorted_players = "\n".join(players)

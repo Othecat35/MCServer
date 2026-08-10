@@ -1,4 +1,4 @@
-#Modules
+# Modules
 # Standard
 import json
 from typing import Literal, NotRequired, TypedDict
@@ -7,11 +7,13 @@ from typing import Literal, NotRequired, TypedDict
 from .. import networking
 from ..constants import modrinth_api_url
 
-#TypedDict
+
+# TypedDict
 # Project Version
 class FileHashes(TypedDict):
     sha512: NotRequired[str]
     sha1: NotRequired[str]
+
 
 class VersionFile(TypedDict):
     file_hashes: FileHashes
@@ -19,13 +21,26 @@ class VersionFile(TypedDict):
     filename: str
     is_primary: bool
     file_size: int
-    file_type: NotRequired[Literal["required-resource-pack", "optional-resource-pack", "sources-jar", "dev-jar", "javadoc-jar", "unknown", "signature"] | None]
+    file_type: NotRequired[
+        Literal[
+            "required-resource-pack",
+            "optional-resource-pack",
+            "sources-jar",
+            "dev-jar",
+            "javadoc-jar",
+            "unknown",
+            "signature",
+        ]
+        | None
+    ]
+
 
 class VersionDependency(TypedDict):
     version_id: NotRequired[str | None]
     project_id: NotRequired[str | None]
     filename: NotRequired[str | None]
     dependency_type: Literal["required", "optional", "incompatible", "embedded"]
+
 
 class ProjectVersion(TypedDict):
     version_name: NotRequired[str]
@@ -36,15 +51,20 @@ class ProjectVersion(TypedDict):
     version_type: NotRequired[Literal["release", "beta", "alpha"]]
     loader_names: NotRequired[list[str]]
     is_featured: NotRequired[bool]
-    status: NotRequired[Literal["listed", "archived", "draft", "unlisted", "scheduled", "unknown"]]
-    requested_status: NotRequired[Literal["listed", "archived", "draft", "unlisted"] | None]
+    status: NotRequired[
+        Literal["listed", "archived", "draft", "unlisted", "scheduled", "unknown"]
+    ]
+    requested_status: NotRequired[
+        Literal["listed", "archived", "draft", "unlisted"] | None
+    ]
     version_id: str
     project_id: str
     author_id: str
-    published_time: str # Time format: ISO-8601
+    published_time: str  # Time format: ISO-8601
     download_count: int
     changelog_url: NotRequired[str | None]
     files: list[VersionFile]
+
 
 # Project Information
 class DonationPlatform(TypedDict):
@@ -52,22 +72,26 @@ class DonationPlatform(TypedDict):
     platform_name: NotRequired[str]
     donation_url: NotRequired[str]
 
+
 class ModeratorMessage(TypedDict):
     message: NotRequired[str]
     body: NotRequired[str | None]
+
 
 class ProjectLicense(TypedDict):
     license_id: NotRequired[str]
     license_name: NotRequired[str]
     license_url: NotRequired[str | None]
 
+
 class GalleryImage(TypedDict):
     image_url: str
     is_featured: bool
     image_title: NotRequired[str | None]
     image_description: NotRequired[str | None]
-    created_time: str                          # Time format: ISO-8601
+    created_time: str  # Time format: ISO-8601
     image_order: NotRequired[int]
+
 
 class ProjectInformation(TypedDict):
     project_slug: NotRequired[str]
@@ -77,8 +101,23 @@ class ProjectInformation(TypedDict):
     client_side: NotRequired[Literal["required", "optional", "unsupported", "unknown"]]
     server_side: NotRequired[Literal["required", "optional", "unsupported", "unknown"]]
     description: NotRequired[str]
-    status: NotRequired[Literal["approved", "archived", "rejected", "draft", "unlisted", "processing", "withheld", "scheduled", "private", "unknown"]]
-    requested_status: NotRequired[Literal["approved", "archived", "unlisted", "private", "draft"] | None]
+    status: NotRequired[
+        Literal[
+            "approved",
+            "archived",
+            "rejected",
+            "draft",
+            "unlisted",
+            "processing",
+            "withheld",
+            "scheduled",
+            "private",
+            "unknown",
+        ]
+    ]
+    requested_status: NotRequired[
+        Literal["approved", "archived", "unlisted", "private", "draft"] | None
+    ]
     additional_categories: NotRequired[list[str]]
     issues_url: NotRequired[str | None]
     source_url: NotRequired[str | None]
@@ -90,21 +129,26 @@ class ProjectInformation(TypedDict):
     icon_url: NotRequired[str | None]
     icon_color: NotRequired[int | None]
     thread_id: NotRequired[str]
-    monetization_status: NotRequired[Literal["monetized", "demonetized", "force-demonetized"]]
+    monetization_status: NotRequired[
+        Literal["monetized", "demonetized", "force-demonetized"]
+    ]
     project_id: str
     team_id: str
     description_url: NotRequired[str | None]
-    moderator_message: NotRequired[ModeratorMessage | None] # NOTE: The docs is misleading
-    published_time: str                    # Time format: ISO-8601
-    last_updated_time: str                 # Time format: ISO-8601
-    approved_time: NotRequired[str | None] # Time format: ISO-8601
-    queued_time: NotRequired[str | None]   # Time format: ISO-8601
+    moderator_message: NotRequired[
+        ModeratorMessage | None
+    ]  # NOTE: The docs is misleading
+    published_time: str  # Time format: ISO-8601
+    last_updated_time: str  # Time format: ISO-8601
+    approved_time: NotRequired[str | None]  # Time format: ISO-8601
+    queued_time: NotRequired[str | None]  # Time format: ISO-8601
     follower_count: int
     license: NotRequired[ProjectLicense]
     version_ids: NotRequired[list[str]]
     game_versions: NotRequired[list[str]]
     loader_names: NotRequired[list[str]]
     project_gallery: NotRequired[list[GalleryImage]]
+
 
 class SearchHit(TypedDict):
     project_slug: NotRequired[str]
@@ -118,7 +162,9 @@ class SearchHit(TypedDict):
     icon_url: NotRequired[str | None]
     icon_color: NotRequired[int | None]
     thread_id: NotRequired[str]
-    monetization_status: NotRequired[Literal["monetized", "demonetized", "force-demonetized"]]
+    monetization_status: NotRequired[
+        Literal["monetized", "demonetized", "force-demonetized"]
+    ]
     project_id: str
     all_project_types: list[str]
     author_username: str
@@ -126,11 +172,12 @@ class SearchHit(TypedDict):
     game_versions: list[str]
     follower_count: int
     created_time: str  # Time Format: ISO-8601
-    modified_time: str # Time Format: ISO-8601
+    modified_time: str  # Time Format: ISO-8601
     latest_game_version: NotRequired[str]
     license_id: str
     gallery_images: NotRequired[list[str]]
     featured_galeery: NotRequired[str | None]
+
 
 class SearchResult(TypedDict):
     hits: list[SearchHit]
@@ -138,8 +185,15 @@ class SearchResult(TypedDict):
     limit: int
     total_hits: int
 
-#Functions
-def get_project_versions(project_id: str, loader_names: list[str] | str | None = None, game_versions: list[str] | str | None = None, featured: bool | None = None, include_changelog: bool = True) -> list[ProjectVersion]:
+
+# Functions
+def get_project_versions(
+    project_id: str,
+    loader_names: list[str] | str | None = None,
+    game_versions: list[str] | str | None = None,
+    featured: bool | None = None,
+    include_changelog: bool = True,
+) -> list[ProjectVersion]:
     if isinstance(loader_names, str):
         loader_names = [loader_names]
 
@@ -149,14 +203,16 @@ def get_project_versions(project_id: str, loader_names: list[str] | str | None =
     query_parameter = {
         "loaders": json.dumps(loader_names),
         "game_versions": json.dumps(game_versions),
-        "include_changelog": json.dumps(include_changelog)
+        "include_changelog": json.dumps(include_changelog),
     }
 
     # NOTE: 'featured' is trinary
     if featured is not None:
         query_parameter["featured"] = json.dumps(featured)
 
-    response = networking.request(f"{modrinth_api_url}/v2/project/{project_id}/version", query=query_parameter)
+    response = networking.request(
+        f"{modrinth_api_url}/v2/project/{project_id}/version", query=query_parameter
+    )
     response_json = json.loads(response["text"])
 
     project_versions = []
@@ -164,18 +220,19 @@ def get_project_versions(project_id: str, loader_names: list[str] | str | None =
         dependencies = []
         if "dependencies" in version:
             for dependency in version["dependencies"]:
-                version_dependency = {
-                    "dependency_type": dependency["dependency_type"]
-                }
+                version_dependency = {"dependency_type": dependency["dependency_type"]}
 
-                if "version_id" in dependency: version_dependency["version_id"] = dependency["version_id"]
-                if "project_id" in dependency: version_dependency["project_id"] = dependency["project_id"]
-                if "file_name" in dependency: version_dependency["filename"] = dependency["file_name"]
+                if "version_id" in dependency:
+                    version_dependency["version_id"] = dependency["version_id"]
+                if "project_id" in dependency:
+                    version_dependency["project_id"] = dependency["project_id"]
+                if "file_name" in dependency:
+                    version_dependency["filename"] = dependency["file_name"]
                 dependencies.append(version_dependency)
 
         files = []
         for file in version["files"]:
-            #Overcomplicate now because yes
+            # Overcomplicate now because yes
             file_hashes = {}
             for hash_algorithm, hash_value in file["hashes"].items():
                 if hash_algorithm in ["sha512", "sha1"]:
@@ -186,10 +243,11 @@ def get_project_versions(project_id: str, loader_names: list[str] | str | None =
                 "download_url": file["url"],
                 "filename": file["filename"],
                 "is_primary": file["primary"],
-                "file_size": file["size"]
+                "file_size": file["size"],
             }
 
-            if "file_type" in file: version_file["file_type"] = file["file_type"]
+            if "file_type" in file:
+                version_file["file_type"] = file["file_type"]
             files.append(version_file)
 
         project_version = {
@@ -198,7 +256,7 @@ def get_project_versions(project_id: str, loader_names: list[str] | str | None =
             "author_id": version["author_id"],
             "published_time": version["date_published"],
             "download_count": version["downloads"],
-            "files": files
+            "files": files,
         }
 
         if "name" in version:
@@ -238,18 +296,23 @@ def get_project_versions(project_id: str, loader_names: list[str] | str | None =
 
     return project_versions
 
-def get_versions_from_hashes(file_hashes: list[str] | str, hash_algorithm: Literal["sha1", "sha512"]) -> dict[str, ProjectVersion]:
+
+def get_versions_from_hashes(
+    file_hashes: list[str] | str, hash_algorithm: Literal["sha1", "sha512"]
+) -> dict[str, ProjectVersion]:
     if isinstance(file_hashes, str):
         file_hashes = [file_hashes]
 
-    request_body = json.dumps({
-        "hashes": file_hashes,
-        "algorithm": hash_algorithm
-    }).encode("utf-8")
+    request_body = json.dumps(
+        {"hashes": file_hashes, "algorithm": hash_algorithm}
+    ).encode("utf-8")
 
-    response = networking.request(f"{modrinth_api_url}/v2/version_files", data=request_body, headers={
-        "Content-Type": "application/json"
-    }, method="POST")
+    response = networking.request(
+        f"{modrinth_api_url}/v2/version_files",
+        data=request_body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
 
     response_json = json.loads(response["text"])
 
@@ -258,9 +321,7 @@ def get_versions_from_hashes(file_hashes: list[str] | str, hash_algorithm: Liter
         dependencies = []
         if "dependencies" in version:
             for dependency in version["dependencies"]:
-                version_dependency = {
-                    "dependency_type": dependency["dependency_type"]
-                }
+                version_dependency = {"dependency_type": dependency["dependency_type"]}
 
                 if "version_id" in dependency:
                     version_dependency["version_id"] = dependency["version_id"]
@@ -275,7 +336,7 @@ def get_versions_from_hashes(file_hashes: list[str] | str, hash_algorithm: Liter
 
         files = []
         for file in version["files"]:
-            #Overcomplicate now because yes
+            # Overcomplicate now because yes
             file_hash = {}
             for hash_algorithm, file_hash_value in file["hashes"].items():
                 if hash_algorithm in ["sha512", "sha1"]:
@@ -286,10 +347,11 @@ def get_versions_from_hashes(file_hashes: list[str] | str, hash_algorithm: Liter
                 "download_url": file["url"],
                 "filename": file["filename"],
                 "is_primary": file["primary"],
-                "file_size": file["size"]
+                "file_size": file["size"],
             }
 
-            if "file_type" in file: version_file["file_type"] = file["file_type"]
+            if "file_type" in file:
+                version_file["file_type"] = file["file_type"]
             files.append(version_file)
 
         project_version = {
@@ -298,7 +360,7 @@ def get_versions_from_hashes(file_hashes: list[str] | str, hash_algorithm: Liter
             "author_id": version["author_id"],
             "published_time": version["date_published"],
             "download_count": version["downloads"],
-            "files": files
+            "files": files,
         }
 
         if "name" in version:
@@ -338,43 +400,92 @@ def get_versions_from_hashes(file_hashes: list[str] | str, hash_algorithm: Liter
 
     return hash_to_version
 
+
 def get_project_information(project_ids: list[str] | str) -> list[ProjectInformation]:
     if isinstance(project_ids, str):
         project_ids = [project_ids]
 
-    query_parameters: dict[str, str] = {
-        "ids": json.dumps(project_ids)
-    }
+    query_parameters: dict[str, str] = {"ids": json.dumps(project_ids)}
 
-    response = networking.request(f"{modrinth_api_url}/v2/projects", query=query_parameters)
+    response = networking.request(
+        f"{modrinth_api_url}/v2/projects", query=query_parameters
+    )
     response_json = json.loads(response["text"])
 
     project_informations: list[ProjectInformation] = []
     for project in response_json:
-        client_side: Literal["required", "optional", "unsupported", "unknown"] = "unknown"
+        client_side: Literal["required", "optional", "unsupported", "unknown"] = (
+            "unknown"
+        )
         if "client_side" in project:
-            if project["client_side"] in ["required", "optional", "unsupported", "unknown"]:
+            if project["client_side"] in [
+                "required",
+                "optional",
+                "unsupported",
+                "unknown",
+            ]:
                 client_side = project["client_side"]
 
-        server_side: Literal["required", "optional", "unsupported", "unknown"] = "unknown"
+        server_side: Literal["required", "optional", "unsupported", "unknown"] = (
+            "unknown"
+        )
         if "server_side" in project:
-            if project["server_side"] in ["required", "optional", "unsupported", "unknown"]:
+            if project["server_side"] in [
+                "required",
+                "optional",
+                "unsupported",
+                "unknown",
+            ]:
                 server_side = project["server_side"]
 
-        status: Literal["approved", "archived", "rejected", "draft", "unlisted", "processing", "withheld", "scheduled", "private", "unknown"] = "unknown"
+        status: Literal[
+            "approved",
+            "archived",
+            "rejected",
+            "draft",
+            "unlisted",
+            "processing",
+            "withheld",
+            "scheduled",
+            "private",
+            "unknown",
+        ] = "unknown"
         if "status" in project:
-            if project["status"] in ["approved", "archived", "rejected", "draft", "unlisted", "processing", "withheld", "scheduled", "private", "unknown"]:
+            if project["status"] in [
+                "approved",
+                "archived",
+                "rejected",
+                "draft",
+                "unlisted",
+                "processing",
+                "withheld",
+                "scheduled",
+                "private",
+                "unknown",
+            ]:
                 status = project["status"]
 
-        requested_status: Literal["approved", "archived", "unlisted", "private", "draft"] | None = None
+        requested_status: (
+            Literal["approved", "archived", "unlisted", "private", "draft"] | None
+        ) = None
         if "requested_status" in project:
             requested_status_data = project["requested_status"]
-            if requested_status_data in ["approved", "archived", "unlisted", "private", "draft"] or requested_status_data is None:
+            if (
+                requested_status_data
+                in ["approved", "archived", "unlisted", "private", "draft"]
+                or requested_status_data is None
+            ):
                 requested_status = requested_status_data
 
-        monetization_status: Literal["monetized", "demonetized", "force-demonetized"] = "monetized"
+        monetization_status: Literal[
+            "monetized", "demonetized", "force-demonetized"
+        ] = "monetized"
         if "monetization_status" in project:
-            if project["monetization_status"] in ["monetized", "demonetized", "force-demonetized"]:
+            if project["monetization_status"] in [
+                "monetized",
+                "demonetized",
+                "force-demonetized",
+            ]:
                 monetization_status = project["monetization_status"]
 
         donation_platforms: list[DonationPlatform] = []
@@ -382,9 +493,12 @@ def get_project_information(project_ids: list[str] | str) -> list[ProjectInforma
             for platform in project["donation_urls"]:
                 donation_platform: DonationPlatform = {}
 
-                if "id" in platform: donation_platform["platform_id"] = platform["id"]
-                if "platform" in platform: donation_platform["platform_name"] = platform["platform"]
-                if "url" in platform: donation_platform["donation_url"] = platform["url"]
+                if "id" in platform:
+                    donation_platform["platform_id"] = platform["id"]
+                if "platform" in platform:
+                    donation_platform["platform_name"] = platform["platform"]
+                if "url" in platform:
+                    donation_platform["donation_url"] = platform["url"]
                 donation_platforms.append(donation_platform)
 
         moderator_message: ModeratorMessage | None = None
@@ -397,15 +511,20 @@ def get_project_information(project_ids: list[str] | str) -> list[ProjectInforma
                 if moderator_message is None:
                     moderator_message = {}
 
-                if "message" in moderator_message_data: moderator_message["message"] = moderator_message_data["message"]
-                if "body" in moderator_message_data: moderator_message["body"] = moderator_message_data["body"]
+                if "message" in moderator_message_data:
+                    moderator_message["message"] = moderator_message_data["message"]
+                if "body" in moderator_message_data:
+                    moderator_message["body"] = moderator_message_data["body"]
 
         project_license: ProjectLicense = {}
         if "license" in project:
             license_data = project["license"]
-            if "id" in license_data: project_license["license_id"] = license_data["id"]
-            if "name" in license_data: project_license["license_name"] = license_data["name"]
-            if "url" in license_data: project_license["license_url"] = license_data["url"]
+            if "id" in license_data:
+                project_license["license_id"] = license_data["id"]
+            if "name" in license_data:
+                project_license["license_name"] = license_data["name"]
+            if "url" in license_data:
+                project_license["license_url"] = license_data["url"]
 
         project_gallery: list[GalleryImage] = []
         if "gallery" in project:
@@ -413,12 +532,15 @@ def get_project_information(project_ids: list[str] | str) -> list[ProjectInforma
                 gallery_image: GalleryImage = {
                     "image_url": image["url"],
                     "is_featured": image["featured"],
-                    "created_time": image["created"]
+                    "created_time": image["created"],
                 }
 
-                if "title" in image: gallery_image["image_title"] = image["title"]
-                if "description" in image: gallery_image["image_description"] = image["description"]
-                if "ordering" in image: gallery_image["image_order"] = image["ordering"]
+                if "title" in image:
+                    gallery_image["image_title"] = image["title"]
+                if "description" in image:
+                    gallery_image["image_description"] = image["description"]
+                if "ordering" in image:
+                    gallery_image["image_order"] = image["ordering"]
                 project_gallery.append(gallery_image)
 
         project_information: ProjectInformation = {
@@ -428,7 +550,7 @@ def get_project_information(project_ids: list[str] | str) -> list[ProjectInforma
             "team_id": project["team"],
             "published_time": project["published"],
             "last_updated_time": project["updated"],
-            "follower_count": project["followers"]
+            "follower_count": project["followers"],
         }
 
         if "slug" in project:
@@ -459,7 +581,9 @@ def get_project_information(project_ids: list[str] | str) -> list[ProjectInforma
             project_information["requested_status"] = requested_status
 
         if "additional_categories" in project:
-            project_information["additional_categories"] = project["additional_categories"]
+            project_information["additional_categories"] = project[
+                "additional_categories"
+            ]
 
         if "issues_url" in project:
             project_information["issues_url"] = project["issues_url"]
@@ -519,6 +643,15 @@ def get_project_information(project_ids: list[str] | str) -> list[ProjectInforma
 
     return project_informations
 
-def search_projects(query: str, facets: list[list[str]], index: Literal["relevance", "downloads", "follows", "newest", "updated"] = "relevance", offset: int = 0, limit: int = 10) -> SearchResult:
+
+def search_projects(
+    query: str,
+    facets: list[list[str]],
+    index: Literal[
+        "relevance", "downloads", "follows", "newest", "updated"
+    ] = "relevance",
+    offset: int = 0,
+    limit: int = 10,
+) -> SearchResult:
     search_result: SearchResult = {}
     return search_result

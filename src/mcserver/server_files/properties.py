@@ -1,17 +1,16 @@
-#Imports
+# Imports
 from typing import TypedDict
 
-#TypedDicts
+
+# TypedDicts
 class ParsedProperties(TypedDict):
     comments: list[str]
     data: dict[str, str]
 
-#Functions
+
+# Functions
 def loads(properties_data: str) -> ParsedProperties:
-    parsed_properties: ParsedProperties = {
-        "comments": [],
-        "data": {}
-    }
+    parsed_properties: ParsedProperties = {"comments": [], "data": {}}
 
     for line in properties_data.splitlines():
         line = line.strip()
@@ -28,6 +27,7 @@ def loads(properties_data: str) -> ParsedProperties:
         parsed_properties[key.strip()] = value
 
     return parsed_properties
+
 
 # Dump only support comments that are oon top of the file
 def dumps(parsed_properties: ParsedProperties) -> str:

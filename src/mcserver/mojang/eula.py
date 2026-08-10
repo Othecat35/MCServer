@@ -1,12 +1,13 @@
-#Modules
+# Modules
 # Standard
 import time
 from pathlib import Path
 
-#Paths
+# Paths
 eula_file = Path("eula.txt")
 
-#Functions
+
+# Functions
 def is_eula_agreed() -> bool:
     try:
         for line in eula_file.read_text().split("\n"):
@@ -17,8 +18,11 @@ def is_eula_agreed() -> bool:
 
     return False
 
+
 def eula_agree() -> None:
     timestamp = time.strftime("%a %b %d %H:%M:%S GMT %Y", time.gmtime())
-    eula_file.write_text(f"""#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).
+    eula_file.write_text(
+        f"""#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).
 #{timestamp}
-eula=true""")
+eula=true"""
+    )

@@ -1,6 +1,9 @@
 from argparse import Namespace as argparseNamespace
+
+
 def main(args: argparseNamespace) -> int:
     import logging as log
+
     from ..server_files import whitelist
     from ..shared import pluralize
 
@@ -19,7 +22,9 @@ def main(args: argparseNamespace) -> int:
         log.info("There are no whitelisted players.")
         return 0
     else:
-        log.info(f"There {pluralize('is', player_count)} whitelisted {pluralize('player', player_count)}:")
+        log.info(
+            f"There {pluralize('is', player_count)} whitelisted {pluralize('player', player_count)}:"
+        )
 
     player_list.sort()
     print("\n".join(player_list))

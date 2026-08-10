@@ -1,4 +1,4 @@
-#Modules
+# Modules
 # Standard
 import json
 import logging as log
@@ -7,29 +7,34 @@ from typing import TypedDict
 from uuid import UUID
 
 # MCServer
-from mcserver.minecraft.player_identity import normalize_player_uuid, PlayerID, PlayerUUID
+from mcserver.minecraft.player_identity import (PlayerID, PlayerUUID,
+                                                normalize_player_uuid)
 
-#Paths
+# Paths
 whitelist_file = Path("whitelist.json")
 
-#TypedDicts
+
+# TypedDicts
 class WhitelistEntry(TypedDict):
     uuid: str
     name: str
+
 
 class WhitelistPlayer(TypedDict):
     player_uuid: PlayerUUID
     player_name: str
 
-#Functions
+
+# Functions
 # Add Players
 def add_player(player_uuid: PlayerUUID, player_name: str) -> None:
     whitelist_player: WhitelistPlayer = {
         "player_uuid": player_uuid,
-        "player_name": player_name
+        "player_name": player_name,
     }
 
     add_players(whitelist_player)
+
 
 def add_players(whitelist_players: list[WhitelistPlayer] | WhitelistPlayer) -> None:
     if not isinstance(whitelist_players, list):
@@ -41,7 +46,7 @@ def add_players(whitelist_players: list[WhitelistPlayer] | WhitelistPlayer) -> N
         for player in whitelist_players:
             whitelist_entry: WhitelistEntry = {
                 "uuid": str(normalize_player_uuid(player["player_uuid"])),
-                "name": player.get("player_name", "")
+                "name": player.get("player_name", ""),
             }
 
             whitelist_data.append(whitelist_entry)
@@ -50,10 +55,15 @@ def add_players(whitelist_players: list[WhitelistPlayer] | WhitelistPlayer) -> N
         json.dump(whitelist_data, file, indent=2)
         file.truncate()
 
+
 # Remove Players
-def remove_player(player_uuid: PlayerUUID | None = None, player_name: str | None = None) -> None:
+def remove_player(
+    player_uuid: PlayerUUID | None = None, player_name: str | None = None
+) -> None:
     if player_uuid is None and player_name is None:
-        raise ValueError("At least one of 'player_uuid' or 'player_name' must be provided")
+        raise ValueError(
+            "At least one of 'player_uuid' or 'player_name' must be provided"
+        )
 
     player_id: PlayerID = {}
     if player_uuid is not None:
@@ -64,6 +74,7 @@ def remove_player(player_uuid: PlayerUUID | None = None, player_name: str | None
         player_id["player_name"] = player_name
 
     remove_players(player_id)
+
 
 def remove_players(player_ids: list[PlayerID] | PlayerID) -> None:
     if not isinstance(player_ids, list):
@@ -86,7 +97,9 @@ def remove_players(player_ids: list[PlayerID] | PlayerID) -> None:
             player_name = player["name"]
 
             if player_uuid in player_uuids or player_name in player_names:
-                log.debug(f"Removed player '{player_name}' ({player_uuid}) from the whitelisted player list")
+                log.debug(
+                    f"Removed player '{player_name}' ({player_uuid}) from the whitelisted player list"
+                )
                 continue
 
             new_whitelist_data.append(player)
@@ -95,7 +108,9 @@ def remove_players(player_ids: list[PlayerID] | PlayerID) -> None:
         json.dump(new_whitelist_data, file, indent=2)
         file.truncate()
 
+
 # TODO: add 'update_player' and 'update_players', just use plain dict.update() because it has no depth
+
 
 # List Players
 def list_players() -> list[WhitelistPlayer]:
@@ -120,7 +135,7 @@ def list_players() -> list[WhitelistPlayer]:
         try:
             whitelist_player: WhitelistPlayer = {
                 "player_uuid": UUID(player_uuid),
-                "player_name": entry["name"]
+                "player_name": entry["name"],
             }
         except ValueError:
             log.error(f"Invalid UUID in whitelist: '{player_uuid}'")

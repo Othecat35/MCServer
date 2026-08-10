@@ -1,17 +1,19 @@
-#Modules
+# Modules
 from typing import NotRequired, TypedDict
 from uuid import UUID
 
-#Type Aliases
+# Type Aliases
 type PlayerUUID = UUID | str
 
-#TypedDicts
+
+# TypedDicts
 class PlayerID(TypedDict):
     # Used for providing either player UUID and/or name
     player_uuid: NotRequired[PlayerUUID]
     player_name: NotRequired[str]
 
-#Functions
+
+# Functions
 def normalize_player_uuid(player_uuid: PlayerUUID) -> UUID:
     if isinstance(player_uuid, str):
         player_uuid = UUID(player_uuid)

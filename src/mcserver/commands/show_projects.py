@@ -1,4 +1,6 @@
 from argparse import Namespace as argparseNamespace
+
+
 def main(args: argparseNamespace) -> int:
     projects: list[str] = args.projects
 
@@ -17,6 +19,8 @@ def main(args: argparseNamespace) -> int:
             print(f"Followers: {format_number(project["follower_count"])}")
 
         if "project_slug" in project:
-            print(f"Homepage: https://modrinth.com/{project['project_type']}/{project['project_slug']}")
+            print(
+                f"Homepage: https://modrinth.com/{project['project_type']}/{project['project_slug']}"
+            )
 
     return 0

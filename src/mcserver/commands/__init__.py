@@ -29,5 +29,5 @@ __all__ = [
     "stop_server",
     "whitelist_add",
     "whitelist_list",
-    "whitelist_remove"
+    "whitelist_remove",
 ]

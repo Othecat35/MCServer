@@ -1,4 +1,4 @@
-#Modules
+# Modules
 # Standard
 import sys
 from pathlib import Path
@@ -6,34 +6,26 @@ from pathlib import Path
 # MCServer
 from .constants import iec_prefixes, si_prefixes
 
-#Variables
+# Variables
 mods_loader = ["fabric", "quilt"]
 plugins_loader = ["paper", "purpur"]
 loader_list = ["vanilla"] + mods_loader + plugins_loader
 
-loader_context = {
-    "project_directory": None,
-    "project_label": "project"
-}
+loader_context = {"project_directory": None, "project_label": "project"}
 
-special_plural = {
-    "is": "are",
-    "this": "these"
-}
+special_plural = {"is": "are", "this": "these"}
 
-color_output_mode = "auto" # 'never', 'auto', 'always'
+color_output_mode = "auto"  # 'never', 'auto', 'always'
 ansi_codes = {
     "gray": "\033[90m",
     "green": "\033[92m",
     "red": "\033[91m",
     "yellow": "\033[93m",
-
     "bold": "\033[1m",
     "reset": "\033[0m",
-
     "clear_line": "\033[K",
     "cursor_up": "\033[A",
-    "start_line": "\033[G"
+    "start_line": "\033[G",
 }
 
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
@@ -41,32 +33,19 @@ last_status_message = ""
 
 default_configs = {
     "launcher": {
-        "ram": {
-            "_comment": "Memory size in MebiByte (MiB)",
-            "min": 512,
-            "max": 2_048
-        },
-
+        "ram": {"_comment": "Memory size in MebiByte (MiB)", "min": 512, "max": 2_048},
         "jarfile": "Server.jar",
         "is_nogui": True,
-        "force_stop": 5
+        "force_stop": 5,
     },
-
-    "modrinth": {
-        "search_limit": 20,
-        "sort_by": "relevance"
-    },
-
+    "modrinth": {"search_limit": 20, "sort_by": "relevance"},
     "server": {
-        "game_version": "", # Auto-fetched the latest version when init without --mc-version
-        "loader": {
-            "name": "vanilla",
-            "version": None
-        }
-    }
+        "game_version": "",  # Auto-fetched the latest version when init without --mc-version
+        "loader": {"name": "vanilla", "version": None},
+    },
 }
 
-#Paths
+# Paths
 current_dir: Path = Path.cwd()
 mcserver_dir: Path = Path(".mcserver")
 tempfiles_dir: Path = mcserver_dir / "tempfiles"
@@ -74,7 +53,8 @@ tempfiles_dir: Path = mcserver_dir / "tempfiles"
 mods_dir: Path = Path("mods")
 plugins_dir: Path = Path("plugins")
 
-#Functions
+
+# Functions
 def pluralize(singular: str, count: int = 0, plural: str = ""):
     if count != 1:
         if plural:
@@ -91,6 +71,7 @@ def pluralize(singular: str, count: int = 0, plural: str = ""):
             return f"{singular}s"
 
     return singular
+
 
 def format_number(number: str | float, unit_type: str = "si"):
     number = float(number)
@@ -116,6 +97,7 @@ def format_number(number: str | float, unit_type: str = "si"):
 
     return f"{round(number, 2):g}{prefixes[iteration]}"
 
+
 def remap_keys(source: dict, mapping: dict[str, str]) -> dict:
     remapped_source = {}
     for target_key, source_key in mapping.items():
@@ -123,6 +105,7 @@ def remap_keys(source: dict, mapping: dict[str, str]) -> dict:
             remapped_source[target_key] = source[source_key]
 
     return remapped_source
+
 
 def merge_dict(base: dict, update: dict) -> dict:
     for key, value in update.items():
@@ -132,6 +115,7 @@ def merge_dict(base: dict, update: dict) -> dict:
             base[key] = value
 
     return base
+
 
 def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
     accepted_value = "y/n"
@@ -143,7 +127,7 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
     try:
         answer = input(f"{prompt} [{accepted_value}]: ")
     except KeyboardInterrupt:
-        print() # To avoid weird no newline when Ctrl+C
+        print()  # To avoid weird no newline when Ctrl+C
         return False
 
     match answer.lower():
@@ -156,19 +140,15 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
         case _:
             return False
 
+
 def set_loader_context(loader_name: str) -> None:
     global loader_context
 
     if loader_name in mods_loader:
-        loader_context = {
-            "project_directory": mods_dir,
-            "project_label": "mod"
-        }
+        loader_context = {"project_directory": mods_dir, "project_label": "mod"}
     elif loader_name in plugins_loader:
-        loader_context = {
-            "project_directory": plugins_dir,
-            "project_label": "plugin"
-        }
+        loader_context = {"project_directory": plugins_dir, "project_label": "plugin"}
+
 
 # ANSI
 def ansi(name: str):
@@ -183,10 +163,14 @@ def ansi(name: str):
 
             return ""
         case _:
-            raise ValueError(f"Invalid string '{color_output_mode}' of variable color_output_mode")
+            raise ValueError(
+                f"Invalid string '{color_output_mode}' of variable color_output_mode"
+            )
+
 
 def wrap_ansi(string: str, ansi_name: str):
     return f"{ansi(ansi_name)}{string}{ansi('reset')}"
+
 
 def mod_environment_color(environment: str, padding: int = 0):
     if environment == "required":
@@ -199,12 +183,14 @@ def mod_environment_color(environment: str, padding: int = 0):
         return wrap_ansi(f"{'Unknown': <{padding}}", "gray")
     return f"{environment: <{padding}}"
 
+
 def print_status(message: str, dynamic: str | None = None):
-    if dynamic is None: dynamic = ""
+    if dynamic is None:
+        dynamic = ""
     global last_status_message
 
     if dynamic and isatty:
-        print(f"{ansi('clear_line')} {dynamic}", end=ansi('start_line'), flush=True)
+        print(f"{ansi('clear_line')} {dynamic}", end=ansi("start_line"), flush=True)
     else:
         if message != last_status_message:
             print(message, flush=True)

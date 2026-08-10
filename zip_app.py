@@ -18,6 +18,7 @@ Interpreter : '{python_interpreter}'
 Target      : '{target_file}'
 """)
 
+
 # Filter function
 def filter_file(file: Path) -> bool:
     if file.name in ["__pycache__"]:
@@ -26,7 +27,13 @@ def filter_file(file: Path) -> bool:
 
     return True
 
+
 # Zip the App
 print("Creating archive...")
-zipapp.create_archive(source=source_dir, target=target_file, interpreter=python_interpreter, filter=filter_file)
+zipapp.create_archive(
+    source=source_dir,
+    target=target_file,
+    interpreter=python_interpreter,
+    filter=filter_file,
+)
 print("Zipping complete.")

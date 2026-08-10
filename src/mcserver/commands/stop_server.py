@@ -1,10 +1,12 @@
 from argparse import Namespace as argparseNamespace
+
+
 def main(args: argparseNamespace) -> int:
     # CLI arguments
     force_stop: bool = args.force_stop
 
-    import os
     import logging as log
+    import os
     from signal import SIGKILL, SIGTERM
 
     from .. import state
@@ -27,11 +29,15 @@ def main(args: argparseNamespace) -> int:
         return 0
 
     if not force_stop:
-        log.warning("Server appears to still be running, you may stop the server manually.")
+        log.warning(
+            "Server appears to still be running, you may stop the server manually."
+        )
         return 1
 
     import time
+
     from .. import config
+
     launcher_config = config.load_config("launcher")
     time.sleep(launcher_config["force_stop"])
 

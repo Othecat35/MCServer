@@ -1,12 +1,17 @@
 from argparse import Namespace as argparseNamespace
+
+
 def main(args: argparseNamespace) -> int:
     import logging as log
+
     from .. import state
 
     # Check MCServer status
     current_state = state.get_state()
     if current_state["is_active"]:
-        log.error(f"There's another active MCServer process ({current_state["action"]}) running with process ID: {current_state["process_id"]}")
+        log.error(
+            f"There's another active MCServer process ({current_state["action"]}) running with process ID: {current_state["process_id"]}"
+        )
         return 1
 
     # Set state
@@ -27,6 +32,7 @@ def main(args: argparseNamespace) -> int:
     # Download jarfile
     if not jarfile.exists():
         import json
+
         from .. import networking
 
         state.set_state("downloading_server")
@@ -47,35 +53,53 @@ def main(args: argparseNamespace) -> int:
             case "fabric":
                 from ..fabricmc import meta as fabricmc_meta
 
-                log.info(f"Downloading Fabric loader {loader_version} for Minecraft version {game_version}...")
-                networking.download(fabricmc_meta.download_url(game_version, loader_version, "1.0.1"), jarfile)
-            
-#            case "quilt":
-#                log.info(f"Downloading Quilt loader {loader_version} for Minecraft version {game_version}...")
-#                networking.download(f"https://")
+                log.info(
+                    f"Downloading Fabric loader {loader_version} for Minecraft version {game_version}..."
+                )
+                networking.download(
+                    fabricmc_meta.download_url(game_version, loader_version, "1.0.1"),
+                    jarfile,
+                )
 
-#            case "legacy-fabric":
-#                pass
+            #            case "quilt":
+            #                log.info(f"Downloading Quilt loader {loader_version} for Minecraft version {game_version}...")
+            #                networking.download(f"https://")
+
+            #            case "legacy-fabric":
+            #                pass
 
             # Plugin loaders
             case "paper":
                 from ..papermc import api as papermc_api
-                log.info(f"Downloading Paper build {loader_version} for Minecraft version {game_version}...")
 
-                download_prop = papermc_api.get_project_build("paper", game_version, loader_version)["download_props"]["server:default"]
+                log.info(
+                    f"Downloading Paper build {loader_version} for Minecraft version {game_version}..."
+                )
+
+                download_prop = papermc_api.get_project_build(
+                    "paper", game_version, loader_version
+                )["download_props"]["server:default"]
                 networking.download(download_prop["download_url"], jarfile)
             case "purpur":
                 from ..purpurmc import api as purpurmc_api
 
-                log.info(f"Downloading Purpur build {loader_version} for Minecraft version {game_version}...")
-                networking.download(purpurmc_api.download_url("purpur", game_version, loader_version), jarfile)
+                log.info(
+                    f"Downloading Purpur build {loader_version} for Minecraft version {game_version}..."
+                )
+                networking.download(
+                    purpurmc_api.download_url("purpur", game_version, loader_version),
+                    jarfile,
+                )
 
             # Vanilla
             case "vanilla":
                 from ..mojang import manifest as mojang_manifest
+
                 log.info(f"Downloading vanilla Minecraft version {game_version}...")
 
-                version_manifest = mojang_manifest.get_version_manifest()["game_versions"]
+                version_manifest = mojang_manifest.get_version_manifest()[
+                    "game_versions"
+                ]
                 package_url = None
                 for version in version_manifest:
                     if version["version_id"] == game_version:
@@ -90,9 +114,11 @@ def main(args: argparseNamespace) -> int:
                 package_json = json.loads(package_data)
                 version_download = package_json["downloads"]["server"]
 
-                networking.download(version_download["url"], jarfile, hashes={
-                    "sha1": version_download["sha1"]
-                })
+                networking.download(
+                    version_download["url"],
+                    jarfile,
+                    hashes={"sha1": version_download["sha1"]},
+                )
             case _:
                 log.error(f"Loader is not supported: {loader_name}")
 
@@ -111,7 +137,7 @@ def main(args: argparseNamespace) -> int:
         f"-Xmx{memory_config['max']}M",
         f"-Xms{memory_config['min']}M",
         "-jar",
-        str(jarfile)
+        str(jarfile),
     ]
 
     if launcher_config["is_nogui"]:

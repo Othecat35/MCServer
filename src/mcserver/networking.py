@@ -1,44 +1,58 @@
-#Modules
+# Modules
 # Standard
-import hashlib, shutil
-import urllib.parse, urllib.request
+import hashlib
 import logging as log
-
+import shutil
+import urllib.parse
+import urllib.request
 from pathlib import Path
 from typing import TypedDict
 
 # MCServer
 from . import __version__
-from .shared import current_dir
-from .shared import format_number
-from .shared import mcserver_dir
-from .shared import print_status
+from .shared import current_dir, format_number, mcserver_dir, print_status
 
-#TypedDict
+
+# TypedDict
 class ResponseObject(TypedDict):
     text: str
     headers: dict
     status: int
 
-#Errors
-class DownloadURLError(Exception): pass
 
-#Variables
+# Errors
+class DownloadURLError(Exception):
+    pass
+
+
+# Variables
 user_agent = f"Othecat35/MCServer/{__version__} (https://github.com/Othecat35/MCServer)"
-read_chunk_size: int = 1024 * 64 # 64KiB
+read_chunk_size: int = 1024 * 64  # 64KiB
 
-#Paths
+# Paths
 tempfiles_dir = mcserver_dir / "tempfiles"
 
-#Functions
-def request(url: str, query: dict | None = None, data: bytes | None = None, headers: dict | None = None, method: str = "GET", timeout: int = 10) -> ResponseObject:
+
+# Functions
+def request(
+    url: str,
+    query: dict | None = None,
+    data: bytes | None = None,
+    headers: dict | None = None,
+    method: str = "GET",
+    timeout: int = 10,
+) -> ResponseObject:
     method = method.upper()
-    if query is None: query = {}
-    if headers is None: headers = {}
+    if query is None:
+        query = {}
+    if headers is None:
+        headers = {}
     headers.setdefault("User-Agent", user_agent)
 
     query_string = f"?{urllib.parse.urlencode(query)}" if query else ""
-    request = urllib.request.Request(f"{url}{query_string}", data=data, headers=headers, method=method)
+    request = urllib.request.Request(
+        f"{url}{query_string}", data=data, headers=headers, method=method
+    )
 
     log.debug(f"Requesting URL: {method} {request.full_url}")
     with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -51,13 +65,22 @@ def request(url: str, query: dict | None = None, data: bytes | None = None, head
         return {
             "text": response.read().decode("utf-8"),
             "headers": response_headers,
-            "status": response.status
+            "status": response.status,
         }
 
-def download(url: str, filename: str | Path, hashes: dict | None = None, headers: dict | None = None, timeout: int = 10):
+
+def download(
+    url: str,
+    filename: str | Path,
+    hashes: dict | None = None,
+    headers: dict | None = None,
+    timeout: int = 10,
+):
     filename = Path(filename)
-    if hashes is None: hashes = {}
-    if headers is None: headers = {}
+    if hashes is None:
+        hashes = {}
+    if headers is None:
+        headers = {}
     headers.setdefault("User-Agent", user_agent)
 
     basename = filename.name
@@ -105,9 +128,15 @@ def download(url: str, filename: str | Path, hashes: dict | None = None, headers
                 downloaded_length += len(data)
 
                 if content_length == 0:
-                    print_status(f"Downloading {basename}... (unknown final size)", dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}")
+                    print_status(
+                        f"Downloading {basename}... (unknown final size)",
+                        dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}",
+                    )
                 else:
-                    print_status(f"Downloading {basename}... File size: {format_number(content_length, 'iec')}", dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}/{format_number(content_length, 'iec')} ({round(downloaded_length / content_length * 100)}%)")
+                    print_status(
+                        f"Downloading {basename}... File size: {format_number(content_length, 'iec')}",
+                        dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}/{format_number(content_length, 'iec')} ({round(downloaded_length / content_length * 100)}%)",
+                    )
 
                 file.write(data)
 
@@ -116,6 +145,8 @@ def download(url: str, filename: str | Path, hashes: dict | None = None, headers
 
             log.debug(f"Got hash: {calculated_hash}")
             if calculated_hash != expected_hash:
-                raise DownloadURLError(f"Downloaded file '{tempfile.relative_to(current_dir)}' hash does not match with the expected {hash_name} hash")
+                raise DownloadURLError(
+                    f"Downloaded file '{tempfile.relative_to(current_dir)}' hash does not match with the expected {hash_name} hash"
+                )
 
     shutil.move(tempfile, filename)

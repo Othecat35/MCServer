@@ -1,35 +1,45 @@
-#Modules
+# Modules
 # Standard
-import json, zipfile
+import json
+import zipfile
 from pathlib import Path
 from typing import Literal, NotRequired, TypedDict
 
-#TYpedDict
+
+# TYpedDict
 class FileHashes(TypedDict):
-    sha1: str   #original: sha1
-    sha512: str #original: sha512
+    sha1: str  # original: sha1
+    sha512: str  # original: sha512
+
 
 class ModEnvironment(TypedDict):
-    client_side: Literal["required", "optional", "unsupported", "unknown"] #original: client
-    server_side: Literal["required", "optional", "unsupported", "unknown"] #original: server
+    client_side: Literal[
+        "required", "optional", "unsupported", "unknown"
+    ]  # original: client
+    server_side: Literal[
+        "required", "optional", "unsupported", "unknown"
+    ]  # original: server
+
 
 class ModpackFile(TypedDict):
-    file_path: Path                              #original: path
-    hashes: FileHashes                           #original: hashes
-    mod_environment: NotRequired[ModEnvironment] #original: env
-    download_urls: list[str]                     #original: downloads
-    file_size: int                               #original: fileSize
+    file_path: Path  # original: path
+    hashes: FileHashes  # original: hashes
+    mod_environment: NotRequired[ModEnvironment]  # original: env
+    download_urls: list[str]  # original: downloads
+    file_size: int  # original: fileSize
+
 
 class ModpackIndex(TypedDict):
-    format_version: int             #original: formatVersion
-    game_name: Literal["minecraft"] #original: game
-    version_id: str                 #original: versionId
-    pack_name: str                  #original: name
-    summary: NotRequired[str]       #original: summary
-    files: list[ModpackFile]        #original: files
-    dependencies: dict[str, str]    #original: dependencies
+    format_version: int  # original: formatVersion
+    game_name: Literal["minecraft"]  # original: game
+    version_id: str  # original: versionId
+    pack_name: str  # original: name
+    summary: NotRequired[str]  # original: summary
+    files: list[ModpackFile]  # original: files
+    dependencies: dict[str, str]  # original: dependencies
 
-#Functions
+
+# Functions
 def read_index(file_path: Path | str) -> ModpackIndex:
     file_path = Path(file_path)
 
@@ -39,13 +49,15 @@ def read_index(file_path: Path | str) -> ModpackIndex:
 
     files = []
     for file in pack_index["files"]:
-        files.append({
-            "file_path": Path(file["path"]),
-            "hashes": file["hashes"],
-            "mod_environment": file.get("env"),
-            "download_urls": file["downloads"],
-            "file_size": file["fileSize"]
-        })
+        files.append(
+            {
+                "file_path": Path(file["path"]),
+                "hashes": file["hashes"],
+                "mod_environment": file.get("env"),
+                "download_urls": file["downloads"],
+                "file_size": file["fileSize"],
+            }
+        )
 
     return {
         "format_version": pack_index["formatVersion"],
@@ -54,10 +66,13 @@ def read_index(file_path: Path | str) -> ModpackIndex:
         "pack_name": pack_index["name"],
         "summary": pack_index.get("summary"),
         "files": files,
-        "dependencies": pack_index["dependencies"]
+        "dependencies": pack_index["dependencies"],
     }
 
-def _extract_zip(zip_file: zipfile.ZipFile, zip_path: str, path: Path | str = Path.cwd()):
+
+def _extract_zip(
+    zip_file: zipfile.ZipFile, zip_path: str, path: Path | str = Path.cwd()
+):
     path = Path(path)
     for entry in zip_file.namelist():
         if not entry.startswith(zip_path):
@@ -71,11 +86,13 @@ def _extract_zip(zip_file: zipfile.ZipFile, zip_path: str, path: Path | str = Pa
         else:
             destination_path.write_bytes(zip_file.read(entry))
 
+
 def apply_overrides(file_path: str | Path) -> None:
     file_path = Path(file_path)
 
     with zipfile.ZipFile(file_path) as zip_file:
         _extract_zip(zip_file, "overrides/")
+
 
 def apply_server_overrides(file_path: str | Path) -> None:
     file_path = Path(file_path)

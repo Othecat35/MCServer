@@ -1,24 +1,27 @@
-#Modules
+# Modules
 # Standard
 import json
 from typing import NotRequired, TypedDict
 
-# MCSe.rver
-from .player_identity import normalize_player_uuid, PlayerUUID
-
 from .. import networking
 from ..constants import minecraft_api_url
+# MCSe.rver
+from .player_identity import PlayerUUID, normalize_player_uuid
 
-#TypedDict
+
+# TypedDict
 class PlayerIdentity(TypedDict):
     player_uuid: PlayerUUID
     player_name: str
     is_legacy: NotRequired[bool]
     is_demo: NotRequired[bool]
 
-#Functions
+
+# Functions
 def get_player_from_name(player_name: str) -> PlayerIdentity:
-    response = networking.request(f"{minecraft_api_url}/minecraft/profile/lookup/name/{player_name}")
+    response = networking.request(
+        f"{minecraft_api_url}/minecraft/profile/lookup/name/{player_name}"
+    )
     response_json = json.loads(response["text"])
 
     player_identity: PlayerIdentity = {
@@ -34,6 +37,7 @@ def get_player_from_name(player_name: str) -> PlayerIdentity:
 
     return player_identity
 
+
 def get_players_from_names(player_names: list[str] | str) -> list[PlayerIdentity]:
     if isinstance(player_names, str):
         player_names = [player_names]
@@ -42,9 +46,12 @@ def get_players_from_names(player_names: list[str] | str) -> list[PlayerIdentity
         raise ValueError("Cannot query more than 10 player names at once")
 
     data_payload = json.dumps(player_names).encode("utf-8")
-    response = networking.request(f"{minecraft_api_url}/minecraft/profile/lookup/bulk/byname", data=data_payload, headers={
-        "Content-Type": "application/json"
-    }, method="POST")
+    response = networking.request(
+        f"{minecraft_api_url}/minecraft/profile/lookup/bulk/byname",
+        data=data_payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
 
     response_json = json.loads(response["text"])
 
@@ -65,8 +72,11 @@ def get_players_from_names(player_names: list[str] | str) -> list[PlayerIdentity
 
     return player_identities
 
+
 def get_player_from_uuid(player_uuid: PlayerUUID) -> PlayerIdentity:
-    response = networking.request(f"{minecraft_api_url}/minecraft/profile/lookup/{player_uuid}")
+    response = networking.request(
+        f"{minecraft_api_url}/minecraft/profile/lookup/{player_uuid}"
+    )
     response_json = json.loads(response["text"])
 
     player_identity: PlayerIdentity = {

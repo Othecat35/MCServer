@@ -1,4 +1,6 @@
 from argparse import Namespace as argparseNamespace
+
+
 def main(args: argparseNamespace) -> int:
     # CLI Arguments
     game_version: str = args.game_version
@@ -13,13 +15,8 @@ def main(args: argparseNamespace) -> int:
     import copy
     import logging as log
 
-    from .. import __version__
-    from .. import config
-    from .. import shared
-    from .. import state
-
-    from ..metadata import metadata_file
-    from ..metadata import set_metadata
+    from .. import __version__, config, shared, state
+    from ..metadata import metadata_file, set_metadata
 
     # Special loader version
     if loader_name == "vanilla":
@@ -28,6 +25,7 @@ def main(args: argparseNamespace) -> int:
     # Special latest game_version
     if game_version in ["latest", "latest-release", "latest-snapshot"]:
         from ..mojang import manifest as mojang_manifest
+
         match game_version:
             case "latest" | "latest-release":
                 game_version = mojang_manifest.get_latest_release_version()
@@ -42,6 +40,7 @@ def main(args: argparseNamespace) -> int:
             # Mod Loaders
             case "fabric":
                 from ..fabricmc import meta as fabricmc_meta
+
                 loader_versions = fabricmc_meta.get_loader_versions()
                 for version in loader_versions:
                     if version["is_stable"]:
@@ -51,6 +50,7 @@ def main(args: argparseNamespace) -> int:
                 log.info(f"Latest Fabric loader version is {loader_version}")
             case "quilt":
                 from ..quiltmc import meta as quiltmc_meta
+
                 loader_versions = quiltmc_meta.get_loader_versions()
                 latest_quilt_version = loader_versions[0]
                 loader_version = str(latest_quilt_version["loader_version"])
@@ -58,12 +58,18 @@ def main(args: argparseNamespace) -> int:
             # Plugin Loader
             case "paper":
                 from ..papermc import api as papermc_api
-                latest_paper_version = papermc_api.get_latest_project_build("paper", game_version)
+
+                latest_paper_version = papermc_api.get_latest_project_build(
+                    "paper", game_version
+                )
                 loader_version = str(latest_paper_version["build_id"])
                 log.info(f"Latest Paper build version is: {loader_version}")
             case "purpur":
                 from ..purpurmc import api as purpurmc_api
-                latest_purpur_version = purpurmc_api.get_latest_project_build("purpur", game_version)
+
+                latest_purpur_version = purpurmc_api.get_latest_project_build(
+                    "purpur", game_version
+                )
                 loader_version = str(latest_purpur_version["build_id"])
                 log.info(f"Latest Purpur build version is: {loader_version}")
 
@@ -90,20 +96,12 @@ def main(args: argparseNamespace) -> int:
         config_override: dict = {}
         match config_name:
             case "launcher":
-                config_override = {
-                    "ram": {
-                        "min": min_ram,
-                        "max": max_ram
-                    }
-                }
+                config_override = {"ram": {"min": min_ram, "max": max_ram}}
 
             case "server":
                 config_override = {
                     "game_version": game_version,
-                    "loader": {
-                        "name": loader_name,
-                        "version": loader_version
-                    }
+                    "loader": {"name": loader_name, "version": loader_version},
                 }
 
         config_data = shared.merge_dict(default_config, config_override)

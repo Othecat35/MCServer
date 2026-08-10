@@ -1,35 +1,37 @@
-#Modules
+# Modules
 # Standard
-import argparse, json, math, os, shutil, sys, textwrap
+import argparse
+import json
 import logging as log
-
-from pathlib import Path
+import math
+import os
+import shutil
+import sys
+import textwrap
 from collections import deque
+from pathlib import Path
 
+from . import config, networking, state
 # MCServer
 from .config import default_configs, generate_config, load_config
 from .constants import __version__
-#from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
-from .metadata import metadata_file
-from .modrinth.api import get_project_versions, VersionDependency, modrinth_base_api
-from .networking import download, request
-from .shared import ansi, mcserver_dir, mod_environment_color, pluralize, format_number, wrap_ansi, confirmation_prompt
-from .state import get_state, set_state, is_active
-
-from . import config
-from . import state
-from . import networking
-
 from .fabricmc import meta as fabricmc_meta
+# from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
+from .metadata import metadata_file
 from .modrinth import modpack as modrinth_modpack
+from .modrinth.api import (VersionDependency, get_project_versions,
+                           modrinth_base_api)
+from .mojang import eula as mojang_eula
+from .mojang import manifest as mojang_manifest
+from .networking import download, request
 from .papermc import api as papermc_api
 from .purpurmc import api as purpurmc_api
 from .server_files import whitelist as server_whitelist
+from .shared import (ansi, confirmation_prompt, format_number, mcserver_dir,
+                     mod_environment_color, pluralize, wrap_ansi)
+from .state import get_state, is_active, set_state
 
-from .mojang import eula as mojang_eula
-from .mojang import manifest as mojang_manifest
-
-#Variables
+# Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
 log_level = log.DEBUG if debug_mode else log.INFO
 
@@ -44,54 +46,99 @@ version_dependency_types = {
     "embedded": 0,
     "optional": 1,
     "required": 2,
-    "incompatible": 3
+    "incompatible": 3,
 }
 
-#Paths
+# Paths
 mods_dir = Path("mods")
 plugins_dir = Path("plugins")
 
 configs_dir = mcserver_dir / "configs"
 tempfiles_dir = mcserver_dir / "tempfiles"
 
-#Error Classes
-class AddProjectsError(Exception): pass
-class InitializeServerError(Exception): pass
-class InstallServerError(Exception): pass
-class SearchProjectsError(Exception): pass
-class ShowProjectsError(Exception): pass
 
-class EULAAgreementError(Exception): pass
-class FetchProjectVersionError(Exception): pass
-class DownloadURLError(Exception): pass
+# Error Classes
+class AddProjectsError(Exception):
+    pass
+
+
+class InitializeServerError(Exception):
+    pass
+
+
+class InstallServerError(Exception):
+    pass
+
+
+class SearchProjectsError(Exception):
+    pass
+
+
+class ShowProjectsError(Exception):
+    pass
+
+
+class EULAAgreementError(Exception):
+    pass
+
+
+class FetchProjectVersionError(Exception):
+    pass
+
+
+class DownloadURLError(Exception):
+    pass
+
 
 class ResolveProjectsConflictsError(Exception):
-    def __init__(self, project_id: str, incompatible_dependants: list | str, required_dependants: list | str | None = None):
-        if required_dependants is None: required_dependants = []
-        if isinstance(required_dependants, str): required_dependants = [required_dependants]
-        if isinstance(incompatible_dependants, str): incompatible_dependants = [incompatible_dependants]
+    def __init__(
+        self,
+        project_id: str,
+        incompatible_dependants: list | str,
+        required_dependants: list | str | None = None,
+    ):
+        if required_dependants is None:
+            required_dependants = []
+        if isinstance(required_dependants, str):
+            required_dependants = [required_dependants]
+        if isinstance(incompatible_dependants, str):
+            incompatible_dependants = [incompatible_dependants]
 
         required_join = "', '".join(required_dependants)
-        required_message = f" but required by '{required_join}'" if required_dependants else " but it is requested"
+        required_message = (
+            f" but required by '{required_join}'"
+            if required_dependants
+            else " but it is requested"
+        )
 
         incompatible_join = "', '".join(incompatible_dependants)
-        super().__init__(f"Project '{project_id}' is incompatible with '{incompatible_join}'{required_message}")
+        super().__init__(
+            f"Project '{project_id}' is incompatible with '{incompatible_join}'{required_message}"
+        )
 
         self.project_id = project_id
 
         self.incompatible_dependants = incompatible_dependants
         self.required_dependants = required_dependants
 
-#Functions
+
+# Functions
 def print_help(args):
     args.parser.print_help()
     sys.exit(0)
+
 
 def hahaha_yes():
     print("The cake is a lie.")
     sys.exit(0)
 
-def wrap_string(string: str, initial_indent: str | int = "", subsequent_indent: str | int = "", width: int | None = None):
+
+def wrap_string(
+    string: str,
+    initial_indent: str | int = "",
+    subsequent_indent: str | int = "",
+    width: int | None = None,
+):
     if isinstance(initial_indent, int):
         initial_indent = " " * initial_indent
 
@@ -99,10 +146,19 @@ def wrap_string(string: str, initial_indent: str | int = "", subsequent_indent: 
         subsequent_indent = " " * subsequent_indent
 
     terminal_width = width or shutil.get_terminal_size().columns
-    return "\n".join(textwrap.wrap(string, width=terminal_width, initial_indent=initial_indent, subsequent_indent=subsequent_indent))
+    return "\n".join(
+        textwrap.wrap(
+            string,
+            width=terminal_width,
+            initial_indent=initial_indent,
+            subsequent_indent=subsequent_indent,
+        )
+    )
+
 
 project_label = "project"
 loader_dir = None
+
 
 def set_loader_context(loader_name: str):
     global project_label
@@ -115,15 +171,23 @@ def set_loader_context(loader_name: str):
         project_label = "plugin"
         loader_dir = plugins_dir
 
+
 # Resolve prejects dependencies
 def adapt_dependencies_data(dependencies: list[VersionDependency]) -> dict:
     dependencies_data = {}
     for dependency in dependencies:
         if "project_id" in dependency:
-            if dependency["project_id"] is not None and dependency["dependency_type"] != version_dependency_types["embedded"]:
-                dependencies_data[dependency["project_id"]] = version_dependency_types[dependency["dependency_type"]]
+            if (
+                dependency["project_id"] is not None
+                and dependency["dependency_type"]
+                != version_dependency_types["embedded"]
+            ):
+                dependencies_data[dependency["project_id"]] = version_dependency_types[
+                    dependency["dependency_type"]
+                ]
 
     return dependencies_data
+
 
 def filter_dependencies_type(dependencies: dict, filter_type: str):
     dependencies_list = []
@@ -132,6 +196,7 @@ def filter_dependencies_type(dependencies: dict, filter_type: str):
             dependencies_list.append(dependency_id)
 
     return dependencies_list
+
 
 # def resolve_projects(projects_id: list | str, game_version: str, loader_name: str) -> dict:
 #     projects_id = list(projects_id)
@@ -211,7 +276,7 @@ def filter_dependencies_type(dependencies: dict, filter_type: str):
 
 #             if "version_name" in version:
 #                 project_metadata["version_name"] = version["version_name"]
-            
+
 #             if "version_number" in version:
 #                 project_metadata["version_number"] = version["version_number"]
 
@@ -302,7 +367,8 @@ def filter_dependencies_type(dependencies: dict, filter_type: str):
 #     if debug_mode: print(json.dumps(resolved_data, indent=2))
 #     return resolved_data
 
-#Command Functions
+
+# Command Functions
 def add_projects(args):
     # projects = args.projects
 
@@ -387,6 +453,7 @@ def add_projects(args):
     #         download(project_file["url"], loader_dir / project_file["filename"], hashes=project_file["hashes"])
     return 0
 
+
 def initialize_server(args):
     # Arguments
     game_version = args.mc_version
@@ -430,11 +497,15 @@ def initialize_server(args):
 
             # Plugin loaders
             case "paper":
-                latest_build_version = papermc_api.get_latest_project_build("paper", game_version)["build_version"]
+                latest_build_version = papermc_api.get_latest_project_build(
+                    "paper", game_version
+                )["build_version"]
                 log.info(f"Latest Paper build version is: {latest_build_version}")
                 loader_version = latest_build_version
             case "purpur":
-                latest_build_version = purpurmc_api.get_latest_project_build("purpur", game_version)["build_version"]
+                latest_build_version = purpurmc_api.get_latest_project_build(
+                    "purpur", game_version
+                )["build_version"]
                 log.info(f"Latest Purpur build version is: {latest_build_version}")
                 loader_version = latest_build_version
 
@@ -457,39 +528,32 @@ def initialize_server(args):
         update_config = None
         match config_name:
             case "launcher":
-                update_config = {
-                    "ram": {
-                        "min": min_ram,
-                        "max": max_ram
-                    }
-                }
+                update_config = {"ram": {"min": min_ram, "max": max_ram}}
 
             case "server":
                 update_config = {
                     "version": game_version,
-                    "loader": {
-                        "name": loader_name,
-                        "version": loader_version
-                    }
+                    "loader": {"name": loader_name, "version": loader_version},
                 }
 
         try:
             generate_config(config_name, update_config)
         except FileExistsError:
-            log.debug(f"Configuration file '{config_name}' already exist, continuing...")
+            log.debug(
+                f"Configuration file '{config_name}' already exist, continuing..."
+            )
 
     if is_first_initialize:
-        metadata_file.write_text(json.dumps({
-            "mcserver": {
-                "version": __version__
-            }
-        }, indent=2))
+        metadata_file.write_text(
+            json.dumps({"mcserver": {"version": __version__}}, indent=2)
+        )
 
         log.info("Initialized server configuration.")
     else:
         log.info("Reinitialized server configuration.")
 
     return 0
+
 
 def import_setup(args):
     file = Path(args.file)
@@ -514,11 +578,11 @@ def import_setup(args):
                 return 1
 
     args = argparse.Namespace(
-        mc_version = modpack_index["dependencies"]["minecraft"],
-        loader = loader_name,
-        loader_version = loader_version,
-        min_ram = min_ram,
-        max_ram = max_ram
+        mc_version=modpack_index["dependencies"]["minecraft"],
+        loader=loader_name,
+        loader_version=loader_version,
+        min_ram=min_ram,
+        max_ram=max_ram,
     )
 
     initialize_server(args)
@@ -535,8 +599,10 @@ def import_setup(args):
                 case "optional":
                     pass
 
+
 def list_projects(args) -> int:
     return 0
+
 
 # 'op' commands
 def op_grant(args) -> int:
@@ -545,12 +611,15 @@ def op_grant(args) -> int:
     bypasses_player_limit = args.bypasses_player_limit
     return 0
 
+
 def op_list(args) -> int:
     return 0
+
 
 def op_revoke(args) -> int:
     players = args.players
     return 0
+
 
 def search_projects(args):
     query = " ".join(args.query)
@@ -564,14 +633,20 @@ def search_projects(args):
 
     search_index = sort_by or modrinth_config.get("sort_by", "relevance")
     search_offset = search_limit * (page - 1)
-    search_message = f"Searching projects with '{query}' in Modrinth sorted by {search_index}..."
+    search_message = (
+        f"Searching projects with '{query}' in Modrinth sorted by {search_index}..."
+    )
     search_filters = []
 
     if not (configs_dir / "server.json").exists():
-        log.warning("Configuration file for 'server' is missing, no version filter will be applied.")
+        log.warning(
+            "Configuration file for 'server' is missing, no version filter will be applied."
+        )
 
         search_filters = []
-        search_message = f"Searching projects with '{query}' in Modrinth sorted by {search_index}..."
+        search_message = (
+            f"Searching projects with '{query}' in Modrinth sorted by {search_index}..."
+        )
     elif not no_filter:
         server_config = load_config("server")
         server_loader = server_config["loader"]
@@ -589,17 +664,22 @@ def search_projects(args):
             [f"project_type:{project_label}"],
             ["server_side!=unsupported"],
             [f"categories:{loader_name}"],
-            [f"versions:{server_version}"]
+            [f"versions:{server_version}"],
         ]
 
     log.info(search_message)
-    response = json.loads(request(f"{modrinth_base_api}/v2/search", query={
-            "query": query,
-            "facets": json.dumps(search_filters),
-            "index": search_index,
-            "limit": search_limit,
-            "offset": search_offset
-        })["body"])
+    response = json.loads(
+        request(
+            f"{modrinth_base_api}/v2/search",
+            query={
+                "query": query,
+                "facets": json.dumps(search_filters),
+                "index": search_index,
+                "limit": search_limit,
+                "offset": search_offset,
+            },
+        )["body"]
+    )
 
     projects_list = response.get("hits", [])
     if not projects_list:
@@ -613,14 +693,24 @@ def search_projects(args):
     follows_width = 0
 
     for project in projects_list:
-        server_side_width = max(server_side_width, len(project.get("server_side", "unknown")))
-        client_side_width = max(client_side_width, len(project.get("client_side", "unknown")))
+        server_side_width = max(
+            server_side_width, len(project.get("server_side", "unknown"))
+        )
+        client_side_width = max(
+            client_side_width, len(project.get("client_side", "unknown"))
+        )
 
         downloads = project.get("downloads", 0)
-        downloads_width = max(downloads_width, len(f"{pluralize('Download', downloads)}: {format_number(downloads)}"))
+        downloads_width = max(
+            downloads_width,
+            len(f"{pluralize('Download', downloads)}: {format_number(downloads)}"),
+        )
 
         follows = project.get("follows", 0)
-        follows_width = max(follows_width, len(f"{pluralize('Follow', follows)}: {format_number(follows)}"))
+        follows_width = max(
+            follows_width,
+            len(f"{pluralize('Follow', follows)}: {format_number(follows)}"),
+        )
 
     total_hits = response.get("total_hits", 0)
     total_pages = f"{math.ceil(total_hits / search_limit):,}"
@@ -628,34 +718,58 @@ def search_projects(args):
     response_offset = response.get("offset", 0)
     shown_projects_count = min(len(projects_list), search_limit)
 
-    skipped_message = f"(skipped {response_offset:,} {pluralize(project_label, response_offset)}) " if response_offset > 0 else ""
-    log.info(f"Showing {shown_projects_count:,} {pluralize(project_label, shown_projects_count)} out of {total_hits:,} total {pluralize(project_label, total_hits)} {skipped_message}| Page: {page:,}/{total_pages}")
+    skipped_message = (
+        f"(skipped {response_offset:,} {pluralize(project_label, response_offset)}) "
+        if response_offset > 0
+        else ""
+    )
+    log.info(
+        f"Showing {shown_projects_count:,} {pluralize(project_label, shown_projects_count)} out of {total_hits:,} total {pluralize(project_label, total_hits)} {skipped_message}| Page: {page:,}/{total_pages}"
+    )
 
     for index, project in enumerate(projects_list):
         title = wrap_ansi(project.get("title", "<No Title>"), "bold")
         slug = project.get("slug", "<No Slug>")
         author = f"by {project.get('author', '<No Author>')}"
 
-        project_header = wrap_string(f"{title} ({slug}) {wrap_ansi(author, 'gray')}", subsequent_indent=" ")
+        project_header = wrap_string(
+            f"{title} ({slug}) {wrap_ansi(author, 'gray')}", subsequent_indent=" "
+        )
 
         downloads = project.get("downloads", 0)
         follows = project.get("follows", 0)
 
-        downloads_text = f"{pluralize('Download', downloads)}: {format_number(downloads)}"
+        downloads_text = (
+            f"{pluralize('Download', downloads)}: {format_number(downloads)}"
+        )
         follows_text = f"{pluralize('Follow', follows)}: {format_number(follows)}"
-        downloads_follows = wrap_ansi(f"[ {downloads_text: <{downloads_width}} | {follows_text: <{follows_width}} ]", "gray")
+        downloads_follows = wrap_ansi(
+            f"[ {downloads_text: <{downloads_width}} | {follows_text: <{follows_width}} ]",
+            "gray",
+        )
 
-        server_side = wrap_ansi(f"Server: {mod_environment_color(project.get('server_side', "unknown"), server_side_width)}", "bold")
-        client_side = mod_environment_color(project.get("client_side", "unknown"), client_side_width)
+        server_side = wrap_ansi(
+            f"Server: {mod_environment_color(project.get('server_side', "unknown"), server_side_width)}",
+            "bold",
+        )
+        client_side = mod_environment_color(
+            project.get("client_side", "unknown"), client_side_width
+        )
 
-        description = wrap_string(project["description"], initial_indent="    ", subsequent_indent=" ")
+        description = wrap_string(
+            project["description"], initial_indent="    ", subsequent_indent=" "
+        )
 
         is_end_of_list = (index + 1) == shown_projects_count
 
-        print(f"""{project_header}
+        print(
+            f"""{project_header}
 [ {server_side} | Client: {client_side} ] {downloads_follows}
 > https://modrinth.com/{project_label}/{slug}
-{description}""", end="\n" if is_end_of_list else "\n\n")
+{description}""",
+            end="\n" if is_end_of_list else "\n\n",
+        )
+
 
 def show_projects(args):
     projects = args.projects
@@ -663,10 +777,11 @@ def show_projects(args):
     set_loader_context(load_config("server", allow_missing=True)["loader"]["name"])
 
     log.info(f"Getting {pluralize(project_label, len(projects))} information...")
-    projects_info = json.loads(request(f"{modrinth_base_api}/v2/projects", query={
-            "ids": json.dumps(projects)
-        }
-    )["body"])
+    projects_info = json.loads(
+        request(
+            f"{modrinth_base_api}/v2/projects", query={"ids": json.dumps(projects)}
+        )["body"]
+    )
 
     for project_index, project in enumerate(projects_info):
         title = wrap_ansi(project.get("title", "") or "<No Title>", "bold")
@@ -675,29 +790,52 @@ def show_projects(args):
         downloads = wrap_ansi(format_number(project.get("downloads", 0)), "bold")
         followers = wrap_ansi(format_number(project.get("followers", 0)), "bold")
 
-        project_categories = ', '.join(project.get('categories', ['None'])).title()
-        categories = wrap_string(f"Categories: {wrap_ansi(project_categories, 'bold')}", subsequent_indent=" ")
+        project_categories = ", ".join(project.get("categories", ["None"])).title()
+        categories = wrap_string(
+            f"Categories: {wrap_ansi(project_categories, 'bold')}",
+            subsequent_indent=" ",
+        )
 
-        project_loaders = ', '.join(project.get('loaders', ['None'])).title()
-        loaders = wrap_string(f"Loaders: {wrap_ansi(project_loaders, 'bold')}", subsequent_indent=" ")
+        project_loaders = ", ".join(project.get("loaders", ["None"])).title()
+        loaders = wrap_string(
+            f"Loaders: {wrap_ansi(project_loaders, 'bold')}", subsequent_indent=" "
+        )
 
-        project_game_versions = ', '.join(project.get('game_versions', ['None'])).title()
-        game_versions = wrap_string(f"Minecraft Versions: {wrap_ansi(project_game_versions, 'bold')}", subsequent_indent=" ")
+        project_game_versions = ", ".join(
+            project.get("game_versions", ["None"])
+        ).title()
+        game_versions = wrap_string(
+            f"Minecraft Versions: {wrap_ansi(project_game_versions, 'bold')}",
+            subsequent_indent=" ",
+        )
 
-        server_side = wrap_ansi(f"Server: {mod_environment_color(project.get('server_side', '<Unknown>'))}", "bold")
+        server_side = wrap_ansi(
+            f"Server: {mod_environment_color(project.get('server_side', '<Unknown>'))}",
+            "bold",
+        )
         client_side = mod_environment_color(project.get("client_side", "<Unknown>"))
 
         project_license = project.get("license", {})
-        license_name = wrap_ansi(project_license.get("name", "") or "All Rights Reserved", "bold")
-        license_id = wrap_ansi(project_license.get("id", "") or "LicenseRef-All-Rights-Reserved", "bold")
+        license_name = wrap_ansi(
+            project_license.get("name", "") or "All Rights Reserved", "bold"
+        )
+        license_id = wrap_ansi(
+            project_license.get("id", "") or "LicenseRef-All-Rights-Reserved", "bold"
+        )
 
         project_homepage = project.get("slug", project["id"])
-        homepage = wrap_ansi(f"https://modrinth.com/{project_label}/{project_homepage}", "bold")
+        homepage = wrap_ansi(
+            f"https://modrinth.com/{project_label}/{project_homepage}", "bold"
+        )
 
-        project_description = project.get('description', '<No Description>')
-        description = wrap_string(f"Description: {wrap_ansi(project_description, 'bold')}", subsequent_indent=" ")
+        project_description = project.get("description", "<No Description>")
+        description = wrap_string(
+            f"Description: {wrap_ansi(project_description, 'bold')}",
+            subsequent_indent=" ",
+        )
 
-        if (project_index >= 1): print()
+        if project_index >= 1:
+            print()
         print(f"""Name: {title} ({slug})
 Downloads: {downloads}
 Followers: {followers}
@@ -709,11 +847,14 @@ License: {license_name} ({license_id})
 Homepage: {homepage}
 {description}""")
 
+
 def start_server(args):
     # Checking current state
     if state.is_active():
         current_state = state.get_state()
-        log.error(f"There's another active MCServer process ({current_state["action"]}) running with process ID: {current_state["process_id"]}")
+        log.error(
+            f"There's another active MCServer process ({current_state["action"]}) running with process ID: {current_state["process_id"]}"
+        )
         return 1
 
     state.set_state("running_server")
@@ -736,61 +877,96 @@ def start_server(args):
         match loader_name:
             # Mod loaders
             case "fabric":
-                log.info(f"Downloading Fabric loader {loader_version} for Minecraft version {game_version}...")
-                networking.download(f"https://meta.fabricmc.net/v2/versions/loader/{game_version}/{loader_version}/1.1.1/server/jar", launcher_config["jarfile"])
+                log.info(
+                    f"Downloading Fabric loader {loader_version} for Minecraft version {game_version}..."
+                )
+                networking.download(
+                    f"https://meta.fabricmc.net/v2/versions/loader/{game_version}/{loader_version}/1.1.1/server/jar",
+                    launcher_config["jarfile"],
+                )
 
             # Plugin loaders
             case "paper":
-                log.info(f"Downloading Paper version {loader_version} for Minecraft version {game_version}...")
-                download_prop = papermc_api.get_project_build("paper", game_version, loader_version)["download_props"]["server:default"]
-                networking.download(download_prop["download_url"], launcher_config["jarfile"], dict(download_prop["checksums"]))
+                log.info(
+                    f"Downloading Paper version {loader_version} for Minecraft version {game_version}..."
+                )
+                download_prop = papermc_api.get_project_build(
+                    "paper", game_version, loader_version
+                )["download_props"]["server:default"]
+                networking.download(
+                    download_prop["download_url"],
+                    launcher_config["jarfile"],
+                    dict(download_prop["checksums"]),
+                )
             case "purpur":
-                log.info(f"Downloading Purpur version {loader_version} for Minecraft version {game_version}...")
-                networking.download(purpurmc_api.download_url("purpur", game_version, loader_version), launcher_config["jarfile"], {
-                    "md5": purpurmc_api.get_project_build("purpur", game_version, loader_version)["artifact_md5"]
-                })
+                log.info(
+                    f"Downloading Purpur version {loader_version} for Minecraft version {game_version}..."
+                )
+                networking.download(
+                    purpurmc_api.download_url("purpur", game_version, loader_version),
+                    launcher_config["jarfile"],
+                    {
+                        "md5": purpurmc_api.get_project_build(
+                            "purpur", game_version, loader_version
+                        )["artifact_md5"]
+                    },
+                )
 
             # Vanilla
             case "vanilla":
                 log.debug("Getting Mojang version manifest file...")
-                version_manifest = mojang_manifest.get_version_manifest()["game_versions"]
+                version_manifest = mojang_manifest.get_version_manifest()[
+                    "game_versions"
+                ]
 
                 selected_version_url = None
                 for version in version_manifest:
                     if version["version_id"] == game_version:
-                        selected_version_url =    version["package_url"]
+                        selected_version_url = version["package_url"]
                         break
 
                 if selected_version_url is None:
                     log.error(f"Minecraft version {game_version} is not found.")
                     return 1
 
-                server_download = json.loads(networking.request(selected_version_url)["body"])["downloads"]["server"]
+                server_download = json.loads(
+                    networking.request(selected_version_url)["body"]
+                )["downloads"]["server"]
                 log.info(f"Downloading vanilla Minecraft version {game_version}...")
 
-                networking.download(server_download["url"], launcher_config["jarfile"], {
-                    "sha1": server_download["sha1"]
-                })
-            
+                networking.download(
+                    server_download["url"],
+                    launcher_config["jarfile"],
+                    {"sha1": server_download["sha1"]},
+                )
+
             case _:
                 log.error(f"Loader '{loader_name}' is not supported.")
                 return 1
 
     # Running the server
     if not shutil.which("java"):
-        log.error("Cannot find 'java' in PATH, is Java Runtime Environment installed correctly?")
+        log.error(
+            "Cannot find 'java' in PATH, is Java Runtime Environment installed correctly?"
+        )
         return 1
 
     if memory_config["min"] > memory_config["max"]:
-        log.error(f"Minimum RAM cannot be larger that maximum RAM, please check configuration for `launcher`")
+        log.error(
+            f"Minimum RAM cannot be larger that maximum RAM, please check configuration for `launcher`"
+        )
         return 1
 
-    #TODO: Implement the "free RAM" checker here
+    # TODO: Implement the "free RAM" checker here
 
     try:
         if not mojang_eula.is_eula_agreed():
-            log.warning("You need to agree to Mojang's EULA in order to run the server: https://aka.ms/MinecraftEULA")
-            log.info(f"Please type '{wrap_ansi(eula_agree_sentence, 'yellow')}' (case-insensitive) to agree with Mojang's EULA.")
+            log.warning(
+                "You need to agree to Mojang's EULA in order to run the server: https://aka.ms/MinecraftEULA"
+            )
+            log.info(
+                f"Please type '{wrap_ansi(eula_agree_sentence, 'yellow')}' (case-insensitive) to agree with Mojang's EULA."
+            )
             answer = input("> ")
 
             if answer.lower().strip() == eula_agree_sentence.lower().strip():
@@ -807,7 +983,7 @@ def start_server(args):
         f"-Xmx{memory_config['max']}M",
         f"-Xms{memory_config['min']}M",
         "-jar",
-        launcher_config["jarfile"]
+        launcher_config["jarfile"],
     ]
 
     if launcher_config["hide_gui"]:
@@ -818,9 +994,11 @@ def start_server(args):
     log.debug(f"Executing command: {' '.join(java_command_argv)}")
     os.execvp(java_command_argv[0], java_command_argv)
 
+
 def whitelist_add(args) -> int:
     players = args.players
     return 0
+
 
 def whitelist_list(args) -> int:
     whitelisted_players = server_whitelist.list_players()
@@ -828,7 +1006,9 @@ def whitelist_list(args) -> int:
     if player_count < 1:
         log.info("There is no whitelisted player")
     else:
-       log.info(f"There {pluralize('is', player_count)} {player_count} whitelisted {pluralize("player", player_count)}:")
+        log.info(
+            f"There {pluralize('is', player_count)} {player_count} whitelisted {pluralize("player", player_count)}:"
+        )
 
     player_list: list[str] = []
     for player in whitelisted_players:
@@ -838,28 +1018,29 @@ def whitelist_list(args) -> int:
     print("\n".join(player_list))
     return 0
 
+
 def whitelist_remove(args) -> int:
     players = args.players
     return 0
 
-#Log handler
+
+# Log handler
 class ClearLineHandler(log.StreamHandler):
     def emit(self, record):
-        self.stream.write(ansi('clear_line') + ansi('start_line'))
+        self.stream.write(ansi("clear_line") + ansi("start_line"))
         self.stream.flush()
         super().emit(record)
 
-#Main
+
+# Main
 def main():
-    if ((sys.argv[1] if len(sys.argv) > 1 else "") == "cake"): hahaha_yes()
+    if (sys.argv[1] if len(sys.argv) > 1 else "") == "cake":
+        hahaha_yes()
 
     log_handler = ClearLineHandler(sys.stdout)
     log_handler.setFormatter(log.Formatter("[%(levelname)s]: %(message)s"))
 
-    log.basicConfig(
-        level=log_level,
-        handlers=[log_handler]
-    )
+    log.basicConfig(level=log_level, handlers=[log_handler])
 
     # Parser
     parser = argparse.ArgumentParser(
@@ -868,113 +1049,234 @@ def main():
         epilog="Not created for Windows.",
         allow_abbrev=False,
         suggest_on_error=True,
-        color=True)
+        color=True,
+    )
 
     parser.set_defaults(func=print_help, parser=parser)
 
     parser.add_argument(
-        "-v", "--version",
-        action="version",
-        version="%(prog)s " + __version__)
+        "-v", "--version", action="version", version="%(prog)s " + __version__
+    )
 
     commands = parser.add_subparsers(title="Commands")
 
-    #Commands
+    # Commands
     # 'add' command
-    add_command = commands.add_parser("add", help="Add Modrinth projects", description="Add Modrinth projects")
+    add_command = commands.add_parser(
+        "add", help="Add Modrinth projects", description="Add Modrinth projects"
+    )
     add_command.set_defaults(func=add_projects)
 
-    add_command.add_argument("projects", nargs="+", type=str, help="Project slugs or IDs")
+    add_command.add_argument(
+        "projects", nargs="+", type=str, help="Project slugs or IDs"
+    )
 
     # 'import' command
-    import_command = commands.add_parser("import", description="Import a Modrinth modpack", help="Import a Modrinth modpack")
+    import_command = commands.add_parser(
+        "import",
+        description="Import a Modrinth modpack",
+        help="Import a Modrinth modpack",
+    )
     import_command.set_defaults(func=import_setup)
 
     import_command.add_argument("file", type=str, help="THe Modpack file")
-    import_command.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for the server (in Mebibytes)", metavar="size")
-    import_command.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibytes)", metavar="size")
+    import_command.add_argument(
+        "--min-ram",
+        default=512,
+        type=int,
+        help="Minimum RAM for the server (in Mebibytes)",
+        metavar="size",
+    )
+    import_command.add_argument(
+        "--max-ram",
+        default=2048,
+        type=int,
+        help="Maximum RAM for the server (in Mebibytes)",
+        metavar="size",
+    )
 
     # 'init' command
     init_command = commands.add_parser("init", help="Initialize server configurations")
     init_command.set_defaults(func=initialize_server)
 
-    init_command.add_argument("--mc-version", default="latest-release", type=str, help="Minecraft server version", metavar="version")
-    init_command.add_argument("--loader", default="vanilla", type=str, choices=loaders_list, help="Loader for the server (vanilla for unmodded server)")
-    init_command.add_argument("--loader-version", default="latest", type=str, help="Version of the loader", metavar="version")
-    init_command.add_argument("--min-ram", default=512, type=int, help="Minimum RAM for the server (in Mebibyte)", metavar="size")
-    init_command.add_argument("--max-ram", default=2048, type=int, help="Maximum RAM for the server (in Mebibyte)", metavar="size")
+    init_command.add_argument(
+        "--mc-version",
+        default="latest-release",
+        type=str,
+        help="Minecraft server version",
+        metavar="version",
+    )
+    init_command.add_argument(
+        "--loader",
+        default="vanilla",
+        type=str,
+        choices=loaders_list,
+        help="Loader for the server (vanilla for unmodded server)",
+    )
+    init_command.add_argument(
+        "--loader-version",
+        default="latest",
+        type=str,
+        help="Version of the loader",
+        metavar="version",
+    )
+    init_command.add_argument(
+        "--min-ram",
+        default=512,
+        type=int,
+        help="Minimum RAM for the server (in Mebibyte)",
+        metavar="size",
+    )
+    init_command.add_argument(
+        "--max-ram",
+        default=2048,
+        type=int,
+        help="Maximum RAM for the server (in Mebibyte)",
+        metavar="size",
+    )
 
     # 'list' command
-    list_command = commands.add_parser("list", description="List downloaded projects", help="List downloaded projects")
+    list_command = commands.add_parser(
+        "list", description="List downloaded projects", help="List downloaded projects"
+    )
     list_command.set_defaults(func=list_projects)
 
     # 'op' commands
-    op_command = commands.add_parser("op", help="Manage operator statuses", description="Manage operator statuses")
+    op_command = commands.add_parser(
+        "op", help="Manage operator statuses", description="Manage operator statuses"
+    )
     op_command.set_defaults(func=print_help, parser=op_command)
 
     op_subcommands = op_command.add_subparsers(title="Subcommands")
 
     # 'op grant'
-    op_grant_command = op_subcommands.add_parser("grant", help="Grant operator status to players", description="Grant operator status to players")
+    op_grant_command = op_subcommands.add_parser(
+        "grant",
+        help="Grant operator status to players",
+        description="Grant operator status to players",
+    )
     op_grant_command.set_defaults(func=op_grant)
 
     op_grant_command.add_argument("players", nargs="+", help="Player names or UUIDs")
-    op_grant_command.add_argument("--level", type=int, choices=[0, 1, 2, 3, 4], help="Operator permission level (0-4)", metavar="level", dest="permission_level")
-    op_grant_command.add_argument("--bypass-player-limit", action="store_true", help="Can bypass player limit", dest="bypasses_player_limit")
+    op_grant_command.add_argument(
+        "--level",
+        type=int,
+        choices=[0, 1, 2, 3, 4],
+        help="Operator permission level (0-4)",
+        metavar="level",
+        dest="permission_level",
+    )
+    op_grant_command.add_argument(
+        "--bypass-player-limit",
+        action="store_true",
+        help="Can bypass player limit",
+        dest="bypasses_player_limit",
+    )
 
     # 'op list'
-    op_list_command = op_subcommands.add_parser("list", help="List all operators", description="List all operators")
+    op_list_command = op_subcommands.add_parser(
+        "list", help="List all operators", description="List all operators"
+    )
     op_list_command.set_defaults(func=op_list)
 
     # 'op revoke'
-    op_revoke_command = op_subcommands.add_parser("revoke", help="Revoke operator status from players", description="Revoke operator status from players")
+    op_revoke_command = op_subcommands.add_parser(
+        "revoke",
+        help="Revoke operator status from players",
+        description="Revoke operator status from players",
+    )
     op_revoke_command.set_defaults(func=op_revoke)
 
     op_revoke_command.add_argument("players", nargs="+", help="Player names or UUIDs")
 
     # 'search' command
-    search_command = commands.add_parser("search", help="Search Modrinth projects", description="Search Modrinth projects")
+    search_command = commands.add_parser(
+        "search",
+        help="Search Modrinth projects",
+        description="Search Modrinth projects",
+    )
     search_command.set_defaults(func=search_projects)
 
     search_command.add_argument("query", nargs="*", type=str, help="Search query")
-    search_command.add_argument("-n", "--no-filter", action="store_true", help="No search filter from server configuration")
-    search_command.add_argument("-p", "--page", default=1, type=int, help="Page number", metavar="N")
-    search_command.add_argument("-s", "--sort-by", default="relevance", type=str, choices=["downloads", "follows", "newest", "relevance", "updated"], help="Sort search result by")
+    search_command.add_argument(
+        "-n",
+        "--no-filter",
+        action="store_true",
+        help="No search filter from server configuration",
+    )
+    search_command.add_argument(
+        "-p", "--page", default=1, type=int, help="Page number", metavar="N"
+    )
+    search_command.add_argument(
+        "-s",
+        "--sort-by",
+        default="relevance",
+        type=str,
+        choices=["downloads", "follows", "newest", "relevance", "updated"],
+        help="Sort search result by",
+    )
 
     # 'show' command
-    show_command = commands.add_parser("show", help="Show project information", description="Show project information")
+    show_command = commands.add_parser(
+        "show", help="Show project information", description="Show project information"
+    )
     show_command.set_defaults(func=show_projects)
 
-    show_command.add_argument("projects", nargs="+", type=str, help="Project slugs or IDs")
+    show_command.add_argument(
+        "projects", nargs="+", type=str, help="Project slugs or IDs"
+    )
 
     # 'start' command
-    start_command = commands.add_parser("start", description="Start the server", help="Start the server")
+    start_command = commands.add_parser(
+        "start", description="Start the server", help="Start the server"
+    )
     start_command.set_defaults(func=start_server)
 
     # 'whitelist' command
-    whitelist_command = commands.add_parser("whitelist", help="Manage whitelisted players", description="Manage whitelisted players")
+    whitelist_command = commands.add_parser(
+        "whitelist",
+        help="Manage whitelisted players",
+        description="Manage whitelisted players",
+    )
     whitelist_command.set_defaults(func=print_help, parser=whitelist_command)
 
     whitelist_subcommands = whitelist_command.add_subparsers(title="Subcommands")
 
     # 'whitelist add'
-    whitelist_add_command = whitelist_subcommands.add_parser("add", help="Add players to the whitelist", description="Add players to the whitelist")
+    whitelist_add_command = whitelist_subcommands.add_parser(
+        "add",
+        help="Add players to the whitelist",
+        description="Add players to the whitelist",
+    )
     whitelist_add_command.set_defaults(func=whitelist_add)
 
-    whitelist_add_command.add_argument("players", nargs="+", help="Player names or UUIDs")
+    whitelist_add_command.add_argument(
+        "players", nargs="+", help="Player names or UUIDs"
+    )
 
     # 'whitelist list'
-    whitelist_list_command = whitelist_subcommands.add_parser("list", help="List all whitelisted players", description="List all whitelisted players")
+    whitelist_list_command = whitelist_subcommands.add_parser(
+        "list",
+        help="List all whitelisted players",
+        description="List all whitelisted players",
+    )
     whitelist_list_command.set_defaults(func=whitelist_list)
 
     # 'whitelist remove'
-    whitelist_remove_command = whitelist_subcommands.add_parser("remove", help="Remove players from the whitelist", description="Remove players from the whitelist")
+    whitelist_remove_command = whitelist_subcommands.add_parser(
+        "remove",
+        help="Remove players from the whitelist",
+        description="Remove players from the whitelist",
+    )
     whitelist_remove_command.set_defaults(func=whitelist_remove)
 
-    whitelist_remove_command.add_argument("players", nargs="+", help="Player names or UUIDs")
+    whitelist_remove_command.add_argument(
+        "players", nargs="+", help="Player names or UUIDs"
+    )
 
     args = parser.parse_args()
     sys.exit(args.func(args))
+
 
 ### This file used to be a one big script file, like 1,200 lines of codes.
 ### and the modularization happens after I found out about zipapp, silly me.

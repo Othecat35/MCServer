@@ -1,4 +1,4 @@
-#Modules
+# Modules
 # Standard
 import json
 from typing import TypedDict
@@ -7,7 +7,8 @@ from typing import TypedDict
 from .. import networking
 from ..constants import fabricmc_meta_url
 
-#TypedDict
+
+# TypedDict
 class LoaderVersion(TypedDict):
     separator: str
     build_id: int
@@ -15,7 +16,8 @@ class LoaderVersion(TypedDict):
     loader_version: str
     is_stable: bool
 
-#Functions
+
+# Functions
 def get_loader_versions() -> list[LoaderVersion]:
     response = networking.request(f"{fabricmc_meta_url}/v2/versions/loader")
     response_json = json.loads(response["text"])
@@ -27,7 +29,7 @@ def get_loader_versions() -> list[LoaderVersion]:
             "build_id": version["build"],
             "maven_id": version["maven"],
             "loader_version": version["version"],
-            "is_stable": version["stable"]
+            "is_stable": version["stable"],
         }
 
         loader_versions.append(loader_version)
