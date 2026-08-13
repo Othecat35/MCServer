@@ -1,4 +1,4 @@
-from argparse import Namespace as argparseNamespace
+import argparse
 from uuid import UUID
 from ..server_files.whitelist import remove_players
 from ..minecraft.player_identity import PlayerID
@@ -6,7 +6,7 @@ from ..minecraft.player_identity import PlayerID
 import logging as log
 
 
-def main(args: argparseNamespace) -> int:
+def main(args: argparse.Namespace) -> int:
     players: list[str] = args.players
     player_ids: list[PlayerID] = []
     for player in players:
