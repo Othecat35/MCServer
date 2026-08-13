@@ -1,12 +1,26 @@
 import logging as log
 from collections import deque
 from collections.abc import Callable
-from typing import TypedDict
+from typing import Literal, TypedDict, TypeAlias
+
+DependencyType: TypeAlias = Literal["embedded", "optional", "required", "incompatible"]
+dependency_types: dict[DependencyType, int] = {
+    "embedded": 0,
+    "optional": 1,
+    "required": 2,
+    "incompatible": 3,
+}
+dependency_types2: list[DependencyType] = [
+    "embedded",
+    "optional",
+    "required",
+    "incompatible",
+]
 
 
 class Dependency(TypedDict):
     project_id: str
-    dependency_type: str
+    dependency_type: DependencyType
 
 
 class Project(TypedDict):
@@ -22,24 +36,53 @@ class ProjectData(TypedDict):
     dependents: list[Dependency]
 
 
-dependency_types = {"embedded": 0, "optional": 1, "required": 2, "incompatible": 3}
+# NOTE: These are just theory, or not?
+def human_to_resolver(dependencies: list[Dependency]) -> dict[str, int]:
+    resolver_dependencies: dict[str, int] = {}
+    for dependency in dependencies:
+        resolver_dependencies[dependency["project_id"]] = dependency_types[
+            dependency["dependency_type"]
+        ]
+
+    return resolver_dependencies
 
 
-def test_dependencies(project_id: str) -> dict[str, int]:
-    dependencies = {
-        "a": {"b": 2, "c": 2, "d": 2},
-        "b": {"c": 2, "d": 2},
-        "c": {"e": 2},
-        "d": {"e": 2},
-        "e": {},
-    }
+def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]:
+    projects: list[ProjectData] = []
+    for project_id, project_data in dependency_graph.items():
+        dependencies: list[Dependency] = []
+        for dependency_id, dependency_type in project_data["dependencies"].items():
+            dependency: Dependency = {
+                "project_id": dependency_id,
+                "dependency_type": dependency_types2[dependency_type],
+            }
 
-    return dependencies[project_id]
+            dependencies.append(dependency)
+
+        dependents: list[Dependency] = []
+        for dependency_id, dependency_type in project_data["dependents"].items():
+            dependent: Dependency = {
+                "project_id": dependency_id,
+                "dependency_type": dependency_types2[dependency_type],
+            }
+
+            dependents.append(dependent)
+
+        project: ProjectData = {
+            "project_id": project_id,
+            "is_manual": project_data["is_manual"],
+            "dependencies": dependencies,
+            "dependents": dependents,
+        }
+
+        projects.append(project)
+
+    return projects
 
 
 def resolve_dependencies(
-    project_ids: list[str] | str, get_dependencies: Callable
-) -> list:
+    project_ids: list[str] | str, get_dependencies: Callable[[str], dict[str, int]]
+) -> dict[str, Project]:
     """Resolve dependency tree using BFS
 
     Args:
@@ -94,37 +137,26 @@ def resolve_dependencies(
 
         visited_projects.add(project_id)
 
-    resolved_dependencies: list[ProjectData] = []
-    dependency_types2 = list(
-        dependency_types.keys()
-    )  # NOTE: hacky ikr but I hate this file anyway (I'll fix it later)
-    for project_id, project in dependency_graph.items():
-        dependencies: list[Dependency] = []
-        for dependency_id, dependency_type in project["dependencies"].items():
-            dependency: Dependency = {
-                "project_id": dependency_id,
-                "dependency_type": dependency_types2[dependency_type],
-            }
-
-            dependencies.append(dependency)
-
-        dependents: list[Dependency] = []
-        for dependency_id, dependency_type in project["dependencies"].items():
-            dependency: Dependency = {
-                "project_id": dependency_id,
-                "dependency_type": dependency_types2[dependency_type],
-            }
-
-        project_data: ProjectData = {
-            "project_id": project_id,
-            "is_manual": project["is_manual"],
-            "dependencies": dependencies,
-            "dependents": dependents,
-        }
-
-        resolved_dependencies.append(project_data)
-
-    return resolved_dependencies
+    return dependency_graph
 
 
-print(resolve_dependencies("a", test_dependencies))
+def test_dependencies(project_id: str) -> dict[str, int]:
+    dependencies = {
+        "a": [
+            {"project_id": "b", "dependency_type": "required"},
+            {"project_id": "c", "dependency_type": "required"},
+            {"project_id": "d", "dependency_type": "required"},
+        ],
+        "b": [
+            {"project_id": "c", "dependency_type": "required"},
+            {"project_id": "d", "dependency_type": "required"},
+        ],
+        "c": [{"project_id": "e", "dependency_type": "required"}],
+        "d": [{"project_id": "e", "dependency_type": "required"}],
+        "e": [],
+    }
+
+    return human_to_resolver(dependencies[project_id])
+
+
+print(resolver_to_human(resolve_dependencies("a", test_dependencies)))
