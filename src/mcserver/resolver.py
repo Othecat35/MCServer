@@ -22,7 +22,7 @@ class ProjectData(TypedDict):
     dependents: list[Dependency]
 
 
-dependency_type = {"embedded": 0, "optional": 1, "required": 2, "incompatible": 3}
+dependency_types = {"embedded": 0, "optional": 1, "required": 2, "incompatible": 3}
 
 
 def test_dependencies(project_id: str) -> dict[str, int]:
@@ -40,6 +40,15 @@ def test_dependencies(project_id: str) -> dict[str, int]:
 def resolve_dependencies(
     project_ids: list[str] | str, get_dependencies: Callable
 ) -> list:
+    """Resolve dependency tree using BFS
+
+    Args:
+        project_ids: Projects to start with
+        get_dependencies: Callback that returns a dictionary
+
+    Raises:
+        TypeError: Callback 'get_dependency' does not return a dictionary
+    """
     if isinstance(project_ids, str):
         project_ids = [project_ids]
 
@@ -48,10 +57,9 @@ def resolve_dependencies(
     dependency_graph: dict[str, Project] = {}
 
     for project_id in project_ids:
-        log.debug(f"Adding project '{project_id}' to queue")
+        log.debug(f"Adding project '{project_id}' to the queue")
         queued_projects.append(project_id)
         project: Project = {"is_manual": True, "dependencies": {}, "dependents": {}}
-
         dependency_graph[project_id] = project
 
     while queued_projects:
@@ -61,6 +69,9 @@ def resolve_dependencies(
             continue
 
         dependencies = get_dependencies(project_id)
+        if not isinstance(dependencies, dict):
+            raise TypeError("Callback 'get_dependency' must return a dict")
+
         dependency_graph[project_id]["dependencies"] = dependencies
 
         for dependency_id, dependency_type in dependencies.items():
@@ -84,27 +95,31 @@ def resolve_dependencies(
         visited_projects.add(project_id)
 
     resolved_dependencies: list[ProjectData] = []
+    dependency_types2 = list(
+        dependency_types.keys()
+    )  # NOTE: hacky ikr but I hate this file anyway (I'll fix it later)
     for project_id, project in dependency_graph.items():
         dependencies: list[Dependency] = []
-        for dependency_id, dependency_type in project["dependencies"]:
+        for dependency_id, dependency_type in project["dependencies"].items():
             dependency: Dependency = {
                 "project_id": dependency_id,
-                "dependency_type": dependency_type,
+                "dependency_type": dependency_types2[dependency_type],
             }
 
             dependencies.append(dependency)
 
-        dependents: list[Dependency] = {}
-        for dependency_id, dependency_type in project["dependencies"]:
+        dependents: list[Dependency] = []
+        for dependency_id, dependency_type in project["dependencies"].items():
             dependency: Dependency = {
                 "project_id": dependency_id,
-                "dependency_type": dependency_type,
+                "dependency_type": dependency_types2[dependency_type],
             }
 
         project_data: ProjectData = {
             "project_id": project_id,
             "is_manual": project["is_manual"],
             "dependencies": dependencies,
+            "dependents": dependents,
         }
 
         resolved_dependencies.append(project_data)
