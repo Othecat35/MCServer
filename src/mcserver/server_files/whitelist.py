@@ -80,6 +80,17 @@ def remove_player(
 
 
 def remove_players(player_ids: list[PlayerID] | PlayerID) -> None:
+    """Remove player entries matching the exact UUIDs or names
+
+    Args:
+        player_ids: Player UUIDs and/or names object
+
+    Returns:
+        None: Returns nothing
+
+    Raises:
+        FileNotFoundError: The 'whitelist.json' file not found
+    """
     if not isinstance(player_ids, list):
         player_ids = [player_ids]
 
@@ -91,6 +102,9 @@ def remove_players(player_ids: list[PlayerID] | PlayerID) -> None:
 
         if "player_name" in player_id:
             player_names.add(player_id["player_name"])
+
+    if not whitelist_file.exists():
+        raise FileNotFoundError(f"File '{whitelist_file}' is not found.")
 
     with open(whitelist_file, mode="r+") as file:
         whitelist_data: list[WhitelistEntry] = json.load(file)
