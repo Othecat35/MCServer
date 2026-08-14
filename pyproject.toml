@@ -1,7 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "mcserver"
-description = "A CLI tool to manage Minecraft: Java Edition servers."
+dynamic = ["version"]
+dependencies = []
 requires-python = ">= 3.14"
+authors = [
+  {name = "Othecat35", email = "othecat35@gmail.com"}
+]
+maintainers = [
+  { name = "Othecat35", email = "othecat35@gmail.com"}
+]
+description = "A CLI tool to manage Minecraft: Java Edition servers."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+
+[project.urls]
+Homepage = "https://github.com/Othecat35/MCServer"
+Repository = "https://github.com/Othecat35/MCServer.git"
+Changelog = "https://github.com/Othecat35/MCServer/blob/main/CHANGELOG.md"
 
 [project.scripts]
 mcserver = "mcserver:__main__"
+
+[tool.hatch.version]
+path = "src/mcserver/__init__.py"

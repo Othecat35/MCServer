@@ -91,7 +91,7 @@ def main() -> int:
     parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s " + ".".join(map(str, __version__)),
+        version="%(prog)s " +  __version__,
     )
 
     commands = parser.add_subparsers(title="Commands")
