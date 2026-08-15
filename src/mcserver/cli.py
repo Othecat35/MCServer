@@ -92,7 +92,7 @@ def main() -> int:
         "-v",
         "--version",
         action="version",
-        version="%(prog)s " +  __version__,
+        version="%(prog)s " + __version__,
     )
 
     commands = parser.add_subparsers(title="Commands")
@@ -216,6 +216,15 @@ def main() -> int:
         "players", nargs="+", type=str, help="Player names or UUIDs"
     )
 
+    # 'remove' command
+    remove_command = commands.add_parser(
+        "remove",
+        help="Remove projects",
+        description="Remove projects"
+    )
+
+    
+
     # 'search' command
     search_command = commands.add_parser(
         "search",
@@ -253,6 +262,13 @@ def main() -> int:
     stop_command.set_defaults(command_name="stop")
     stop_command.add_argument(
         "--force-stop", action="store_true", help="Force stop the server"
+    )
+
+    # "update" command
+    update_command = commands.add_parser(
+        "update",
+        help="Update projects from Modrinth",
+        description="Update projects from Modrinth"
     )
 
     # 'whitelist' command
