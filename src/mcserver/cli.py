@@ -89,6 +89,7 @@ def main() -> int:
 
     parser.set_defaults(func=command_function, command_name="help", parser=parser)
     parser.add_argument(
+        "-v",
         "--version",
         action="version",
         version="%(prog)s " +  __version__,
