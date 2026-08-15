@@ -137,7 +137,7 @@ def print_help(args):
 
 
 def hahaha_yes():
-    print("The cake is a lie.")
+    print("the cake is gyatt")
     sys.exit(0)
 
 
