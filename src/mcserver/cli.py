@@ -40,6 +40,10 @@ def main() -> int:
                 from .commands import op_revoke
 
                 return op_revoke(args)
+            case "remove":
+                from .commands import remove_projects
+
+                return remove_projects(args)
             case "search":
                 from .commands import search_projects
 
@@ -52,10 +56,18 @@ def main() -> int:
                 from .commands import start_server
 
                 return start_server(args)
+            case "status":
+                from .commands import server_status
+
+                return server_status(args)
             case "stop":
                 from .commands import stop_server
 
                 return stop_server(args)
+            case "update":
+                from .commands import update_projects
+
+                return update_projects(args)
             case "whitelist_add":
                 from .commands import whitelist_add
 
