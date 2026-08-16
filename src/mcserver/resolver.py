@@ -81,13 +81,16 @@ def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]
 
 
 def resolve_dependencies(
-    project_ids: list[str] | str, get_dependencies: Callable[[str], dict[str, int]]
+    project_ids: list[str] | str,
+    get_dependencies: Callable[[str], dict[str, int]],
+    should_queue: Callable[[int], bool],
 ) -> dict[str, Project]:
     """Resolve dependency tree using BFS
 
     Args:
         project_ids: Projects to start with
         get_dependencies: Callback that returns a dictionary
+        should_queue: Callback that returns a bool
 
     Raises:
         TypeError: Callback 'get_dependency' does not return a dictionary
@@ -112,9 +115,6 @@ def resolve_dependencies(
             continue
 
         dependencies = get_dependencies(project_id)
-        if not isinstance(dependencies, dict):
-            raise TypeError("Callback 'get_dependency' must return a dict")
-
         dependency_graph[project_id]["dependencies"] = dependencies
 
         for dependency_id, dependency_type in dependencies.items():
@@ -129,9 +129,7 @@ def resolve_dependencies(
                     "dependents": {project_id: dependency_type},
                 }
 
-                if (
-                    dependency_type == 2
-                ):  # NOTE: yay hardcoded value until I need to change this
+                if should_queue(dependency_type):
                     log.debug(f"Adding dependency '{dependency_id}' to queue")
                     queued_projects.append(dependency_id)
 
@@ -139,6 +137,8 @@ def resolve_dependencies(
 
     return dependency_graph
 
+def required_only(dependency_type: int) -> bool:
+    return dependency_type == dependency_types["required"]
 
 def test_dependencies(project_id: str) -> dict[str, int]:
     dependencies = {
@@ -159,4 +159,4 @@ def test_dependencies(project_id: str) -> dict[str, int]:
     return human_to_resolver(dependencies[project_id])
 
 
-print(resolver_to_human(resolve_dependencies("a", test_dependencies)))
+print(resolver_to_human(resolve_dependencies("a", test_dependencies, required_only)))

@@ -230,12 +230,8 @@ def main() -> int:
 
     # 'remove' command
     remove_command = commands.add_parser(
-        "remove",
-        help="Remove projects",
-        description="Remove projects"
+        "remove", help="Remove projects", description="Remove projects"
     )
-
-    
 
     # 'search' command
     search_command = commands.add_parser(
@@ -280,7 +276,7 @@ def main() -> int:
     update_command = commands.add_parser(
         "update",
         help="Update projects from Modrinth",
-        description="Update projects from Modrinth"
+        description="Update projects from Modrinth",
     )
 
     # 'whitelist' command
