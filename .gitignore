@@ -1,5 +1,5 @@
-__pycache__/
 .mcserver/
+__pycache__/
 dist/
 mods/
 Launcher.jar
