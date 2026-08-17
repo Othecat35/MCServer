@@ -266,3 +266,4 @@ I definitely broke my promise. (oops)
 
     Q -- Yes --> R[It's perf]
     Q -- No --> S[It's refactor]
+- commit convention reference: https://gist.github.com/qoomon/5dfcdf8eec66a051ecd85625518cfd13
