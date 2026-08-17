@@ -238,3 +238,31 @@ I definitely broke my promise. (oops)
   so "mc_version" can mean <server.json>.game_version.
 - init command could take some sort of "target dir"
 - make src/mcserver/modrinth/projects.py into a dir, ans inside it we have metadata.py and relationship.py
+- flowchart TD
+    A[Did you fix a bug?]
+    A -- Yes --> B[It's fix]
+    A -- No --> C[Did you change functionality or affect UI?]
+
+    C -- Yes --> D[It's feat]
+    C -- No --> E[Did you add or change tests?]
+
+    E -- Yes --> F[It's test]
+    E -- No --> G[Did you change code style or formatting?]
+
+    G -- Yes --> H[It's style]
+    G -- No --> I[Did you make changes to documentation?]
+
+    I -- Yes --> J[It's docs]
+    I -- No --> K[Did you change things related to build or deploy operations?]
+
+    K -- Yes --> L[It's build]
+    K -- No --> M[Did you change something related to devops, infrastructure or backups?]
+
+    M -- Yes --> N[It's ops]
+    M -- No --> O[Did you complete a maintenance task or other non-code task?]
+
+    O -- Yes --> P[It's chore]
+    O -- No --> Q[Did you rewrite or restructure code specifically for performance?]
+
+    Q -- Yes --> R[It's perf]
+    Q -- No --> S[It's refactor]
