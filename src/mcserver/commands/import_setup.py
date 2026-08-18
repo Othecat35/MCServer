@@ -2,5 +2,7 @@ import argparse
 
 
 def main(args: argparse.Namespace) -> int:
-    print(args)
-    return 0
+    file: str = args.file
+    import logging as log
+    log.error("Command is not implemented yet.")
+    return 1

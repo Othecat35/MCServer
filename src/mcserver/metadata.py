@@ -8,7 +8,7 @@ from .shared import mcserver_dir
 
 
 class MCServerMetadata(TypedDict):
-    version: tuple[int, int, int]
+    version: str
 
 
 class Metadata(TypedDict):
@@ -20,7 +20,7 @@ metadata_file = mcserver_dir / "metadata.json"
 
 
 # Functions
-def set_metadata(mcserver_version: tuple[int, int, int]) -> None:
+def set_metadata(mcserver_version: str) -> None:
     metadata: Metadata = {"mcserver": {"version": mcserver_version}}
 
     metadata_data: str = json.dumps(metadata)

@@ -3,5 +3,6 @@ import argparse
 
 def main(args: argparse.Namespace) -> int:
     projects: list[str] = args.projects
-    print(args)
-    return 0
+    import logging as log
+    log.error("Command is not implemented yet.")
+    return 1
