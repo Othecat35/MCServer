@@ -9,17 +9,14 @@ from .shared import project_records_dir
 from .shared import DependencyTypes
 
 # Types
-dependency_types: list[str] = [
-    "embedded",
-    "optional",
-    "required",
-    "incompatible"
-]
+dependency_types: list[str] = ["embedded", "optional", "required", "incompatible"]
+
 
 # TypedDicts
 class ProjectRelationships(TypedDict):
     dependencies: dict[str, DependencyTypes]
     dependents: dict[str, DependencyTypes]
+
 
 # Functions
 def create(
@@ -53,7 +50,9 @@ def create(
     project_record_dir = project_records_dir / project_id
     relationships_file = project_record_dir / "relationships.json"
     if relationships_file.exists():
-        raise FileExistsError(f"Relationships for project ID '{project_id}' already exists")
+        raise FileExistsError(
+            f"Relationships for project ID '{project_id}' already exists"
+        )
 
     project_relationships: ProjectRelationships = {"dependencies": {}, "dependents": {}}
     for dependency_id, dependency_type in dependencies.items():
@@ -99,7 +98,9 @@ def read(project_id: str) -> ProjectRelationships:
     project_relationships: ProjectRelationships = {"dependencies": {}, "dependents": {}}
 
     if not relationships_file.exists():
-        raise FileNotFoundError(f"Relationships file for project ID '{project_id}' does not exist")
+        raise FileNotFoundError(
+            f"Relationships file for project ID '{project_id}' does not exist"
+        )
 
     relationships_data = relationships_file.read_text()
     relationships_json: ProjectRelationships = {"dependencies": {}, "dependents": {}}
@@ -161,7 +162,9 @@ def update(
     project_record_dir = project_records_dir / project_id
     relationships_file = project_record_dir / "relationships.json"
     if not relationships_file.exists():
-        raise FileNotFoundError(f"Relationships file for project ID '{project_id}' does not exist")
+        raise FileNotFoundError(
+            f"Relationships file for project ID '{project_id}' does not exist"
+        )
 
     project_relationships: ProjectRelationships = {"dependencies": {}, "dependents": {}}
     relationships_data = relationships_file.read_text()
@@ -175,9 +178,10 @@ def update(
     relationships_data = json.dumps(project_relationships, indent=2)
     relationships_file.write_text(relationships_data)
 
+
 def delete(project_id: str):
-    """"Delete a project's relationships record
-    
+    """ "Delete a project's relationships record
+
     Args:
         project_id: The Modrinth project ID
 
@@ -185,11 +189,15 @@ def delete(project_id: str):
         FileNotFoundError: Project has no relationships record or project_records_dir does not exist
     """
     if not project_records_dir.exists():
-        raise FileNotFoundError(f"Relationships file for project ID '{project_id}' does not exist")
+        raise FileNotFoundError(
+            f"Relationships file for project ID '{project_id}' does not exist"
+        )
 
     project_record_dir = project_records_dir / project_id
     relationships_file = project_record_dir / "relationships.json"
     if not relationships_file.exists():
-        raise FileNotFoundError(f"Relationships file for project ID '{project_id}' does not exist")
+        raise FileNotFoundError(
+            f"Relationships file for project ID '{project_id}' does not exist"
+        )
 
     relationships_file.unlink()

@@ -137,8 +137,10 @@ def resolve_dependencies(
 
     return dependency_graph
 
+
 def required_only(dependency_type: int) -> bool:
     return dependency_type == dependency_types["required"]
+
 
 def test_dependencies(project_id: str) -> dict[str, int]:
     dependencies = {

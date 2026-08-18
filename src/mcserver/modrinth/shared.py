@@ -6,7 +6,7 @@ from typing import Literal, TypeAlias
 # MCServer
 from ..shared import mcserver_dir
 
-#TypeAliases
+# TypeAliases
 DependencyTypes: TypeAlias = Literal["embedded", "optional", "required", "incompatible"]
 
 # Variables
