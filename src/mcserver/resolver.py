@@ -144,6 +144,12 @@ def required_only(dependency_type: int) -> bool:
 
 def test_dependencies(project_id: str) -> dict[str, int]:
     dependencies = {
+        "embeddium": [{"project_id": "sodium", "dependency_type": "incompatible"}],
+        "fabric-api": [],
+        "origins": [{"project_id": "fabric-api", "dependency_type": "required"}],
+        "pehkui": [{"project_id": "fabric-api", "dependency_type": "required"}],
+        "podium": [{"project_id": "sodium", "dependency_type": "required"}],
+        "sodium": [],
         "thdilos-fox-origin-expanded": [
             {"project_id": "thdilos-fox-origin", "dependency_type": "required"},
             {"project_id": "pehkui", "dependency_type": "required"},
@@ -152,13 +158,10 @@ def test_dependencies(project_id: str) -> dict[str, int]:
         "thdilos-fox-origin": [
             {"project_id": "pehkui", "dependency_type": "required"},
             {"project_id": "origins", "dependency_type": "required"},
-        ],
-        "pehkui": [{"project_id": "fabric-api", "dependency_type": "required"}],
-        "origins": [{"project_id": "fabric-api", "dependency_type": "required"}],
-        "fabric-api": [],
+        ]
     }
 
     return human_to_resolver(dependencies[project_id])
 
 
-print(resolver_to_human(resolve_dependencies("thdilos-fox-origin-expanded", test_dependencies, required_only)))
+print(resolver_to_human(resolve_dependencies(["embeddium", "podium"], test_dependencies, required_only)))
