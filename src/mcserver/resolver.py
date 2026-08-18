@@ -142,18 +142,18 @@ def required_only(dependency_type: int) -> bool:
 
 def test_dependencies(project_id: str) -> dict[str, int]:
     dependencies = {
-        "a": [
-            {"project_id": "b", "dependency_type": "required"},
-            {"project_id": "c", "dependency_type": "required"},
-            {"project_id": "d", "dependency_type": "required"},
+        "thdilos-fox-origin-expanded": [
+            {"project_id": "thdilos-fox-origin", "dependency_type": "required"},
+            {"project_id": "pehkui", "dependency_type": "required"},
+            {"project_id": "origins", "dependency_type": "required"},
         ],
-        "b": [
-            {"project_id": "c", "dependency_type": "required"},
-            {"project_id": "d", "dependency_type": "required"},
+        "thdilos-fox-origin": [
+            {"project_id": "pehkui", "dependency_type": "required"},
+            {"project_id": "origins", "dependency_type": "required"},
         ],
-        "c": [{"project_id": "e", "dependency_type": "required"}],
-        "d": [{"project_id": "e", "dependency_type": "required"}],
-        "e": [],
+        "pehkui": [{"project_id": "fabric-api", "dependency_type": "required"}],
+        "origins": [{"project_id": "fabric-api", "dependency_type": "required"}],
+        "fabric-api": [],
     }
 
     return human_to_resolver(dependencies[project_id])
