@@ -8,8 +8,8 @@ from .op_revoke import main as op_revoke
 from .print_help import main as print_help
 from .remove_projects import main as remove_projects
 from .search_projects import main as search_projects
-from .show_projects import main as show_projects
 from .server_status import main as server_status
+from .show_projects import main as show_projects
 from .start_server import main as start_server
 from .stop_server import main as stop_server
 from .update_projects import main as update_projects

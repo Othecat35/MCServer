@@ -7,7 +7,7 @@ from pathlib import Path
 from .constants import iec_prefixes, si_prefixes
 
 # Variables
-mods_loader = ["fabric"] #, "quilt"]
+mods_loader = ["fabric"]  # , "quilt"]
 plugins_loader = ["paper", "purpur"]
 loader_list = ["vanilla"] + mods_loader + plugins_loader
 

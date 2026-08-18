@@ -1,7 +1,7 @@
 import logging as log
 from collections import deque
 from collections.abc import Callable
-from typing import Literal, TypedDict, TypeAlias
+from typing import Literal, TypeAlias, TypedDict
 
 DependencyType: TypeAlias = Literal["embedded", "optional", "required", "incompatible"]
 dependency_types: dict[DependencyType, int] = {
@@ -158,7 +158,7 @@ def test_dependencies(project_id: str) -> dict[str, int]:
         "thdilos-fox-origin": [
             {"project_id": "pehkui", "dependency_type": "required"},
             {"project_id": "origins", "dependency_type": "required"},
-        ]
+        ],
     }
 
     return human_to_resolver(dependencies[project_id])

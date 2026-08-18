@@ -5,8 +5,7 @@ import logging as log
 from typing import TypedDict
 
 # MCServer
-from .shared import project_records_dir
-from .shared import DependencyTypes
+from .shared import DependencyTypes, project_records_dir
 
 # Types
 dependency_types: list[str] = ["embedded", "optional", "required", "incompatible"]

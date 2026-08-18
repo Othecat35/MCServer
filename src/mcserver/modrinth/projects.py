@@ -3,7 +3,6 @@
 import json
 
 from ..shared import merge_dict
-
 # MCServer
 from .shared import modrinth_dir
 
