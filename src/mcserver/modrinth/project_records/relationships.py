@@ -144,7 +144,7 @@ def update(
         project_id: The Modrinth project ID
         new_dependencies: New dependencies relationships data
         new_dependents: New dependents relationships data
-    
+
     Raises:
         FileNotFoundError: Project has no relationships record or project_records_dir does not exist
         json.JSONDecodeError: Project relationships record file is corrupted
@@ -174,3 +174,22 @@ def update(
     project_relationships.update(relationships_json)
     relationships_data = json.dumps(project_relationships, indent=2)
     relationships_file.write_text(relationships_data)
+
+def delete(project_id: str):
+    """"Delete a project's relationships record
+    
+    Args:
+        project_id: The Modrinth project ID
+
+    Raises:
+        FileNotFoundError: Project has no relationships record or project_records_dir does not exist
+    """
+    if not project_records_dir.exists():
+        raise FileNotFoundError(f"Relationships file for project ID '{project_id}' does not exist")
+
+    project_record_dir = project_records_dir / project_id
+    relationships_file = project_record_dir / "relationships.json"
+    if not relationships_file.exists():
+        raise FileNotFoundError(f"Relationships file for project ID '{project_id}' does not exist")
+
+    relationships_file.unlink()
