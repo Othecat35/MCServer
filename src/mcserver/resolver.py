@@ -161,4 +161,4 @@ def test_dependencies(project_id: str) -> dict[str, int]:
     return human_to_resolver(dependencies[project_id])
 
 
-print(resolver_to_human(resolve_dependencies("a", test_dependencies, required_only)))
+print(resolver_to_human(resolve_dependencies("thdilos-fox-origin-expanded", test_dependencies, required_only)))
