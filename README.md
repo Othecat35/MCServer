@@ -26,13 +26,14 @@ Supported platforms:
    - Run `fish_add_path ~/bin` if you're using FISH
 
 ## Usage
-- Initialize the server: `mcserver init [options]`
-- List operator players: `mcserver op lits`
+- Initialize a server: `mcserver init [options]`
+- List operator players: `mcserver op list`
 - Start the server: `mcserver start`
-- Stop the server: `mcserver stop`
+- Stop the server: `mcserver stop [--force-stop]`
 - List whitelisted players: `mcserver whitelist list`
 
 ### Example
+- Create a 1.20.1 Fabric (1.19.3) server
 ```bash
 mcserver init --mc-version=1.20.1 --loader=fabric --loader-version=0.19.3
 mcserver start
