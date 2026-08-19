@@ -1,7 +1,7 @@
-import argparse
+from argparse import Namespace
 
 
-def main(args: argparse.Namespace) -> int:
+def main(args: Namespace) -> int:
     query: list[str] = args.query
     import logging as log
 

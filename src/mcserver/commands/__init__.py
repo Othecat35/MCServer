@@ -35,5 +35,5 @@ __all__ = [
     "update_projects",
     "whitelist_add",
     "whitelist_list",
-    "whitelist_remove",
+    "whitelist_remove"
 ]

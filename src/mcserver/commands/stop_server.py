@@ -1,7 +1,7 @@
-import argparse
+from argparse import Namespace
 
 
-def main(args: argparse.Namespace) -> int:
+def main(args: Namespace) -> int:
     # CLI arguments
     force_stop: bool = args.force_stop
 

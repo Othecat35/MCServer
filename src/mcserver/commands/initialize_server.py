@@ -1,7 +1,7 @@
-import argparse
+from argparse import Namespace
 
 
-def main(args: argparse.Namespace) -> int:
+def main(args: Namespace) -> int:
     # CLI Arguments
     game_version: str = args.game_version
 

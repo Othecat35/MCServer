@@ -1,7 +1,7 @@
-import argparse
+from argparse import Namespace
 
 
-def main(args: argparse.Namespace) -> int:
+def main(args: Namespace) -> int:
     projects: list[str] = args.projects
     import logging as log
 

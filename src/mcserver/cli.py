@@ -112,13 +112,13 @@ def main() -> int:
     # 'add' command
     add_command = commands.add_parser(
         "add",
-        help="Add mods/projects",
-        description="Add mods/plugins and their dependencies.",
+        help="Add Modrinth projects to the server",
+        description="Add Mdorinth mods/plugins to the server",
     )
 
     add_command.set_defaults(command_name="add")
     add_command.add_argument(
-        "projects", nargs="+", type=str, help="Project slugs or IDs"
+        "projects", nargs="+", type=str, help="Modrinth project slugs or IDs"
     )
 
     # 'import' command
@@ -129,7 +129,7 @@ def main() -> int:
     )
 
     import_command.set_defaults(command_name="import")
-    import_command.add_argument("modpack", type=str, help="The Modrinth modpack file")
+    import_command.add_argument("file", type=str, help="The Modrinth modpack file")
 
     # 'init' command
     init_command = commands.add_parser(
