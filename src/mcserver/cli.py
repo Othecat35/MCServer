@@ -122,14 +122,14 @@ def main() -> int:
     )
 
     # 'import' command
-    import_command = commands.add_parser(
-        "import",
-        help="Import a Modrinth modpack",
-        description="Import a Modrinth modpack from a file.",
-    )
+    # import_command = commands.add_parser(
+    #     "import",
+    #     help="Import a Modrinth modpack",
+    #     description="Import a Modrinth modpack from a file.",
+    # )
 
-    import_command.set_defaults(command_name="import")
-    import_command.add_argument("file", type=str, help="The Modrinth modpack file")
+    # import_command.set_defaults(command_name="import")
+    # import_command.add_argument("file", type=str, help="The Modrinth modpack file")
 
     # 'init' command
     init_command = commands.add_parser(
@@ -183,11 +183,11 @@ def main() -> int:
     )
 
     # 'list' command
-    list_command = commands.add_parser(
-        "list", help="List all added projects", description="List all added projects."
-    )
+    # list_command = commands.add_parser(
+    #     "list", help="List all added projects", description="List all added projects."
+    # )
 
-    list_command.set_defaults(command_name="list")
+    # list_command.set_defaults(command_name="list")
 
     # 'op' command
     op_command = commands.add_parser(
@@ -198,16 +198,16 @@ def main() -> int:
     op_subcommands = op_command.add_subparsers(title="Subcommands")
 
     # 'op grant'
-    op_grant_command = op_subcommands.add_parser(
-        "grant",
-        help="Grant operator to players",
-        description="Grant operator status to players.",
-    )
+    # op_grant_command = op_subcommands.add_parser(
+    #     "grant",
+    #     help="Grant operator to players",
+    #     description="Grant operator status to players.",
+    # )
 
-    op_grant_command.set_defaults(command_name="op_grant")
-    op_grant_command.add_argument(
-        "players", nargs="+", type=str, help="Player names or UUIDs"
-    )
+    # op_grant_command.set_defaults(command_name="op_grant")
+    # op_grant_command.add_argument(
+    #     "players", nargs="+", type=str, help="Player names or UUIDs"
+    # )
 
     # 'op list'
     op_list_command = op_subcommands.add_parser(
@@ -217,22 +217,23 @@ def main() -> int:
     op_list_command.set_defaults(command_name="op_list")
 
     # 'op revoke'
-    op_revoke_command = op_subcommands.add_parser(
-        "revoke",
-        help="Revoke operator from players",
-        description="Revoke operator status from players.",
-    )
+    # op_revoke_command = op_subcommands.add_parser(
+    #     "revoke",
+    #     help="Revoke operator from players",
+    #     description="Revoke operator status from players.",
+    # )
 
-    op_revoke_command.set_defaults(command_name="op_revoke")
-    op_revoke_command.add_argument(
-        "players", nargs="+", type=str, help="Player names or UUIDs"
-    )
+    # op_revoke_command.set_defaults(command_name="op_revoke")
+    # op_revoke_command.add_argument(
+    #     "players", nargs="+", type=str, help="Player names or UUIDs"
+    # )
 
     # 'remove' command
     remove_command = commands.add_parser(
         "remove", help="Remove projects", description="Remove projects"
     )
 
+    remove_command.set_defaults(command_name="remove")
     # 'search' command
     search_command = commands.add_parser(
         "search",
@@ -273,11 +274,11 @@ def main() -> int:
     )
 
     # "update" command
-    update_command = commands.add_parser(
-        "update",
-        help="Update projects from Modrinth",
-        description="Update projects from Modrinth",
-    )
+    # update_command = commands.add_parser(
+    #     "update",
+    #     help="Update projects from Modrinth",
+    #     description="Update projects from Modrinth",
+    # )
 
     # 'whitelist' command
     whitelist_command = commands.add_parser(
@@ -290,16 +291,16 @@ def main() -> int:
     whitelist_subcommands = whitelist_command.add_subparsers(title="Subcommands")
 
     # 'whitelist add'
-    whitelist_add_command = whitelist_subcommands.add_parser(
-        "add",
-        help="Add players to whitelist",
-        description="Add players to the whitelist.",
-    )
+    # whitelist_add_command = whitelist_subcommands.add_parser(
+    #     "add",
+    #     help="Add players to whitelist",
+    #     description="Add players to the whitelist.",
+    # )
 
-    whitelist_add_command.set_defaults(command_name="whitelist_add")
-    whitelist_add_command.add_argument(
-        "players", nargs="+", type=str, help="Player names or UUIDs"
-    )
+    # whitelist_add_command.set_defaults(command_name="whitelist_add")
+    # whitelist_add_command.add_argument(
+    #     "players", nargs="+", type=str, help="Player names or UUIDs"
+    # )
 
     # 'whitelist list'
     whitelist_list_command = whitelist_subcommands.add_parser(
@@ -311,16 +312,16 @@ def main() -> int:
     whitelist_list_command.set_defaults(command_name="whitelist_list")
 
     # 'whitelist remove'
-    whitelist_remove_command = whitelist_subcommands.add_parser(
-        "remove",
-        help="Remove players from whitelist",
-        description="Remove players from the whitelist.",
-    )
+    # whitelist_remove_command = whitelist_subcommands.add_parser(
+    #     "remove",
+    #     help="Remove players from whitelist",
+    #     description="Remove players from the whitelist.",
+    # )
 
-    whitelist_remove_command.set_defaults(command_name="whitelist_remove")
-    whitelist_remove_command.add_argument(
-        "players", nargs="+", type=str, help="Player names or UUIDs"
-    )
+    # whitelist_remove_command.set_defaults(command_name="whitelist_remove")
+    # whitelist_remove_command.add_argument(
+    #     "players", nargs="+", type=str, help="Player names or UUIDs"
+    # )
 
     args = parser.parse_args()
     return args.func(args)

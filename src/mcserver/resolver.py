@@ -83,7 +83,7 @@ def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]
 def resolve_dependencies(
     project_ids: list[str] | str,
     get_dependencies: Callable[[str], dict[str, int]],
-    should_queue: Callable[[int], bool],
+    queue_filter: Callable[[int], bool],
 ) -> dict[str, Project]:
     """Resolve dependency tree using BFS
 
@@ -91,10 +91,7 @@ def resolve_dependencies(
         project_ids: Projects to start with
         get_dependencies: Callback that returns a dictionary
         should_queue: Callback that returns a bool
-
-    Raises:
-        TypeError: Callback 'get_dependency' does not return a dictionary
-    """
+   """
     if isinstance(project_ids, str):
         project_ids = [project_ids]
 
@@ -129,7 +126,7 @@ def resolve_dependencies(
                     "dependents": {project_id: dependency_type},
                 }
 
-                if should_queue(dependency_type):
+                if queue_filter(dependency_type):
                     log.debug(f"Adding dependency '{dependency_id}' to queue")
                     queued_projects.append(dependency_id)
 
