@@ -91,7 +91,7 @@ def resolve_dependencies(
         project_ids: Projects to start with
         get_dependencies: Callback that returns a dictionary
         should_queue: Callback that returns a bool
-   """
+    """
     if isinstance(project_ids, str):
         project_ids = [project_ids]
 

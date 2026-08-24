@@ -4,6 +4,7 @@ import json
 from typing import Literal, NotRequired, TypedDict
 
 # MCServer
+from .shared import DependencyTypes
 from .. import networking
 from ..constants import modrinth_api_url
 
@@ -39,7 +40,7 @@ class VersionDependency(TypedDict):
     version_id: NotRequired[str | None]
     project_id: NotRequired[str | None]
     filename: NotRequired[str | None]
-    dependency_type: Literal["required", "optional", "incompatible", "embedded"]
+    dependency_type: DependencyTypes
 
 
 class ProjectVersion(TypedDict):
@@ -98,8 +99,8 @@ class ProjectInformation(TypedDict):
     project_title: NotRequired[str]
     summary: NotRequired[str]
     categories: NotRequired[list[str]]
-    client_side: NotRequired[Literal["required", "optional", "unsupported", "unknown"]]
-    server_side: NotRequired[Literal["required", "optional", "unsupported", "unknown"]]
+    client_side: DependencyTypes
+    server_side: DependencyTypes
     description: NotRequired[str]
     status: NotRequired[
         Literal[
@@ -150,39 +151,101 @@ class ProjectInformation(TypedDict):
     project_gallery: NotRequired[list[GalleryImage]]
 
 
+# class SearchHit(TypedDict):
+#     project_id: str
+#     project_type: Literal["mod", "modpack", "resourcepack", "shader"]
+#     all_project_types: list[Literal["mod", "resourcepack", "datapack", "shader", "modpack", "plugin"]]
+#     project_title: str
+#     short_description: str
+#     author_username: str
+#     categories: list[str]
+#     display_categories: list[str]
+#     version_ids: list[str]
+#     download_count: int
+#     follower_count: int
+#     project_slug: NotRequired[str]
+#     client_side: NotRequired[Literal["required", "optional", "unsupported", "unknown"]]
+#     server_side: NotRequired[Literal["required", "optional", "unsupported", "unknown"]]
+#     icon_url: NotRequired[str | None]
+#     icon_color: NotRequired[int | None]
+#     thread_id: NotRequired[str]
+#     monetization_status: NotRequired[
+#         Literal["monetized", "demonetized", "force-demonetized"]
+#     ]
+#     game_versions: list[str]
+#     created_time: str  # Time Format: ISO-8601
+#     modified_time: str  # Time Format: ISO-8601
+#     latest_game_version: NotRequired[str]
+#     license_id: str
+#     gallery_images: NotRequired[list[str]]
+#     featured_galeery: NotRequired[str | None]
+
+
 class SearchHit(TypedDict):
-    project_slug: NotRequired[str]
-    project_title: NotRequired[str]
-    short_description: NotRequired[str]
-    categories: NotRequired[list[str]]
-    client_side: NotRequired[Literal["required", "optional", "unsupported", "unknown"]]
-    server_side: NotRequired[Literal["required", "optional", "unsupported", "unknown"]]
+    prject_id: str
     project_type: Literal["mod", "modpack", "resourcepack", "shader"]
-    download_count: int
-    icon_url: NotRequired[str | None]
-    icon_color: NotRequired[int | None]
-    thread_id: NotRequired[str]
-    monetization_status: NotRequired[
-        Literal["monetized", "demonetized", "force-demonetized"]
+    all_project_types: list[
+        Literal["mod", "resourcepack", "datapack", "shader", "modpack", "plugin"]
     ]
-    project_id: str
-    all_project_types: list[str]
+    project_title: str
+    short_description: str
     author_username: str
-    display_categories: NotRequired[list[str]]
-    game_versions: list[str]
-    follower_count: int
+    categories: list[str]
+    display_categories: list[str]
+    minecraft_versions: list[str]
+    download_count: int
+    follow_count: int
+    icon_url: str
     created_time: str  # Time Format: ISO-8601
-    modified_time: str  # Time Format: ISO-8601
-    latest_game_version: NotRequired[str]
+    last_modified_time: str  # Time Format: ISO-8601
+    latest_version_id: str
     license_id: str
-    gallery_images: NotRequired[list[str]]
-    featured_galeery: NotRequired[str | None]
+    project_environment: Literal[
+        "client_and_server",
+        "client_only",
+        "client_only_server_optional",
+        "singleplayer_only",
+        "server_only",
+        "server_only_client_optional",
+        "dedicated_server_only",
+        "client_or_server",
+        "client_or_server_prefers_both",
+        "unknown",
+    ] # For plugin it is almost certainly always be server-only, but whatever I can't assume
+    disclosure_type: list[
+        Literal[
+            "ai_content",
+            "ai_content_code",
+            "ai_content_assets",
+            "ai_content_text",
+            "ai_content_functionality",
+            "advertisements",
+            "epilepsy_triggers",
+            "system_interactions",
+            "telemetry",
+            "telemetry_opt_in",
+            "telemetry_opt_out",
+            "telemetry_always_active",
+            "derivative_work",
+            "paid_features",
+            "archived",
+        ]
+    ]
+    gallery_image_urls: list[str]
+    project_slug: NotRequired[str | None]
+    author_id: NotRequired[str | None]
+    organization_name: NotRequired[str | None]
+    organization_id: NotRequired[str | None]
+    featured_gallery: NotRequired[str | None]
+    icon_color: NotRequired[int | None]
+    client_side: DependencyTypes  # Deprecated, use environment. but my stuff don't really work with the new thing
+    server_side: DependencyTypes  # Deprecared, use environment. but my stuff don't really work with the new thing
 
 
 class SearchResult(TypedDict):
-    hits: list[SearchHit]
-    offset: int
-    limit: int
+    project_hits: list[SearchHit]
+    result_offset: int
+    result_limit: int
     total_hits: int
 
 
@@ -645,13 +708,33 @@ def get_project_information(project_ids: list[str] | str) -> list[ProjectInforma
 
 
 def search_projects(
-    query: str,
-    facets: list[list[str]],
-    index: Literal[
+    search_query: str,
+    search_facets: str,
+    sort_index: Literal[
         "relevance", "downloads", "follows", "newest", "updated"
     ] = "relevance",
-    offset: int = 0,
-    limit: int = 10,
+    result_offset: int = 0,
+    result_limit: int = 10,
 ) -> SearchResult:
+    """Search projects in Modrinth
+
+    Args:
+        search_query: The query to search for
+        search_facets: Filtering in search results
+        sort_index: Search sorting 
+        result_offset: The offsets of results
+        result_limit: Limit the search results
+
+    Raises:
+        ValueError: result_limit is more than 100
+    
+    Returns:
+        SearchResult: Representing the whole search result
+    """
+    if result_limit > 100:
+        raise ValueError("Result limit cannot be over 100")
+
+    
+
     search_result: SearchResult = {}
     return search_result

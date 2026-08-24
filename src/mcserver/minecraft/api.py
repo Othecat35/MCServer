@@ -5,6 +5,7 @@ from typing import NotRequired, TypedDict
 
 from .. import networking
 from ..constants import minecraft_api_url
+
 # MCSe.rver
 from .player_identity import PlayerUUID, normalize_player_uuid
 
