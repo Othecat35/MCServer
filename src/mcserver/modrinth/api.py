@@ -11,6 +11,17 @@ from ..constants import modrinth_api_url
 
 # TypedDict
 # Project Version
+class VersionDependency(TypedDict):
+    version_id: NotRequired[str | None]
+    """The ID of the version that this version depends on"""
+    project_id: NotRequired[str | None]
+    """The ID of the project that this version depends on"""
+    filename: NotRequired[str | None]
+    """The file name of the dependency, mostly used for showing external dependencies on modpacks"""
+    dependency_type: DependencyTypes
+    """The type of dependency that this version has"""
+
+
 class FileHashes(TypedDict):
     sha512: NotRequired[str]
     sha1: NotRequired[str]
@@ -18,10 +29,15 @@ class FileHashes(TypedDict):
 
 class VersionFile(TypedDict):
     file_hashes: FileHashes
+    """A map of hashes of the file. The key is the hashing algorithm and the value is the string version of the hash."""
     download_url: str
+    """A direct link to the file"""
     filename: str
+    """The name of the file"""
     is_primary: bool
+    """Whether this file is the primary one for its version. Only a maximum of one file per version will have this set to true. If there are not any primary files, it can be inferred that the first file is the primary one."""
     file_size: int
+    """The size of the file in bytes"""
     file_type: NotRequired[
         Literal[
             "required-resource-pack",
@@ -36,38 +52,23 @@ class VersionFile(TypedDict):
     ]
 
 
-class VersionDependency(TypedDict):
-    version_id: NotRequired[str | None]
-    project_id: NotRequired[str | None]
-    filename: NotRequired[str | None]
-    dependency_type: DependencyTypes
-
-
 class ProjectVersion(TypedDict):
     version_name: NotRequired[str]
     """The name of this version"""
-
     version_number: NotRequired[str]
-    """The version number. Ideally will follow semantic versioning"""
-
+    """The version number. Ideally will follow semantic versioning"""  # No it does not
     changelog: NotRequired[str | None]
     """The changelog for this version"""
-
     dependencies: NotRequired[list[VersionDependency]]
     """A list of specific versions of projects that this version depends on"""
-
     game_versions: NotRequired[list[str]]
     """A list of versions of Minecraft that this version supports"""
-
     version_type: NotRequired[Literal["release", "beta", "alpha"]]
     """The release channel for this version"""
-
     loader_names: NotRequired[list[str]]
     """The mod loaders that this version supports. In case of resource packs, use 'minecraft'"""
-
     is_featured: NotRequired[bool]
     """Whether the version is featured or not"""
-
     status: NotRequired[
         Literal["listed", "archived", "draft", "unlisted", "scheduled", "unknown"]
     ]
@@ -76,17 +77,13 @@ class ProjectVersion(TypedDict):
     ]
     version_id: str
     """The ID of the version, encoded as a base62 string"""
-
     project_id: str
     """The ID of the project this version is for"""
-
     author_id: str
     """The ID of the author who published this version"""
-
     published_time: str  # Time format: ISO-8601
     download_count: int
     """The number of times this version has been downloaded"""
-
     changelog_url: NotRequired[str | None]
     """A link to the changelog for this version. Always null, only kept for legacy compatibility."""
     environment: ProjectEnvironments
@@ -254,13 +251,25 @@ def get_project_versions(
     featured: bool | None = None,
     include_changelog: bool = True,
 ) -> list[ProjectVersion]:
+    """Get all versions of a Modrinth project
+
+    Args:
+        project_id: The ID or slug of the project
+        loader_names: The types of loaders to filter for
+        game_versions: The game versions to filter for
+        featured: Allows to filter for featured or non-featured versions only
+        include_changelog: Allows you to toggle the inclusion of the changelog field in the response. It is highly recommended to use include_changelog=false in most cases unless you specifically need the changelog for all versions.
+
+    Returns:
+        ProjectVersions: List of version of the project
+    """
     if isinstance(loader_names, str):
         loader_names = [loader_names]
 
     if isinstance(game_versions, str):
         game_versions = [game_versions]
 
-    query_parameter = {
+    query_parameter: dict[str, str] = {
         "loaders": json.dumps(loader_names),
         "game_versions": json.dumps(game_versions),
         "include_changelog": json.dumps(include_changelog),
@@ -275,12 +284,12 @@ def get_project_versions(
     )
     response_json = json.loads(response["text"])
 
-    project_versions = []
+    project_versions: list[ProjectVersion] = []
     for version in response_json:
-        dependencies = []
+        dependencies: list[VersionDependency] = []
         if "dependencies" in version:
             for dependency in version["dependencies"]:
-                version_dependency = {"dependency_type": dependency["dependency_type"]}
+                version_dependency: VersionDependency = {"dependency_type": dependency["dependency_type"]}
 
                 if "version_id" in dependency:
                     version_dependency["version_id"] = dependency["version_id"]
@@ -290,15 +299,15 @@ def get_project_versions(
                     version_dependency["filename"] = dependency["file_name"]
                 dependencies.append(version_dependency)
 
-        files = []
+        files: list[VersionFile] = []
         for file in version["files"]:
             # Overcomplicate now because yes
-            file_hashes = {}
+            file_hashes: FileHashes = {}
             for hash_algorithm, hash_value in file["hashes"].items():
                 if hash_algorithm in ["sha512", "sha1"]:
                     file_hashes[hash_algorithm] = hash_value
 
-            version_file = {
+            version_file: VersionFile = {
                 "file_hashes": file_hashes,
                 "download_url": file["url"],
                 "filename": file["filename"],
@@ -310,12 +319,13 @@ def get_project_versions(
                 version_file["file_type"] = file["file_type"]
             files.append(version_file)
 
-        project_version = {
+        project_version: ProjectVersion = {
             "version_id": version["id"],
             "project_id": version["project_id"],
             "author_id": version["author_id"],
             "published_time": version["date_published"],
             "download_count": version["downloads"],
+            "environment": version["environment"],
             "files": files,
         }
 

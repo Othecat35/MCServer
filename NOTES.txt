@@ -268,3 +268,11 @@ I definitely broke my promise. (oops)
     Q -- No --> S[It's refactor]
 - commit convention reference: https://gist.github.com/qoomon/5dfcdf8eec66a051ecd85625518cfd13
 - or more "official" looking: https://www.conventionalcommits.org/en/v1.0.0/
+
+Othecat35's Development Setup (For anyone if wondering):
+- VSCodium
+  - Extensions:
+    Pyright
+    Python
+
+that's all lol
