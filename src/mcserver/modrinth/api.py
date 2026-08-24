@@ -4,7 +4,7 @@ import json
 from typing import Literal, NotRequired, TypedDict
 
 # MCServer
-from .shared import DependencyTypes
+from .shared import DependencyTypes, ProjectEnvironments
 from .. import networking
 from ..constants import modrinth_api_url
 
@@ -45,13 +45,29 @@ class VersionDependency(TypedDict):
 
 class ProjectVersion(TypedDict):
     version_name: NotRequired[str]
+    """The name of this version"""
+
     version_number: NotRequired[str]
+    """The version number. Ideally will follow semantic versioning"""
+
     changelog: NotRequired[str | None]
+    """The changelog for this version"""
+
     dependencies: NotRequired[list[VersionDependency]]
+    """A list of specific versions of projects that this version depends on"""
+
     game_versions: NotRequired[list[str]]
+    """A list of versions of Minecraft that this version supports"""
+
     version_type: NotRequired[Literal["release", "beta", "alpha"]]
+    """The release channel for this version"""
+
     loader_names: NotRequired[list[str]]
+    """The mod loaders that this version supports. In case of resource packs, use 'minecraft'"""
+
     is_featured: NotRequired[bool]
+    """Whether the version is featured or not"""
+
     status: NotRequired[
         Literal["listed", "archived", "draft", "unlisted", "scheduled", "unknown"]
     ]
@@ -59,11 +75,22 @@ class ProjectVersion(TypedDict):
         Literal["listed", "archived", "draft", "unlisted"] | None
     ]
     version_id: str
+    """The ID of the version, encoded as a base62 string"""
+
     project_id: str
+    """The ID of the project this version is for"""
+
     author_id: str
+    """The ID of the author who published this version"""
+
     published_time: str  # Time format: ISO-8601
     download_count: int
+    """The number of times this version has been downloaded"""
+
     changelog_url: NotRequired[str | None]
+    """A link to the changelog for this version. Always null, only kept for legacy compatibility."""
+    environment: ProjectEnvironments
+    """The environment a project or version supports. For an explanation of each environment, see the blog post here: https://modrinth.com/news/article/new-environments/#new-system"""
     files: list[VersionFile]
 
 
@@ -151,36 +178,6 @@ class ProjectInformation(TypedDict):
     project_gallery: NotRequired[list[GalleryImage]]
 
 
-# class SearchHit(TypedDict):
-#     project_id: str
-#     project_type: Literal["mod", "modpack", "resourcepack", "shader"]
-#     all_project_types: list[Literal["mod", "resourcepack", "datapack", "shader", "modpack", "plugin"]]
-#     project_title: str
-#     short_description: str
-#     author_username: str
-#     categories: list[str]
-#     display_categories: list[str]
-#     version_ids: list[str]
-#     download_count: int
-#     follower_count: int
-#     project_slug: NotRequired[str]
-#     client_side: NotRequired[Literal["required", "optional", "unsupported", "unknown"]]
-#     server_side: NotRequired[Literal["required", "optional", "unsupported", "unknown"]]
-#     icon_url: NotRequired[str | None]
-#     icon_color: NotRequired[int | None]
-#     thread_id: NotRequired[str]
-#     monetization_status: NotRequired[
-#         Literal["monetized", "demonetized", "force-demonetized"]
-#     ]
-#     game_versions: list[str]
-#     created_time: str  # Time Format: ISO-8601
-#     modified_time: str  # Time Format: ISO-8601
-#     latest_game_version: NotRequired[str]
-#     license_id: str
-#     gallery_images: NotRequired[list[str]]
-#     featured_galeery: NotRequired[str | None]
-
-
 class SearchHit(TypedDict):
     prject_id: str
     project_type: Literal["mod", "modpack", "resourcepack", "shader"]
@@ -211,7 +208,7 @@ class SearchHit(TypedDict):
         "client_or_server",
         "client_or_server_prefers_both",
         "unknown",
-    ] # For plugin it is almost certainly always be server-only, but whatever I can't assume
+    ]  # For plugin it is almost certainly always be server-only, but whatever I can't assume
     disclosure_type: list[
         Literal[
             "ai_content",
@@ -721,20 +718,18 @@ def search_projects(
     Args:
         search_query: The query to search for
         search_facets: Filtering in search results
-        sort_index: Search sorting 
+        sort_index: Search sorting
         result_offset: The offsets of results
         result_limit: Limit the search results
 
     Raises:
         ValueError: result_limit is more than 100
-    
+
     Returns:
         SearchResult: Representing the whole search result
     """
     if result_limit > 100:
         raise ValueError("Result limit cannot be over 100")
-
-    
 
     search_result: SearchResult = {}
     return search_result
