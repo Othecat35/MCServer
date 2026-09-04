@@ -176,7 +176,7 @@ class ProjectInformation(TypedDict):
 
 
 class SearchHit(TypedDict):
-    prject_id: str
+    project_id: str
     project_type: Literal["mod", "modpack", "resourcepack", "shader"]
     all_project_types: list[
         Literal["mod", "resourcepack", "datapack", "shader", "modpack", "plugin"]
