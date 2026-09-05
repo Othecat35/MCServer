@@ -1,17 +1,18 @@
-from argparse import Namespace
+import argparse
 
 
-def main(args: Namespace) -> int:
+def main(args: argparse.Namespace) -> int:
     import logging as log
 
     from ..server_files import whitelist
     from ..shared import pluralize
 
-    if not whitelist.whitelist_file.exists():
-        log.error(f"File '{whitelist.whitelist_file}' not found.")
+    whitelist_file = whitelist.whitelist_file
+    if not whitelist_file.exists():
+        log.error(f"Whitelist file ({whitelist_file}) does not exist!")
         return 1
 
-    whitelisted_players = whitelist.list_players()
+    whitelisted_players = whitelist.list_entries()
 
     player_list: list[str] = []
     for player in whitelisted_players:

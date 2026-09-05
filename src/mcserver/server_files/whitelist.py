@@ -19,43 +19,54 @@ whitelist_file = Path("whitelist.json")
 
 # TypedDicts
 class WhitelistEntry(TypedDict):
-    uuid: str
-    name: str
-
-
-class WhitelistPlayer(TypedDict):
     player_uuid: PlayerUUID
     player_name: str
+
+
+class WhitelistFileEntry(TypedDict):
+    uuid: str
+    name: str
 
 
 # Functions
 # Add Players
 def add_player(player_uuid: PlayerUUID, player_name: str) -> None:
-    whitelist_player: WhitelistPlayer = {
+    whitelist_entry: WhitelistEntry = {
         "player_uuid": player_uuid,
         "player_name": player_name,
     }
 
-    add_players(whitelist_player)
+    add_players(whitelist_entry)
 
 
-def add_players(whitelist_players: list[WhitelistPlayer] | WhitelistPlayer) -> None:
-    if not isinstance(whitelist_players, list):
-        whitelist_players = [whitelist_players]
+def add_players(whitelist_entries: list[WhitelistEntry] | WhitelistEntry) -> None:
+    """Add entries to the whitelist file
+    Args:
+        whitelist_entries: List of or an entry of player to be whitelisted
+
+    Raises:
+        FileNotFoundError: Whitelist file does not exist
+        json.JSONDecodeError: Cannot parse JSON of whitelist data
+    """
+    if not whitelist_file.exists():
+        raise FileNotFoundError(f"Whitelist file ({whitelist_file}) does not exist")
+
+    if not isinstance(whitelist_entries, list):
+        whitelist_entries = [whitelist_entries]
 
     with open(whitelist_file, mode="r+") as file:
-        whitelist_data = json.load(file)
+        whitelist_json: list[WhitelistFileEntry] = json.load(file)
 
-        for player in whitelist_players:
-            whitelist_entry: WhitelistEntry = {
-                "uuid": str(normalize_player_uuid(player["player_uuid"])),
-                "name": player.get("player_name", ""),
+        for entry in whitelist_entries:
+            whitelist_entry: WhitelistFileEntry = {
+                "uuid": str(normalize_player_uuid(entry["player_uuid"])),
+                "name": entry.get("player_name", ""),
             }
 
-            whitelist_data.append(whitelist_entry)
+            whitelist_json.append(whitelist_entry)
 
         file.seek(0)
-        json.dump(whitelist_data, file, indent=2)
+        json.dump(whitelist_json, file, indent=2)
         file.truncate()
 
 
@@ -107,8 +118,8 @@ def remove_players(player_ids: list[PlayerID] | PlayerID) -> None:
         raise FileNotFoundError(f"File '{whitelist_file}' is not found.")
 
     with open(whitelist_file, mode="r+") as file:
-        whitelist_data: list[WhitelistEntry] = json.load(file)
-        new_whitelist_data: list[WhitelistEntry] = []
+        whitelist_data: list[WhitelistFileEntry] = json.load(file)
+        new_whitelist_data: list[WhitelistFileEntry] = []
         for player in whitelist_data:
             player_uuid = player["uuid"]
             player_name = player["name"]
@@ -129,35 +140,45 @@ def remove_players(player_ids: list[PlayerID] | PlayerID) -> None:
 # TODO: add 'update_player' and 'update_players', just use plain dict.update() because it has no depth
 
 
-# List Players
-def list_players() -> list[WhitelistPlayer]:
-    whitelist_data: list[WhitelistEntry] = json.loads(whitelist_file.read_text())
+# List Entries
+def list_entries() -> list[WhitelistEntry]:
+    """Return a list of whitelist entries from the whitelist file
+    Raises:
+        FileNotFoundError: Whitelist file does not exist
+        json.JSONDecodeError: Cannot parse JSON of whitelist file
 
-    whitelist_players: list[WhitelistPlayer] = []
-    for entry in whitelist_data:
-        player_uuid: str | None = entry.get("uuid", None)
-        player_name: str | None = entry.get("name", None)
+    Returns:
+        List of whitelist entries
+    """
+    if not whitelist_file.exists():
+        raise FileNotFoundError(f"Whitelist file ({whitelist_file}) does not exist")
 
-        if player_uuid is None or player_name is None:
-            error_message = f"Invalid whitelist entry!"
-            if player_uuid:
-                error_message += f" UUID: '{player_uuid}'"
+    whitelist_data: str = whitelist_file.read_text()
 
-            if player_name:
-                error_message += f" Name: '{player_name}'"
+    # NOTE: A custom TypedDict for entry from JSON with NotRequired so we can get notified for edge cases where the field does no exist
+    whitelist_json: list[WhitelistFileEntry] = json.loads(whitelist_data)
 
-            log.error(error_message)
+    whitelist_entries: list[WhitelistEntry] = []
+    for file_entry in whitelist_json:
+        if "uuid" not in file_entry:
+            log.warning("Invalid whitelist entry: missing 'uuid'")
             continue
+
+        if "name" not in file_entry:
+            log.warning("Invalid whitelist entry: missing 'name'")
+            continue
+
+        file_entry_uuid = file_entry["uuid"]
 
         try:
-            whitelist_player: WhitelistPlayer = {
-                "player_uuid": UUID(player_uuid),
-                "player_name": entry["name"],
+            whitelist_entry: WhitelistEntry = {
+                "player_uuid": UUID(file_entry_uuid),
+                "player_name": file_entry["name"],
             }
         except ValueError:
-            log.error(f"Invalid UUID in whitelist: '{player_uuid}'")
+            log.error(f"Invalid UUID in whitelist: '{file_entry_uuid}'")
             continue
 
-        whitelist_players.append(whitelist_player)
+        whitelist_entries.append(whitelist_entry)
 
-    return whitelist_players
+    return whitelist_entries

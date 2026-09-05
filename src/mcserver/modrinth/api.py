@@ -289,7 +289,9 @@ def get_project_versions(
         dependencies: list[VersionDependency] = []
         if "dependencies" in version:
             for dependency in version["dependencies"]:
-                version_dependency: VersionDependency = {"dependency_type": dependency["dependency_type"]}
+                version_dependency: VersionDependency = {
+                    "dependency_type": dependency["dependency_type"]
+                }
 
                 if "version_id" in dependency:
                     version_dependency["version_id"] = dependency["version_id"]
