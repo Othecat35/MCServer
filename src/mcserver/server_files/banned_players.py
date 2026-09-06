@@ -7,11 +7,8 @@ from typing import Literal, TypedDict
 from uuid import UUID
 
 # MCServer
-from mcserver.minecraft.player_identity import (
-    PlayerID,
-    PlayerUUID,
-    normalize_player_uuid,
-)
+from mcserver.minecraft.player_identity import (PlayerID, PlayerUUID,
+                                                normalize_player_uuid)
 
 # Paths
 banned_players_file = Path("banned-players.json")

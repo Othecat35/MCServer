@@ -3,10 +3,10 @@
 import json
 from typing import Literal, NotRequired, TypedDict
 
-# MCServer
-from .shared import DependencyTypes, ProjectEnvironments
 from .. import networking
 from ..constants import modrinth_api_url
+# MCServer
+from .shared import DependencyTypes, ProjectEnvironments
 
 
 # TypedDict

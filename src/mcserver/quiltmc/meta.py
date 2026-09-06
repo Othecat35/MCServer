@@ -21,8 +21,9 @@ class LoaderVersion(TypedDict):
     maven_id: str
     loader_version: str
     file_size: int
-    hashes: Hashes  # what hash is this for? I don't know, please future me figure it out :>
-    
+    hashes: (
+        Hashes  # what hash is this for? I don't know, please future me figure it out :>
+    )
 
 
 # Functions
