@@ -10,7 +10,7 @@ source_dir = Path("src/")
 
 target_dir = Path("dist")
 target_dir.mkdir(exist_ok=True)
-target_file = target_dir / "mcserver.zip"
+target_file = target_dir / "mcserver"
 
 python_interpreter = "/usr/bin/env python3"
 
