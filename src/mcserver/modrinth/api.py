@@ -177,35 +177,41 @@ class ProjectInformation(TypedDict):
 
 class SearchHit(TypedDict):
     project_id: str
+    """The ID of the project, encoded as a base62 string"""
     project_type: Literal["mod", "modpack", "resourcepack", "shader"]
+    """The project type of the project"""
     all_project_types: list[
         Literal["mod", "resourcepack", "datapack", "shader", "modpack", "plugin"]
     ]
+    """All project types across every version of the project, unlike project_type which only reflects a version-specific type"""
     project_title: str
+    """The title or name of the project"""
     short_description: str
+    """A short sentence summarizing the project, no more than a sentence or two."""
     author_username: str
+    """The username of the project's author"""
     categories: list[str]
+    """A list of the featured categories that the project has."""
     display_categories: list[str]
+    """A list of the featured categories that the project has. Equivalent to categories on the project itself."""
     minecraft_versions: list[str]
+    """A list of the minecraft versions supported by the project"""
     download_count: int
+    """The total number of downloads of the project"""
     follow_count: int
+    """The total number of users following the project"""
     icon_url: str
+    """The URL of the project's icon"""
     created_time: str  # Time Format: ISO-8601
+    """The date the project was created"""
     last_modified_time: str  # Time Format: ISO-8601
+    """The date the latest version of the project was created"""
     latest_version_id: str
+    """The ID of the latest version of the project"""
     license_id: str
-    project_environment: Literal[
-        "client_and_server",
-        "client_only",
-        "client_only_server_optional",
-        "singleplayer_only",
-        "server_only",
-        "server_only_client_optional",
-        "dedicated_server_only",
-        "client_or_server",
-        "client_or_server_prefers_both",
-        "unknown",
-    ]  # For plugin it is almost certainly always be server-only, but whatever I can't assume
+    """The SPDX license ID of a project"""
+    project_environment: ProjectEnvironments  # For plugin it is almost certainly always be server-only, but whatever I can't assume
+    """All the environments that versions of this project support. Not in any particular order, we recommend using the environment information on a version instead. For an explanation of each environment, see the blog post here: https://modrinth.com/news/article/new-environments/#new-system"""
     disclosure_type: list[
         Literal[
             "ai_content",
@@ -225,22 +231,36 @@ class SearchHit(TypedDict):
             "archived",
         ]
     ]
+    """Disclosures listed on the project."""
     gallery_image_urls: list[str]
+    """A list of images that have been uploaded to the project's gallery"""
     project_slug: NotRequired[str | None]
+    """The slug of a project, used for vanity URLs. Regex: ^[\\w!@$()`.+,"\\-']{3,64}$"""
     author_id: NotRequired[str | None]
+    """The ID of the project’s author"""
     organization_name: NotRequired[str | None]
+    """The name of the organization that owns this project"""
     organization_id: NotRequired[str | None]
+    """The ID of the organization that owns this project"""
     featured_gallery: NotRequired[str | None]
+    """The featured gallery image of the project"""
     icon_color: NotRequired[int | None]
+    """The RGB color of the project, automatically generated from the project icon"""
     client_side: DependencyTypes  # Deprecated, use environment. but my stuff don't really work with the new thing
+    """Deprecated - use environment instead. The client side support of the project"""
     server_side: DependencyTypes  # Deprecared, use environment. but my stuff don't really work with the new thing
+    """Deprecated - use environment instead. The server side support of the project"""
 
 
 class SearchResult(TypedDict):
     project_hits: list[SearchHit]
+    """The list of results"""
     result_offset: int
+    """The number of results that were skipped by the query"""
     result_limit: int
+    """The number of results that were returned by the query"""
     total_hits: int
+    """The total number of results that match the query"""
 
 
 # Functions
