@@ -278,3 +278,31 @@ Othecat35's Development Setup (For anyone if wondering):
     Python
 
 that's all lol
+
+
+so, Modrinth has new way to represent which mod go to which environment right?
+so it make the older 'server_side' and 'client_side' obselete.
+but, most of my code rely on them.
+what if, I make a 'translator' between the new 'environment' and the old '*_side'?
+"How can you do that?" said Othecat35.
+well, just convert one value into two values. like if the environment is 'client_and_server',
+then the server_side is required and server_side is required
+required = you need this mod on this side
+recommended = this mod is recommended to be installed on this side
+optional = you can have this mod in this side, or not
+unsupported = basically this side is a side effect (it works but uh...)
+incompatible = this mod may crash on this side
+unknown = the dev doesn't even know their mod, wth
+the mapping table (as for 2026-09-05, basically the time I wrote this):
+| environment                   | server side   | client side   |
+|-------------------------------|---------------|---------------|
+| client_and_server             | required      | required      |
+| client_only                   | unsupported   | required      |
+| client_only_server_optional   | optional      | required      |
+| singleplayer_only             | incompactible | required      |
+| server_only                   | required      | unsupported   |
+| server_only_client_optional   | required      | optional      |
+| dedicated_server_only         | required      | incompactible |
+| client_or_server              | optional      | optional      |
+| client_or_server_prefers_both | recommended   | recommended   |
+| unknown                       | unknown       | unknown       |
