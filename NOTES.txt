@@ -306,3 +306,6 @@ the mapping table (as for 2026-09-05, basically the time I wrote this):
 | client_or_server              | optional      | optional      |
 | client_or_server_prefers_both | recommended   | recommended   |
 | unknown                       | unknown       | unknown       |
+
+todo: move src/mcserver/server to src/mcserver/minecraft/server
+because it make more sense I think
