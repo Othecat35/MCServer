@@ -5,6 +5,7 @@ from typing import Literal, NotRequired, TypedDict
 
 from .. import networking
 from ..constants import modrinth_api_url
+
 # MCServer
 from .shared import DependencyTypes, ProjectEnvironments
 
