@@ -309,3 +309,11 @@ the mapping table (as for 2026-09-05, basically the time I wrote this):
 
 todo: move src/mcserver/server to src/mcserver/minecraft/server
 because it make more sense I think
+
+the export command... ".mcserver" and ".mrpack" format.
+.mrpack is Modrinth Modpack format, I already know that.
+.mcserver? what's this? a custom format? why?
+idk, maybe it can store the actual configs of the server
+the mod relationships, the metadata, etc
+the pros is can contain more metadata of the server.
+okay. but why? idk, maybe it looks cool? yea sure.
