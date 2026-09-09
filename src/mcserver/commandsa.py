@@ -12,23 +12,31 @@ from collections import deque
 from pathlib import Path
 
 from . import config, networking, state
+
 # MCServer
 from .config import default_configs, generate_config, load_config
 from .constants import __version__
 from .fabricmc import meta as fabricmc_meta
+
 # from indexing import project_index_exists, create_project_index, read_project_index, slug_to_id, slug_id_file, slug_id, indexes_dir, update_project_index
 from .metadata import metadata_file
 from .modrinth import modpack as modrinth_modpack
-from .modrinth.api import (VersionDependency, get_project_versions,
-                           modrinth_base_api)
+from .modrinth.api import VersionDependency, get_project_versions, modrinth_base_api
 from .mojang import eula as mojang_eula
 from .mojang import manifest as mojang_manifest
 from .networking import download, request
 from .papermc import api as papermc_api
 from .purpurmc import api as purpurmc_api
 from .server_files import whitelist as server_whitelist
-from .shared import (ansi, confirmation_prompt, format_number, mcserver_dir,
-                     mod_environment_color, pluralize, wrap_ansi)
+from .shared import (
+    ansi,
+    confirmation_prompt,
+    format_number,
+    mcserver_dir,
+    mod_environment_color,
+    pluralize,
+    wrap_ansi,
+)
 from .state import get_state, is_active, set_state
 
 # Variables
