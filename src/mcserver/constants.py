@@ -1,5 +1,3 @@
-__version__: str = "2.0.0"
-
 mojang_manifest_url: str = "https://launchermeta.mojang.com"
 
 minecraft_api_url: str = "https://api.minecraftservices.com"
