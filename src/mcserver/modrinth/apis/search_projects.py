@@ -30,3 +30,11 @@ def main(
 
     if result_limit > 100:
         raise ValueError("'result_limit' cannot be more than 100")
+
+    query_parameters = {
+        "query": search_query,
+        "facets": search_facets,
+        "index": sort_index,
+        "offset": search_offset,
+        "limit": result_limit,
+    }
