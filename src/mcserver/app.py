@@ -1,4 +1,6 @@
-def main() -> None:
+from typing import NoReturn
+
+def main() -> NoReturn:
     import sys
 
     if (sys.argv[1] if len(sys.argv) > 1 else "") == "cake":
