@@ -3,7 +3,7 @@ from typing import Literal
 
 def main(
     search_query: str = "",
-    search_facets: list[list[str] | str] | None = None,
+    search_facets: list[list[str] | str] | str | None = None,
     sort_index: Literal[
         "relevance", "downloads", "follows", "newest", "updated"
     ] = "relevance",
@@ -22,6 +22,11 @@ def main(
     Raises:
         ValueError: sort_index has invalid option or result_limit is over 100
     """
+    import json
+
+    from ... import networking
+    from ...constants import modrinth_api_url
+
     if search_facets is None:
         search_facets = []
 
@@ -33,8 +38,14 @@ def main(
 
     query_parameters = {
         "query": search_query,
-        "facets": search_facets,
+        "facets": str(search_facets),
         "index": sort_index,
         "offset": search_offset,
         "limit": result_limit,
     }
+
+    response = networking.request(
+        f"{modrinth_api_url}/v2/search", query=query_parameters
+    )
+    response_json = json.loads(response["text"])
+    return response_json
