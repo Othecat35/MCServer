@@ -1,6 +1,6 @@
-from typing import NoReturn
+from typing import Never
 
-def main() -> NoReturn:
+def main() -> Never:
     import sys
 
     if (sys.argv[1] if len(sys.argv) > 1 else "") == "cake":
