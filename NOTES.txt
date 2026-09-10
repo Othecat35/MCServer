@@ -317,3 +317,9 @@ idk, maybe it can store the actual configs of the server
 the mod relationships, the metadata, etc
 the pros is can contain more metadata of the server.
 okay. but why? idk, maybe it looks cool? yea sure.
+
+warning for those who want to interact with .properties,
+consider bring your own module and don't use my parser.
+why? its not perfect, and, basically don't. I only make it
+to work with Minecraft, properties files like server.properties
+and eula.txt.
