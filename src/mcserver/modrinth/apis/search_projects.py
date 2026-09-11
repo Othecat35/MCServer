@@ -3,7 +3,7 @@ from typing import Literal
 
 def main(
     search_query: str = "",
-    search_facets: list[list[str] | str] | str | None = None,
+    search_facets: list[list[list[str] | str]] | None = None,
     sort_index: Literal[
         "relevance", "downloads", "follows", "newest", "updated"
     ] = "relevance",
@@ -38,7 +38,7 @@ def main(
 
     query_parameters = {
         "query": search_query,
-        "facets": str(search_facets),
+        "facets": str(json.dumps(search_facets)),
         "index": sort_index,
         "offset": search_offset,
         "limit": result_limit,
