@@ -1,12 +1,13 @@
 # Modules
 # Standard
+import json
 import hashlib
 import logging as log
 import shutil
 import urllib.parse
 import urllib.request
 from pathlib import Path
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 # MCServer
 from . import __version__
@@ -16,8 +17,9 @@ from .shared import current_dir, format_number, mcserver_dir, print_status
 # TypedDict
 class ResponseObject(TypedDict):
     text: str
+    json: NotRequired[str]
     headers: dict
-    status: int
+    status_code: int
 
 
 # Errors
@@ -54,6 +56,12 @@ def request(
         f"{url}{query_string}", data=data, headers=headers, method=method
     )
 
+    response_object: ResponseObject = {
+        "text": "",
+        "headers": {},
+        "status_code": 0,
+    }
+
     log.debug(f"Requesting URL: {method} {request.full_url}")
     with urllib.request.urlopen(request, timeout=timeout) as response:
         log.debug(f"Responded with status: {response.status} {response.reason}")
@@ -61,12 +69,15 @@ def request(
         response_headers = {}
         for key, value in response.getheaders():
             response_headers[key.lower()] = value
+        
+        response_object["text"] = response.read().decode("utf-8")
+        response_object["headers"] = response_headers
+        response_object["status_code"] = response.status
 
-        return {
-            "text": response.read().decode("utf-8"),
-            "headers": response_headers,
-            "status": response.status,
-        }
+        if response_headers["content-type"] == "application/json":
+            response_object["json"] = json.loads(response_object["text"])
+
+    return response_object
 
 
 def download(
