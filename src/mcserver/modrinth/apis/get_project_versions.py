@@ -26,10 +26,16 @@ def main(
         game_versions = [game_versions]
 
     query_parameters = {
-        "loaders": json.dumps(loader_names),
-        "game_versions": json.dumps(game_versions),
-        "include_changelog": json.dumps(include_changelog),
+        "include_changelog": json.dumps(include_changelog)
     }
+
+    if loader_names is not None:
+        query_parameters["loaders"] = json.dumps(loaders)
+
+
+    if game_versions is not None:
+        query_parameters["game_versions"] = json.dumps(game_versions)
+
 
     if featured is not None:
         query_parameters["featured"] = json.dumps(featured)
