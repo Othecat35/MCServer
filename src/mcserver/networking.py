@@ -17,7 +17,7 @@ from .shared import current_dir, format_number, mcserver_dir, print_status
 # TypedDict
 class ResponseObject(TypedDict):
     text: str
-    json: NotRequired[str]
+    json: NotRequired[dict | list]
     headers: dict
     status_code: int
 
@@ -56,11 +56,7 @@ def request(
         f"{url}{query_string}", data=data, headers=headers, method=method
     )
 
-    response_object: ResponseObject = {
-        "text": "",
-        "headers": {},
-        "status_code": 0,
-    }
+    response_object: ResponseObject = {} # type: ignore[typeddict-items]
 
     log.debug(f"Requesting URL: {method} {request.full_url}")
     with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -74,7 +70,7 @@ def request(
         response_object["headers"] = response_headers
         response_object["status_code"] = response.status
 
-        if response_headers["content-type"] == "application/json":
+        if response_headers.get("content-type", "").startswith("application/json"):
             response_object["json"] = json.loads(response_object["text"])
 
     return response_object
