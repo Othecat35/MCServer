@@ -7,6 +7,10 @@ def main(args: Namespace) -> int:
     from .. import state
 
     # Check MCServer status
+    if not state.state_file.parent.exists():
+        log.error("State file not exist, is MCServer initialized?")
+        return 1
+
     current_state = state.get_state()
     if current_state["is_active"]:
         log.error(
@@ -79,16 +83,17 @@ def main(args: Namespace) -> int:
                 download_prop = papermc_api.get_project_build(
                     "paper", game_version, loader_version
                 )["download_props"]["server:default"]
-                networking.download(download_prop["download_url"], jarfile)
+                networking.download(download_prop["download_url"], jarfile, hashes=download_prop["file_hashes"])
             case "purpur":
                 from ..purpurmc import api as purpurmc_api
 
                 log.info(
                     f"Downloading Purpur build {loader_version} for Minecraft version {game_version}..."
                 )
+                project_build = purpurmc_api.get_project_build("purpur", game_version, loader_version)
                 networking.download(
                     purpurmc_api.download_url("purpur", game_version, loader_version),
-                    jarfile,
+                    jarfile, hashes={"md5": project_build["artifact_md5"]}
                 )
 
             # Vanilla
@@ -120,11 +125,12 @@ def main(args: Namespace) -> int:
                     hashes={"sha1": version_download["sha1"]},
                 )
             case _:
-                log.error(f"Loader is not supported: {loader_name}")
+                log.error(f"Loader is not supported ({loader_name}), you may have to edit '.mcserver/configs/server.json' to fix it.")
+                return 1
 
     # Check stuff
     if not shutil.which("java"):
-        log.error("Java is not installed in PATH")
+        log.error("'java' not found")
         return 1
 
     if memory_config["min"] > memory_config["max"]:
@@ -145,6 +151,4 @@ def main(args: Namespace) -> int:
 
     # Execute java
     log.debug(f"Executing command: {' '.join(java_command_argv)}")
-
-    state.set_state("server_running")
     os.execvp(java_command_argv[0], java_command_argv)
