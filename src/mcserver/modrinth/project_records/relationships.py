@@ -173,13 +173,16 @@ def update(
     except json.JSONDecodeError as error:
         raise error
 
+    project_relationships["dependencies"].update(new_dependencies)
+    project_relationships["dependents"].update(new_dependents)
+
     project_relationships.update(relationships_json)
     relationships_data = json.dumps(project_relationships, indent=2)
     relationships_file.write_text(relationships_data)
 
 
 def delete(project_id: str):
-    """ "Delete a project's relationships record
+    """Delete a project's relationships record
 
     Args:
         project_id: The Modrinth project ID
