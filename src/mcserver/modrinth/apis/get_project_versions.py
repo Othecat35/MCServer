@@ -14,6 +14,10 @@ def main(
         featured: Allows to filter for featured or non-featured versions only (trinary)
         include_changelog: Allows you to toggle the inclusion of the changelog field in the response. It is highly recommended to use include_changelog=false in most cases unless you specifically need the changelog for all versions.
     """
+    import json
+    from ... import networking
+    from ...constants import modrinth_api_url
+
     if loader_names is None:
         loader_names = []
 
@@ -28,3 +32,7 @@ def main(
 
     if featured is not None:
         query_parameters["featured"] = featured
+
+    response = networking.request(f"{modrinth_api_url}/v2/project/{project_id}/version", query=query_parameters)
+    response_json = json.loads(response["text"])
+    return response_json
