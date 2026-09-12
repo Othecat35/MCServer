@@ -15,6 +15,7 @@ def main(
         include_changelog: Allows you to toggle the inclusion of the changelog field in the response. It is highly recommended to use include_changelog=false in most cases unless you specifically need the changelog for all versions.
     """
     import json
+
     from ... import networking
     from ...constants import modrinth_api_url
 
@@ -27,12 +28,14 @@ def main(
     query_parameters = {
         "loaders": json.dumps(loader_names),
         "game_versions": json.dumps(game_versions),
-        "include_changelog": json.dumps(include_changelog)
+        "include_changelog": json.dumps(include_changelog),
     }
 
     if featured is not None:
         query_parameters["featured"] = json.dumps(featured)
 
-    response = networking.request(f"{modrinth_api_url}/v2/project/{project_id}/version", query=query_parameters)
+    response = networking.request(
+        f"{modrinth_api_url}/v2/project/{project_id}/version", query=query_parameters
+    )
     response_json = json.loads(response["text"])
     return response_json

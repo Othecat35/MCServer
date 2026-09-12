@@ -1,22 +1,35 @@
 #!/usr/bin/env python3
-import subprocess
-import tempfile
 import unittest
-from pathlib import Path
 
+from src.mcserver.resolver import resolve_dependencies, human_to_resolver, resolver_to_human, dependency_types
 
-class TestMCServer(unittest.TestCase):
-    script_path = Path.cwd() / "mcserver"
+def test_dependencies(project_id: str) -> dict[str, int]:
+    dependencies = {
+        "embeddium": [{"project_id": "sodium", "dependency_type": "incompatible"}],
+        "fabric-api": [],
+        "origins": [{"project_id": "fabric-api", "dependency_type": "required"}],
+        "pehkui": [{"project_id": "fabric-api", "dependency_type": "required"}],
+        "podium": [{"project_id": "sodium", "dependency_type": "required"}],
+        "sodium": [],
+        "thdilos-fox-origin-expanded": [
+            {"project_id": "thdilos-fox-origin", "dependency_type": "required"},
+            {"project_id": "pehkui", "dependency_type": "required"},
+            {"project_id": "origins", "dependency_type": "required"},
+        ],
+        "thdilos-fox-origin": [
+            {"project_id": "pehkui", "dependency_type": "required"},
+            {"project_id": "origins", "dependency_type": "required"},
+        ],
+    }
 
-    def setUp(self):
-        self.temporary_directory = tempfile.TemporaryDirectory()
-        self.test_directory = Path(self.temporary_directory.name)
+    return human_to_resolver(dependencies[project_id])
 
-        self.mcserver_path = self.test_directory / ".mcserver"
-        self.configs_path = self.mcserver_path / "configs"
+def required_only(dependency_type: int) -> bool:
+    return dependency_type == dependency_types["required"]
 
-    def tearDown(self):
-        self.temporary_directory.cleanup()
+class TestDependencyResolver(unittest.TestCase):
+    def test_resolve(self):
+        print(resolver_to_human(resolve_dependencies("thdilos-fox-origin", test_dependencies, required_only)))
 
 
 if __name__ == "__main__":
