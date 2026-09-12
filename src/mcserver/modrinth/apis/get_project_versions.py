@@ -18,20 +18,20 @@ def main(
     from ... import networking
     from ...constants import modrinth_api_url
 
-    if loader_names is None:
-        loader_names = []
+    if isinstance(loader_names, str):
+        loader_names = [loader_names]
 
-    if game_versions is None:
-        game_versions = []
+    if isinstance(game_versions, str):
+        game_versions = [game_versions]
 
     query_parameters = {
-        "loaders": loader_names,
-        "game_versions": game_versions,
-        "include_changelog": include_changelog,
+        "loaders": json.dumps(loader_names),
+        "game_versions": json.dumps(game_versions),
+        "include_changelog": json.dumps(include_changelog)
     }
 
     if featured is not None:
-        query_parameters["featured"] = featured
+        query_parameters["featured"] = json.dumps(featured)
 
     response = networking.request(f"{modrinth_api_url}/v2/project/{project_id}/version", query=query_parameters)
     response_json = json.loads(response["text"])
