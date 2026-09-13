@@ -323,3 +323,8 @@ consider bring your own module and don't use my parser.
 why? its not perfect, and, basically don't. I only make it
 to work with Minecraft, properties files like server.properties
 and eula.txt.
+
+3.1.0:
+no add/remove for whitelist yet
+no grant/revoke for op yet
+no update yet
