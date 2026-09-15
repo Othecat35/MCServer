@@ -35,3 +35,4 @@ def update_config(config_name: str, new_data: dict[str, Any]) -> None:
         config_data = json.load(file)
         merge_dict(config_data, new_data)
         json.dump(config_data, file, indent=2)
+        file.truncate()
