@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 import unittest
 
-from src.mcserver.resolver import resolve_dependencies, human_to_resolver, resolver_to_human, dependency_types
+from src.mcserver.resolver import (
+    resolve_dependencies,
+    human_to_resolver,
+    resolver_to_human,
+    dependency_types,
+)
+
 
 def test_dependencies(project_id: str) -> dict[str, int]:
     dependencies = {
@@ -24,12 +30,20 @@ def test_dependencies(project_id: str) -> dict[str, int]:
 
     return human_to_resolver(dependencies[project_id])
 
+
 def required_only(dependency_type: int) -> bool:
     return dependency_type == dependency_types["required"]
 
+
 class TestDependencyResolver(unittest.TestCase):
     def test_resolve(self):
-        print(resolver_to_human(resolve_dependencies("thdilos-fox-origin", test_dependencies, required_only)))
+        print(
+            resolver_to_human(
+                resolve_dependencies(
+                    "thdilos-fox-origin", test_dependencies, required_only
+                )
+            )
+        )
 
 
 if __name__ == "__main__":

@@ -56,7 +56,7 @@ def request(
         f"{url}{query_string}", data=data, headers=headers, method=method
     )
 
-    response_object: ResponseObject = {} # type: ignore[typeddict-items]
+    response_object: ResponseObject = {}  # type: ignore[typeddict-items]
 
     log.debug(f"Requesting URL: {method} {request.full_url}")
     with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -65,7 +65,7 @@ def request(
         response_headers = {}
         for key, value in response.getheaders():
             response_headers[key.lower()] = value
-        
+
         response_object["text"] = response.read().decode("utf-8")
         response_object["headers"] = response_headers
         response_object["status_code"] = response.status

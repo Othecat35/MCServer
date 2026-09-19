@@ -25,6 +25,7 @@ class Dependency(TypedDict):
 
 class Project(TypedDict):
     is_manual: bool
+    highest_type: int
     dependencies: dict[str, int]
     dependents: dict[str, int]
 
@@ -84,6 +85,7 @@ def resolve_dependencies(
     project_ids: list[str] | str,
     get_dependencies: Callable[[str], dict[str, int]],
     queue_filter: Callable[[int], bool],
+    required_type: int,
 ) -> dict[str, Project]:
     """Resolve dependency tree using BFS
 
@@ -102,7 +104,12 @@ def resolve_dependencies(
     for project_id in project_ids:
         log.debug(f"Adding project '{project_id}' to the queue")
         queued_projects.append(project_id)
-        project: Project = {"is_manual": True, "dependencies": {}, "dependents": {}}
+        project: Project = {
+            "is_manual": True,
+            "highest_type": required_type,
+            "dependencies": {},
+            "dependents": {},
+        }
         dependency_graph[project_id] = project
 
     while queued_projects:
@@ -115,13 +122,23 @@ def resolve_dependencies(
         dependency_graph[project_id]["dependencies"] = dependencies
 
         for dependency_id, dependency_type in dependencies.items():
-            if dependency_id in visited_projects:
-                dependency_graph[dependency_id]["dependents"][
-                    project_id
-                ] = dependency_type
+            if dependency_id in dependency_graph:
+                dependency_project = dependency_graph[dependency_id]
+
+                if not queue_filter(
+                    dependency_project["highest_type"]
+                ) and queue_filter(dependency_type):
+                    log.debug(f"Adding previous dependency '{dependency_id}' to queue")
+                    queued_projects.append(dependency_id)
+
+                dependency_project["highest_type"] = max(
+                    dependency_type, dependency_project["highest_type"]
+                )
+                dependency_project["dependents"][project_id] = dependency_type
             else:
                 dependency_graph[dependency_id] = {
                     "is_manual": False,
+                    "highest_type": dependency_type,
                     "dependencies": {},
                     "dependents": {project_id: dependency_type},
                 }
@@ -143,6 +160,14 @@ def test_dependencies(project_id: str) -> dict[str, int]:
     dependencies = {
         "embeddium": [{"project_id": "sodium", "dependency_type": "incompatible"}],
         "fabric-api": [],
+        "jade": [
+            {"project_id": "fabric-api", "dependency_type": "required"},
+            {"project_id": "jei", "dependency_type": "optional"},
+        ],
+        "jei": [],
+        "just-enough-resources-jer": [
+            {"project_id": "jei", "dependency_type": "required"}
+        ],
         "origins": [{"project_id": "fabric-api", "dependency_type": "required"}],
         "pehkui": [{"project_id": "fabric-api", "dependency_type": "required"}],
         "podium": [{"project_id": "sodium", "dependency_type": "required"}],
@@ -159,3 +184,24 @@ def test_dependencies(project_id: str) -> dict[str, int]:
     }
 
     return human_to_resolver(dependencies[project_id])
+
+
+log.basicConfig(level=log.DEBUG)
+import json
+
+print(
+    json.dumps(
+        resolve_dependencies(
+            [
+                "thdilos-fox-origin-expanded",
+                "thdilos-fox-origin",
+                "jade",
+                "just-enough-resources-jer",
+            ],
+            test_dependencies,
+            required_only,
+            2,
+        ),
+        indent=2,
+    )
+)
