@@ -12,6 +12,9 @@ Supported platforms:
 - JRE (depends on Minecraft version)
 
 ## How to install
+- Using pip:
+1. Run `pip install mcserver-cli`
+
 - System-wide (Requires root): 
 1. Download the `mcserver` script file from GitHub releases
 2. Move the file to `/usr/local/bin`
