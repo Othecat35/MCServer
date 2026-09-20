@@ -4,7 +4,7 @@ import json
 import logging as log
 import os
 from pathlib import Path
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 # MCServer
 from .shared import mcserver_dir
@@ -19,9 +19,9 @@ class State(TypedDict):
 
 class CurrentState(TypedDict):
     is_active: bool
-    process_id: int
-    start_time: int
-    action: str
+    process_id: NofRequired[int]
+    start_time: NotRequired[int]
+    action: NotRequired[str]
 
 
 # Paths
@@ -57,15 +57,33 @@ def set_state(action: str) -> None:
 
 
 def get_state() -> CurrentState:
+    current_state: CurrentState = {
+        "is_active": False
+    }
+
+    if not state_file.exists():
+        log.debug("State file does not exist")
+        return current_state
+
     state_data: str = state_file.read_text()
     file_state: State = json.loads(state_data)  # I ran out of naming
 
     current_state: CurrentState = {
-        "is_active": False,
-        "process_id": file_state["process_id"],
-        "start_time": file_state["start_time"],
-        "action": file_state["action"],
+        "is_active": False
     }
+
+    if "action" in file_state:
+        current_state["action"] = file_state["action"]
+
+    if "process_id" in file_state:
+        current_state["process_id"] = file_state["process_id"]
+    else:
+        return current_state
+
+    if "start_time" in file_state:
+        current_state["start_time"] = file_state["current_state"]
+    else:
+        return current_state
 
     if file_state["start_time"] == get_start_time(file_state["process_id"]):
         current_state["is_active"] = True
