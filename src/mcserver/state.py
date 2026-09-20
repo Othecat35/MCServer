@@ -19,7 +19,7 @@ class State(TypedDict):
 
 class CurrentState(TypedDict):
     is_active: bool
-    process_id: NofRequired[int]
+    process_id: NotRequired[int]
     start_time: NotRequired[int]
     action: NotRequired[str]
 
@@ -57,9 +57,7 @@ def set_state(action: str) -> None:
 
 
 def get_state() -> CurrentState:
-    current_state: CurrentState = {
-        "is_active": False
-    }
+    current_state: CurrentState = {"is_active": False}
 
     if not state_file.exists():
         log.debug("State file does not exist")
@@ -67,10 +65,6 @@ def get_state() -> CurrentState:
 
     state_data: str = state_file.read_text()
     file_state: State = json.loads(state_data)  # I ran out of naming
-
-    current_state: CurrentState = {
-        "is_active": False
-    }
 
     if "action" in file_state:
         current_state["action"] = file_state["action"]

@@ -83,17 +83,24 @@ def main(args: Namespace) -> int:
                 download_prop = papermc_api.get_project_build(
                     "paper", game_version, loader_version
                 )["download_props"]["server:default"]
-                networking.download(download_prop["download_url"], jarfile, hashes=download_prop["file_hashes"])
+                networking.download(
+                    download_prop["download_url"],
+                    jarfile,
+                    hashes=download_prop["file_hashes"],
+                )
             case "purpur":
                 from ..purpurmc import api as purpurmc_api
 
                 log.info(
                     f"Downloading Purpur build {loader_version} for Minecraft version {game_version}..."
                 )
-                project_build = purpurmc_api.get_project_build("purpur", game_version, loader_version)
+                project_build = purpurmc_api.get_project_build(
+                    "purpur", game_version, loader_version
+                )
                 networking.download(
                     purpurmc_api.download_url("purpur", game_version, loader_version),
-                    jarfile, hashes={"md5": project_build["artifact_md5"]}
+                    jarfile,
+                    hashes={"md5": project_build["artifact_md5"]},
                 )
 
             # Vanilla
@@ -125,7 +132,9 @@ def main(args: Namespace) -> int:
                     hashes={"sha1": version_download["sha1"]},
                 )
             case _:
-                log.error(f"Loader is not supported ({loader_name}), you may have to edit '.mcserver/configs/server.json' to fix it.")
+                log.error(
+                    f"Loader is not supported ({loader_name}), you may have to edit '.mcserver/configs/server.json' to fix it."
+                )
                 return 1
 
     # Check stuff
