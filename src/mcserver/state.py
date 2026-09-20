@@ -75,7 +75,7 @@ def get_state() -> CurrentState:
         return current_state
 
     if "start_time" in file_state:
-        current_state["start_time"] = file_state["current_state"]
+        current_state["start_time"] = file_state["start_time"]
     else:
         return current_state
 
