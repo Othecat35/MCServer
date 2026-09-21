@@ -85,14 +85,15 @@ def resolve_dependencies(
     project_ids: list[str] | str,
     get_dependencies: Callable[[str], dict[str, int]],
     queue_filter: Callable[[int], bool],
-    required_type: int,
+    manual_type: int,
 ) -> dict[str, Project]:
     """Resolve dependency tree using BFS
 
     Args:
         project_ids: Projects to start with
         get_dependencies: Callback that returns a dictionary
-        should_queue: Callback that returns a bool
+        queue_filter: Callback that returns a bool
+        manual_type: Number that is treated as required
     """
     if isinstance(project_ids, str):
         project_ids = [project_ids]
@@ -106,7 +107,7 @@ def resolve_dependencies(
         queued_projects.append(project_id)
         project: Project = {
             "is_manual": True,
-            "highest_type": required_type,
+            "highest_type": manual_type,
             "dependencies": {},
             "dependents": {},
         }
