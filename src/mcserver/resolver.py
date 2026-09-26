@@ -187,22 +187,27 @@ def test_dependencies(project_id: str) -> dict[str, int]:
     return human_to_resolver(dependencies[project_id])
 
 
-log.basicConfig(level=log.DEBUG)
-import json
+def main():
+    log.basicConfig(level=log.DEBUG)
+    import json
 
-print(
-    json.dumps(
-        resolve_dependencies(
-            [
-                "thdilos-fox-origin-expanded",
-                "thdilos-fox-origin",
-                "jade",
-                "just-enough-resources-jer",
-            ],
-            test_dependencies,
-            required_only,
-            2,
-        ),
-        indent=2,
+    print(
+        json.dumps(
+            resolve_dependencies(
+                [
+                    "thdilos-fox-origin-expanded",
+                    "thdilos-fox-origin",
+                    "jade",
+                    "just-enough-resources-jer",
+                ],
+                test_dependencies,
+                required_only,
+                2,
+            ),
+            indent=2,
+        )
     )
-)
+
+
+if __name__ == "__main__":
+    main()
