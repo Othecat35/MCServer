@@ -37,7 +37,7 @@ class ProjectData(TypedDict):
     dependents: list[Dependency]
 
 
-# NOTE: These are just theory, or not?
+# NOTE: These are just theory, or not? # because I don't know if anyone do something like this
 def human_to_resolver(dependencies: list[Dependency]) -> dict[str, int]:
     resolver_dependencies: dict[str, int] = {}
     for dependency in dependencies:
