@@ -8,5 +8,5 @@ def main(args: Namespace) -> int:
     from ..modrinth.apis import get_project_versions
     from ..resolver import human_to_resolver, resolve_dependencies, resolver_to_human
 
-    print(get_project_versions(projects[0], include_changelog=False))
+    print(get_project_versions(projects[0], include_changelog=False)[0])
     return 0
