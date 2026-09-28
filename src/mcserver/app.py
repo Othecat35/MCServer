@@ -1,7 +1,4 @@
-from typing import Never
-
-
-def main() -> Never:
+def main():
     import sys
 
     if (sys.argv[1] if len(sys.argv) > 1 else "") == "cake":
