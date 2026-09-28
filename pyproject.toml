@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "mcserver-cli"
 dynamic = ["version"]
 dependencies = []
-requires-python = ">= 3.14"
+requires-python = ">=3.14"
 authors = [
   {name = "Othecat35", email = "othecat35@gmail.com"}
 ]
@@ -24,7 +24,7 @@ Repository = "https://github.com/Othecat35/MCServer.git"
 Changelog = "https://github.com/Othecat35/MCServer/blob/main/CHANGELOG.md"
 
 [project.scripts]
-mcserver = "mcserver:__main__"
+mcserver = "mcserver.app:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcserver"]
