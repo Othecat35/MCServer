@@ -96,12 +96,22 @@ def main(args: Namespace) -> int:
                 else project_version[id_slug[project_id]]
             )
         ]
-        print(a)
         return a
 
     server_config = load_config("server")
     loader_name = server_config["loader"]["name"]
     game_version = server_config["game_version"]
+
+    cached_project_versions = {}
+    project_ids = []
+
+    for project in projects:
+        project_version = get_project_versions(
+            project, loader_name, game_version, include_changelog=False
+        )[0]
+
+        cached_project_versions[project_version["project_id"]] = project_version
+        project_ids.append(project_version["project_id"])
 
     def get_dependencies(project_id: str) -> dict[str, int]:
         dependencies: list[Dependency] = []
@@ -133,7 +143,7 @@ def main(args: Namespace) -> int:
 
     print(
         resolver_to_human(
-            resolve_dependencies(projects, get_dependencies, required_only, 2)
+            resolve_dependencies(project_ids, get_dependencies, required_only, 2)
         )
     )
     return 0
