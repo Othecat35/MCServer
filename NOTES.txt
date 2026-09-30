@@ -328,3 +328,5 @@ and eula.txt.
 no add/remove for whitelist yet
 no grant/revoke for op yet
 no update yet
+
+for the remove command, I would use the resolver I already had. But it would be more complicated once we're dealing with mod that shared dependencies with other. I don't know ;-; I haven't even finished the add commad yet, but it is in incremental so don't rush me >:c
