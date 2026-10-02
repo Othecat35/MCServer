@@ -7,6 +7,7 @@ def main(args: Namespace) -> int:
 
     import logging as log
     import os
+    import time
     from signal import SIGKILL, SIGTERM
 
     from .. import state
@@ -21,11 +22,17 @@ def main(args: Namespace) -> int:
         log.error("Server is not running.")
         return 1
 
+    if "process_id" not in current_state:
+        log.info("Process ID is not in state file")
+        return 1
+
     log.info("Stopping server...")
     os.kill(current_state["process_id"], SIGTERM)
 
+    time.sleep(1)
+
     current_state = state.get_state()
-    if current_state["is_active"]:
+    if not current_state["is_active"]:
         return 0
 
     if not force_stop:
@@ -34,13 +41,23 @@ def main(args: Namespace) -> int:
         )
         return 1
 
-    import time
-
     from .. import config
 
     launcher_config = config.load_config("launcher")
-    time.sleep(launcher_config["force_stop"])
+    force_stop_timeout = launcher_config["force_stop"]
+    log.warning(
+            f"Server appears to still be running, force stopping the server in {force_stop_timeout} seconds..."
+        )
+    time.sleep(force_stop_timeout)
 
-    log.warning("Server process is still running, force stopping the server...")
+    current_state = state.get_state()
+    if not current_state["is_active"]:
+        return 0
+
+    if "process_id" not in current_state:
+        log.info("Process ID is not in state file")
+        return 1
+
+    log.warning("Force stopping the server...")
     os.kill(current_state["process_id"], SIGKILL)
     return 1
