@@ -36,10 +36,16 @@ Supported platforms:
 - List whitelisted players: `mcserver whitelist list`
 
 ### Example
-- Create a 1.20.1 Fabric (1.19.3) server
+- Create a 1.20.1 Fabric (0.19.5) server
 ```bash
-mcserver init --mc-version=1.20.1 --loader=fabric --loader-version=0.19.3
+mcserver init --mc-version=1.20.1 --loader=fabric --loader-version=0.19.5
 mcserver start
+```
+
+- List all operator and whitelisted players
+```bash
+mcserver op list
+mcserver whitelist list
 ```
 
 ## Note
