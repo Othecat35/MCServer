@@ -1,15 +1,16 @@
 from typing import Literal
+from .typed_dicts import SearchResult, SearchHit
 
 
 def main(
-    search_query: str = "",
+    search_query: str | None = None,
     search_facets: list[list[list[str] | str]] | None = None,
     sort_index: Literal[
         "relevance", "downloads", "follows", "newest", "updated"
     ] = "relevance",
     search_offset: int = 0,
     result_limit: int = 10,
-):
+) -> SearchResult:
     """Search projects
 
     Args:
@@ -37,15 +38,78 @@ def main(
         raise ValueError("'result_limit' cannot be more than 100")
 
     query_parameters = {
-        "query": search_query,
         "facets": str(json.dumps(search_facets)),
         "index": sort_index,
         "offset": search_offset,
         "limit": result_limit,
     }
 
+    if search_query is not None:
+      query_parameters["query"] = search_query
+
     response = networking.request(
         f"{modrinth_api_url}/v2/search", query=query_parameters
     )
-    response_json = json.loads(response["text"])
-    return response_json
+
+    # Mostly just to make pyright happy
+    if "json" in response:
+        response_json = response["json"]
+        if isinstance(response_json, list):
+            raise Exception("Response JSON is a list")
+    else:
+        raise Exception("Response is not JSON")
+
+    search_hits: list[SearchHit] = []
+    for hit in response_json["hits"]:
+      search_hit: SearchHit = {
+        "project_id": hit["project_id"],
+        "project_type": hit["project_type"],
+        "all_project_types": hit["all_project_types"],
+        "project_name": hit["title"],
+        "short_description": hit["description"],
+        "author_username": hit["author"],
+        "categories": hit["categories"],
+        "display_categories": hit["display_categories"],
+        "minecraft_versions": hit["versions"],
+        "download_count": hit["downloads"],
+        "follow_count": hit["follows"],
+        "icon_url": hit["icon_url"],
+        "created_time": hit["date_created"],
+        "last_modified_time": hit["date_modified"],
+        "latest_version_id": hit["latest_version"],
+        "license_id": hit["license"],
+        "project_environment": hit["environment"],
+        "disclosure_types": hit["disclosure_types"],
+        "gallery_image_urls": hit["gallery"],
+        "client_side": hit["client_side"],
+        "server_side": hit["server_side"]
+      }
+
+      if "slug" in hit:
+        search_hit["project_slug"] = hit["slug"]
+
+      if "author_id" in hit:
+        search_hit["author_id"] = hit["author_id"]
+
+      if "organization" in hit:
+        search_hit["organization_name"] = hit["organization"]
+
+      if "organization_id" in hit:
+        search_hit["organization_id"] = hit["organization_id"]
+
+      if "featured_gallery" in hit:
+        search_hit["featured_gallery"] = hit["featured_gallery"]
+
+      if "color" in hit:
+        search_hit["icon_color"] = hit["color"]
+
+      search_hits.append(search_hit)
+
+    search_result: SearchResult = {
+        "search_hits": search_hits,
+        "result_offset": response_json["offset"],
+        "result_limit": response_json["limit"],
+        "total_hits": response_json["total_hits"],
+    }
+
+    return search_result

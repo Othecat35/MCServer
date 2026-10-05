@@ -11,7 +11,7 @@ def main(args: Namespace) -> int:
         search_projects(
             "better",
             search_facets=[["environment:dedicated_server_only"]],
-            result_limit=1000,
+            result_limit=100,
         )
     )
     return 1

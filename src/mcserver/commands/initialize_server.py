@@ -47,14 +47,16 @@ def main(args: Namespace) -> int:
                         loader_version = version["loader_version"]
                         break
 
-                log.info(f"Latest Fabric loader version is {loader_version}")
+                log.info(f"Latest Fabric loader version is: {loader_version}")
+            case "legacyfabric":
+                pass
             case "quilt":
                 from ..quiltmc import meta as quiltmc_meta
 
                 loader_versions = quiltmc_meta.get_loader_versions()
                 latest_quilt_version = loader_versions[0]
                 loader_version = str(latest_quilt_version["loader_version"])
-                log.info(f"Latest Quilt loader version is {loader_version}")
+                log.info(f"Latest Quilt loader version is: {loader_version}")
             # Plugin Loader
             case "paper":
                 from ..papermc import api as papermc_api
