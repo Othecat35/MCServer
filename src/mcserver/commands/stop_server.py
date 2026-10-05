@@ -62,4 +62,3 @@ def main(args: Namespace) -> int:
     # log.warning("Force stopping the server...")
     # os.kill(current_state["process_id"], SIGKILL)
     # return 1
->>>>>>> 892d352 (unfeat: remove the force option on stop server)
