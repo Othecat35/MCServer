@@ -45,7 +45,7 @@ def main(
     }
 
     if search_query is not None:
-      query_parameters["query"] = search_query
+        query_parameters["query"] = search_query
 
     response = networking.request(
         f"{modrinth_api_url}/v2/search", query=query_parameters
@@ -61,49 +61,49 @@ def main(
 
     search_hits: list[SearchHit] = []
     for hit in response_json["hits"]:
-      search_hit: SearchHit = {
-        "project_id": hit["project_id"],
-        "project_type": hit["project_type"],
-        "all_project_types": hit["all_project_types"],
-        "project_name": hit["title"],
-        "short_description": hit["description"],
-        "author_username": hit["author"],
-        "categories": hit["categories"],
-        "display_categories": hit["display_categories"],
-        "minecraft_versions": hit["versions"],
-        "download_count": hit["downloads"],
-        "follow_count": hit["follows"],
-        "icon_url": hit["icon_url"],
-        "created_time": hit["date_created"],
-        "last_modified_time": hit["date_modified"],
-        "latest_version_id": hit["latest_version"],
-        "license_id": hit["license"],
-        "project_environment": hit["environment"],
-        "disclosure_types": hit["disclosure_types"],
-        "gallery_image_urls": hit["gallery"],
-        "client_side": hit["client_side"],
-        "server_side": hit["server_side"]
-      }
+        search_hit: SearchHit = {
+            "project_id": hit["project_id"],
+            "project_type": hit["project_type"],
+            "all_project_types": hit["all_project_types"],
+            "project_name": hit["title"],
+            "short_description": hit["description"],
+            "author_username": hit["author"],
+            "categories": hit["categories"],
+            "display_categories": hit["display_categories"],
+            "minecraft_versions": hit["versions"],
+            "download_count": hit["downloads"],
+            "follow_count": hit["follows"],
+            "icon_url": hit["icon_url"],
+            "created_time": hit["date_created"],
+            "last_modified_time": hit["date_modified"],
+            "latest_version_id": hit["latest_version"],
+            "license_id": hit["license"],
+            "project_environment": hit["environment"],
+            "disclosure_types": hit["disclosure_types"],
+            "gallery_image_urls": hit["gallery"],
+            "client_side": hit["client_side"],
+            "server_side": hit["server_side"],
+        }
 
-      if "slug" in hit:
-        search_hit["project_slug"] = hit["slug"]
+        if "slug" in hit:
+            search_hit["project_slug"] = hit["slug"]
 
-      if "author_id" in hit:
-        search_hit["author_id"] = hit["author_id"]
+        if "author_id" in hit:
+            search_hit["author_id"] = hit["author_id"]
 
-      if "organization" in hit:
-        search_hit["organization_name"] = hit["organization"]
+        if "organization" in hit:
+            search_hit["organization_name"] = hit["organization"]
 
-      if "organization_id" in hit:
-        search_hit["organization_id"] = hit["organization_id"]
+        if "organization_id" in hit:
+            search_hit["organization_id"] = hit["organization_id"]
 
-      if "featured_gallery" in hit:
-        search_hit["featured_gallery"] = hit["featured_gallery"]
+        if "featured_gallery" in hit:
+            search_hit["featured_gallery"] = hit["featured_gallery"]
 
-      if "color" in hit:
-        search_hit["icon_color"] = hit["color"]
+        if "color" in hit:
+            search_hit["icon_color"] = hit["color"]
 
-      search_hits.append(search_hit)
+        search_hits.append(search_hit)
 
     search_result: SearchResult = {
         "search_hits": search_hits,

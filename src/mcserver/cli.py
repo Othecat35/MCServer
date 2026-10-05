@@ -86,6 +86,7 @@ def main() -> int:
                 log.error(f"Unknown command: {command_name}")
                 return 1
 
+    # Parser Setup
     parser = argparse.ArgumentParser(
         prog="mcserver",
         description="A CLI tool for managing Minecraft: Java Edition servers.",
