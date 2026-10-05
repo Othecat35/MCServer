@@ -270,9 +270,6 @@ def main() -> int:
     )
 
     stop_command.set_defaults(command_name="stop")
-    stop_command.add_argument(
-        "--force-stop", action="store_true", help="Force stop the server"
-    )
 
     # "update" command
     update_command = commands.add_parser(
