@@ -197,36 +197,12 @@ def main() -> int:
     op_command.set_defaults(parser=op_command)
     op_subcommands = op_command.add_subparsers(title="Subcommands")
 
-    # 'op grant'
-    op_grant_command = op_subcommands.add_parser(
-        "grant",
-        help="Grant operator to players",
-        description="Grant operator status to players.",
-    )
-
-    op_grant_command.set_defaults(command_name="op_grant")
-    op_grant_command.add_argument(
-        "players", nargs="+", type=str, help="Player names or UUIDs"
-    )
-
     # 'op list'
     op_list_command = op_subcommands.add_parser(
         "list", help="List operator players", description="List all operator players."
     )
 
     op_list_command.set_defaults(command_name="op_list")
-
-    # 'op revoke'
-    op_revoke_command = op_subcommands.add_parser(
-        "revoke",
-        help="Revoke operator from players",
-        description="Revoke operator status from players.",
-    )
-
-    op_revoke_command.set_defaults(command_name="op_revoke")
-    op_revoke_command.add_argument(
-        "players", nargs="+", type=str, help="Player names or UUIDs"
-    )
 
     # 'remove' command
     remove_command = commands.add_parser(
@@ -290,18 +266,6 @@ def main() -> int:
     whitelist_command.set_defaults(parser=whitelist_command)
     whitelist_subcommands = whitelist_command.add_subparsers(title="Subcommands")
 
-    # 'whitelist add'
-    whitelist_add_command = whitelist_subcommands.add_parser(
-        "add",
-        help="Add players to whitelist",
-        description="Add players to the whitelist.",
-    )
-
-    whitelist_add_command.set_defaults(command_name="whitelist_add")
-    whitelist_add_command.add_argument(
-        "players", nargs="+", type=str, help="Player names or UUIDs"
-    )
-
     # 'whitelist list'
     whitelist_list_command = whitelist_subcommands.add_parser(
         "list",
@@ -310,18 +274,6 @@ def main() -> int:
     )
 
     whitelist_list_command.set_defaults(command_name="whitelist_list")
-
-    # 'whitelist remove'
-    whitelist_remove_command = whitelist_subcommands.add_parser(
-        "remove",
-        help="Remove players from whitelist",
-        description="Remove players from the whitelist.",
-    )
-
-    whitelist_remove_command.set_defaults(command_name="whitelist_remove")
-    whitelist_remove_command.add_argument(
-        "players", nargs="+", type=str, help="Player names or UUIDs"
-    )
 
     args = parser.parse_args()
     return args.func(args)
