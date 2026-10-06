@@ -3,7 +3,7 @@ from .typed_dicts import SearchResult, SearchHit
 
 
 def main(
-    search_query: str | None = None,
+    search_query: str | list[str] | None = None,
     search_facets: list[list[list[str] | str]] | None = None,
     sort_index: Literal[
         "relevance", "downloads", "follows", "newest", "updated"
@@ -23,6 +23,9 @@ def main(
     Raises:
         ValueError: sort_index has invalid option or result_limit is over 100
     """
+    if isinstance(search_query, list):
+        search_query = " ".join(search_query)
+
     import json
 
     from ... import networking
