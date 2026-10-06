@@ -36,7 +36,8 @@ def main(args: Namespace) -> int:
     for count, hit in enumerate(search_hits):
         slug_or_id = hit['project_slug'] if "project_slug" in hit else hit['project_id']
         print(f"{hit['project_name']} ({slug_or_id}) by {hit["author_username"]}")
-        print(f"https://modrinth.com/{shared.loader_context['project_label']}/{slug_or_id}")
+        print(f"> https://modrinth.com/{shared.loader_context['project_label']}/{slug_or_id}")
+        print(hit["short_description"])
 
         if (count + 1) < len(search_hits):
             print() # Print newline for readability
