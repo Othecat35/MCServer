@@ -7,8 +7,9 @@ from typing import Literal, TypeAlias
 from ..shared import mcserver_dir
 
 # TypeAliases
-DependencyTypes: TypeAlias = Literal["embedded", "optional", "required", "incompatible"]
-ProjectEnvironments: TypeAlias = Literal[
+DependencyType: TypeAlias = Literal["embedded", "optional", "required", "incompatible"]
+ProjectSide: TypeAlias = Literal["required", "optional", "unsupported", "unknown"]
+ProjectEnvironment: TypeAlias = Literal[
     "client_and_server",
     "client_only",
     "client_only_server_optional",

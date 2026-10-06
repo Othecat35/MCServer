@@ -1,5 +1,5 @@
 from typing import Literal
-from .typed_dicts import SearchResult, SearchHit
+from .typed_dicts import SearchResult
 
 
 def main(
@@ -28,6 +28,7 @@ def main(
 
     import json
 
+    from .typed_dicts import ProjectEnvironment, SearchHit
     from ... import networking
     from ...constants import modrinth_api_url
 
@@ -64,6 +65,11 @@ def main(
 
     search_hits: list[SearchHit] = []
     for hit in response_json["hits"]:
+        project_environments: list[ProjectEnvironment] = []
+        for environment in hit["environments"]:
+            project_environment: ProjectEnvironment = environment
+            project_environments.append(project_environment)
+
         search_hit: SearchHit = {
             "project_id": hit["project_id"],
             "project_type": hit["project_type"],
@@ -81,7 +87,7 @@ def main(
             "last_modified_time": hit["date_modified"],
             "latest_version_id": hit["latest_version"],
             "license_id": hit["license"],
-            "project_environment": hit["environment"],
+            "project_environments": project_environments,
             "disclosure_types": hit["disclosure_types"],
             "gallery_image_urls": hit["gallery"],
             "client_side": hit["client_side"],

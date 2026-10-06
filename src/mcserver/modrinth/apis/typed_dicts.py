@@ -1,6 +1,7 @@
-from typing import Literal, NotRequired, TypedDict
+from typing import Literal, NotRequired, TypeAlias, TypedDict
 
-from ..shared import DependencyTypes, ProjectEnvironments
+from ..shared import DependencyType, ProjectEnvironment, ProjectSide
+
 
 
 # Project Version
@@ -11,7 +12,7 @@ class VersionDependency(TypedDict):
     """The ID of the project that this version depends on"""
     filename: NotRequired[str | None]
     """The file name of the dependency, mostly used for showing external dependencies on modpacks"""
-    dependency_type: DependencyTypes
+    dependency_type: DependencyType
     """The type of dependency that this version has"""
 
 
@@ -81,7 +82,7 @@ class ProjectVersion(TypedDict):
     """The number of times this version has been downloaded"""
     changelog_url: NotRequired[str | None]
     """A link to the changelog for this version. Always null, only kept for legacy compatibility."""
-    environment: ProjectEnvironments
+    environment: ProjectEnvironment
     """The environment a project or version supports. For an explanation of each environment, see the blog post here: https://modrinth.com/news/article/new-environments/#new-system"""
     files: list[VersionFile]
 
@@ -118,8 +119,8 @@ class ProjectInformation(TypedDict):
     project_title: NotRequired[str]
     summary: NotRequired[str]
     categories: NotRequired[list[str]]
-    client_side: DependencyTypes
-    server_side: DependencyTypes
+    client_side: ProjectSide
+    server_side: ProjectSide
     description: NotRequired[str]
     status: NotRequired[
         Literal[
@@ -205,7 +206,7 @@ class SearchHit(TypedDict):
     """The ID of the latest version of the project"""
     license_id: str
     """The SPDX license ID of a project"""
-    project_environment: ProjectEnvironments  # For plugin it is almost certainly always be server-only, but whatever I can't assume
+    project_environments: list[ProjectEnvironment]  # For plugin it is almost certainly always be server-only, but whatever I can't assume
     """All the environments that versions of this project support. Not in any particular order, we recommend using the environment information on a version instead. For an explanation of each environment, see the blog post here: https://modrinth.com/news/article/new-environments/#new-system"""
     disclosure_types: list[
         Literal[
@@ -241,9 +242,9 @@ class SearchHit(TypedDict):
     """The featured gallery image of the project"""
     icon_color: NotRequired[int | None]
     """The RGB color of the project, automatically generated from the project icon"""
-    client_side: DependencyTypes  # Deprecated, use environment. but my stuff don't really work with the new thing
+    client_side: ProjectSide  # Deprecated, use environment. but my stuff don't really work with the new thing
     """Deprecated - use environment instead. The client side support of the project"""
-    server_side: DependencyTypes  # Deprecared, use environment. but my stuff don't really work with the new thing
+    server_side: ProjectSide  # Deprecared, use environment. but my stuff don't really work with the new thing
     """Deprecated - use environment instead. The server side support of the project"""
 
 
