@@ -20,7 +20,7 @@ def main(args: Namespace) -> int:
 
     try:
         server_config = config.load_config("server")
-        set_loader_context("paper")#server_config["loader"]["name"])
+        set_loader_context(server_config["loader"]["name"])
     except FileNotFoundError:
         log.warning("Server configuration file (.mcserver/config/server.json) does not exist")
 
@@ -35,7 +35,11 @@ def main(args: Namespace) -> int:
     
     for count, hit in enumerate(search_hits):
         slug_or_id = hit['project_slug'] if "project_slug" in hit else hit['project_id']
+        project_environments = []
+        for project_environment in hit["project_environments"]:
+            project_environments.append(project_environment.replace("_", " ").title())
         print(f"{hit['project_name']} ({slug_or_id}) by {hit["author_username"]}")
+        print(f"> {', '.join(project_environments)}")
         print(f"> https://modrinth.com/{shared.loader_context['project_label']}/{slug_or_id}")
         print(hit["short_description"])
 
