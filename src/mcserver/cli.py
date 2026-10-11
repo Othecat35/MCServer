@@ -224,7 +224,7 @@ def main() -> int:
     search_command.add_argument(
         "--page",
         default="vanilla",
-        type=str,
+        type=int,
         choices=loader_list,
         help="Override the loader filter",
         metavar="Loader",

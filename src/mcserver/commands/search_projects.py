@@ -3,11 +3,14 @@ from argparse import Namespace
 
 def main(args: Namespace) -> int:
     query: list[str] = args.query
+    page: int = args.page
+    game_version: str = args.game_version
+    loader_name: str = args.loader_name
     import logging as log
 
     from .. import config
     from .. import shared
-    from ..shared import pluralize, project_environment_name, set_loader_context, wrap_ansi, wrap_string
+    from ..shared import format_number, pluralize, project_environment_name, set_loader_context, wrap_ansi, wrap_string
     #from ..modrinth.apis import search_projects
     from ..modrinth.apis import SearchResult
 
@@ -43,7 +46,7 @@ def main(args: Namespace) -> int:
                 project_environments.append(project_environment_name(project_environment))
 
         print(f"{wrap_ansi(hit['project_name'], "bold")} ({slug_or_id}) {project_author}")
-        print(f"> {', '.join(project_environments)} | Downloads: {hit['download_count']} | Follows: {hit['follow_count']}")
+        print(f"> {', '.join(project_environments)} | Downloads: {format_number(hit['download_count'])} | Follows: {format_number(hit['follow_count'])}")
         print(f"> https://modrinth.com/{shared.loader_context['project_label']}/{slug_or_id}")
         print(wrap_string(hit["short_description"], initial_indent=2, subsequent_indent=1))
 
