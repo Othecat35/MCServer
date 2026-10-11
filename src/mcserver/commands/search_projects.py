@@ -1,7 +1,5 @@
 from argparse import Namespace
 
-from mcserver.shared import pluralize
-
 
 def main(args: Namespace) -> int:
     query: list[str] = args.query
@@ -9,7 +7,7 @@ def main(args: Namespace) -> int:
 
     from .. import config
     from .. import shared
-    from ..shared import pluralize, set_loader_context
+    from ..shared import pluralize, project_environment_name, set_loader_context, wrap_ansi, wrap_string
     #from ..modrinth.apis import search_projects
     from ..modrinth.apis import SearchResult
 
@@ -32,16 +30,22 @@ def main(args: Namespace) -> int:
     search_hits = search_result["search_hits"]
     if len(search_hits) == 0:
         log.error(f"No {shared.loader_context['project_label']} found.")
-    
+
     for count, hit in enumerate(search_hits):
         slug_or_id = hit['project_slug'] if "project_slug" in hit else hit['project_id']
+        project_author = wrap_ansi(f"by {hit["author_username"]}", "gray")
+
         project_environments = []
-        for project_environment in hit["project_environments"]:
-            project_environments.append(project_environment.replace("_", " ").title())
-        print(f"{hit['project_name']} ({slug_or_id}) by {hit["author_username"]}")
-        print(f"> {', '.join(project_environments)}")
+        if len(hit["project_environments"]) == 0:
+            project_environments.append("No environment")
+        else:
+            for project_environment in hit["project_environments"]:
+                project_environments.append(project_environment_name(project_environment))
+
+        print(f"{wrap_ansi(hit['project_name'], "bold")} ({slug_or_id}) {project_author}")
+        print(f"> {', '.join(project_environments)} | Downloads: {hit['download_count']} | Follows: {hit['follow_count']}")
         print(f"> https://modrinth.com/{shared.loader_context['project_label']}/{slug_or_id}")
-        print(hit["short_description"])
+        print(wrap_string(hit["short_description"], initial_indent=2, subsequent_indent=1))
 
         if (count + 1) < len(search_hits):
             print() # Print newline for readability

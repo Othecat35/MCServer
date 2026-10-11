@@ -1,6 +1,8 @@
 # Modules
 # Standard
+import shutil
 import sys
+import textwrap
 from pathlib import Path
 
 # MCServer
@@ -150,6 +152,28 @@ def set_loader_context(loader_name: str) -> None:
         loader_context = {"project_directory": plugins_dir, "project_label": "plugin"}
 
 
+def wrap_string(
+    string: str,
+    initial_indent: str | int = "",
+    subsequent_indent: str | int = "",
+    width: int | None = None,
+):
+    if isinstance(initial_indent, int):
+        initial_indent = " " * initial_indent
+
+    if isinstance(subsequent_indent, int):
+        subsequent_indent = " " * subsequent_indent
+
+    terminal_width = width or shutil.get_terminal_size().columns
+    return "\n".join(
+        textwrap.wrap(
+            string,
+            width=terminal_width,
+            initial_indent=initial_indent,
+            subsequent_indent=subsequent_indent,
+        )
+    )
+
 # ANSI
 def ansi(name: str):
     match color_output_mode:
@@ -172,16 +196,32 @@ def wrap_ansi(string: str, ansi_name: str):
     return f"{ansi(ansi_name)}{string}{ansi('reset')}"
 
 
-def mod_environment_color(environment: str, padding: int = 0):
-    if environment == "required":
-        return wrap_ansi(f"{'Required': <{padding}}", "green")
-    elif environment == "optional":
-        return wrap_ansi(f"{'Optional': <{padding}}", "yellow")
-    elif environment == "unsupported":
-        return wrap_ansi(f"{'Unsupported': <{padding}}", "red")
-    elif environment == "unknown":
-        return wrap_ansi(f"{'Unknown': <{padding}}", "gray")
-    return f"{environment: <{padding}}"
+# def mod_environment_color(environment: str, padding: int = 0):
+#     if environment == "required":
+#         return wrap_ansi(f"{'Required': <{padding}}", "green")
+#     elif environment == "optional":
+#         return wrap_ansi(f"{'Optional': <{padding}}", "yellow")
+#     elif environment == "unsupported":
+#         return wrap_ansi(f"{'Unsupported': <{padding}}", "red")
+#     elif environment == "unknown":
+#         return wrap_ansi(f"{'Unknown': <{padding}}", "gray")
+#     return f"{environment: <{padding}}"
+
+def project_environment_name(project_environment):
+    project_environments = {
+        "client_only": "Client-side only",
+        "server_only": "Server-side only",
+        "dedicated_server_only": "Dedicated server only",
+        "client_and_server": "Client and server",
+        "server_only_client_optional": "Optional on client",
+        "client_only_server_optional": "Optional on server",
+        "client_or_server_prefers_both": "Works best on both",
+        "client_or_server": "Works the same on either",
+        "singleplayer_only": "Singleplayer only"
+    }
+
+    return project_environments[project_environment]
+
 
 
 def print_status(message: str, dynamic: str | None = None):

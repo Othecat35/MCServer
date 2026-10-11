@@ -141,12 +141,11 @@ def main() -> int:
 
     init_command.set_defaults(command_name="init")
     init_command.add_argument(
-        "--mc-version",
+        "--game-version",
         default="latest-release",
         type=str,
         help="Minecraft version of the server",
         metavar="Version",
-        dest="game_version",
     )
 
     init_command.add_argument(
@@ -221,6 +220,34 @@ def main() -> int:
 
     search_command.set_defaults(command_name="search")
     search_command.add_argument("query", nargs="*", type=str, help="Query to search")
+
+    search_command.add_argument(
+        "--page",
+        default="vanilla",
+        type=str,
+        choices=loader_list,
+        help="Override the loader filter",
+        metavar="Loader",
+        dest="loader_name",
+    )
+
+    search_command.add_argument(
+        "--game-version",
+        type=str,
+        help="Override the Minecraft version filter",
+        metavar="Version",
+        dest="game_version",
+    )
+
+    search_command.add_argument(
+        "--loader",
+        default="vanilla",
+        type=str,
+        choices=loader_list,
+        help="Override the loader filter",
+        metavar="Loader",
+        dest="loader_name",
+    )
 
     # 'show' command
     show_command = commands.add_parser(
