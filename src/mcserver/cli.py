@@ -114,7 +114,7 @@ def main() -> int:
     add_command = commands.add_parser(
         "add",
         help="Add Modrinth projects to the server",
-        description="Add Mdorinth mods/plugins to the server",
+        description="Add Modrinth mods/plugins to the server",
     )
 
     add_command.set_defaults(command_name="add")
@@ -197,6 +197,7 @@ def main() -> int:
     op_command.set_defaults(parser=op_command)
     op_subcommands = op_command.add_subparsers(title="Subcommands")
 
+    # op_grant and op_revoke is not going to be implemented in this version
     # 'op list'
     op_list_command = op_subcommands.add_parser(
         "list", help="List operator players", description="List all operator players."
@@ -210,6 +211,9 @@ def main() -> int:
     )
 
     remove_command.set_defaults(command_name="remove")
+    remove_command.add_argument(
+        "projects", nargs="+", type=str, help="Modrinth project slugs or IDs"
+    )
 
     # 'search' command
     search_command = commands.add_parser(
@@ -223,12 +227,10 @@ def main() -> int:
 
     search_command.add_argument(
         "--page",
-        default="vanilla",
+        default=1,
         type=int,
-        choices=loader_list,
-        help="Override the loader filter",
-        metavar="Loader",
-        dest="loader_name",
+        help="Show mods in page number",
+        metavar="Number",
     )
 
     search_command.add_argument(
@@ -268,6 +270,7 @@ def main() -> int:
 
     start_command.set_defaults(command_name="start")
 
+    # status_command is not going to be implemented in this version
     # "stop" command
     stop_command = commands.add_parser(
         "stop", help="Stop the server", description="Stop the running server"
@@ -294,6 +297,7 @@ def main() -> int:
     whitelist_command.set_defaults(parser=whitelist_command)
     whitelist_subcommands = whitelist_command.add_subparsers(title="Subcommands")
 
+    # whitelist_add and whitelist_remove is not going to be implemented in this version
     # 'whitelist list'
     whitelist_list_command = whitelist_subcommands.add_parser(
         "list",
