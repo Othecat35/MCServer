@@ -66,7 +66,7 @@ def main(
     search_hits: list[SearchHit] = []
     for hit in response_json["hits"]:
         project_environments: list[ProjectEnvironment] = []
-        for environment in hit["environments"]:
+        for environment in hit["environment"]:
             project_environment: ProjectEnvironment = environment
             project_environments.append(project_environment)
 

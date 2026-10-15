@@ -2,7 +2,9 @@ def main() -> int:
     import argparse
 
     from . import __version__
+    from .modrinth.shared import search_sort_index
     from .shared import loader_list
+
 
     def command_function(args: argparse.Namespace) -> int:
         command_name: str = args.command_name
@@ -223,7 +225,18 @@ def main() -> int:
     )
 
     search_command.set_defaults(command_name="search")
-    search_command.add_argument("query", nargs="*", type=str, help="Query to search")
+    search_command.add_argument(
+        "search_query", nargs="*", type=str, help="Query to search"
+    )
+
+    search_command.add_argument(
+        "--limit",
+        default=20,
+        type=int,
+        help="Search projects per page",
+        metavar="Number",
+        dest="result_limit",
+    )
 
     search_command.add_argument(
         "--page",
@@ -231,16 +244,17 @@ def main() -> int:
         type=int,
         help="Show mods in page number",
         metavar="Number",
-        dest="page_number"
+        dest="page_number",
     )
 
     search_command.add_argument(
         "--sort",
         default="relevance",
         type=str,
+        choices=search_sort_index,
         help="Sort by index",
         metavar="Number",
-        dest="sort_index"
+        dest="sort_index",
     )
 
     search_command.add_argument(
@@ -252,8 +266,13 @@ def main() -> int:
     )
 
     search_command.add_argument(
+        "--no-version",
+        action="store_true",
+        help="Ignore game version at all",
+    )
+
+    search_command.add_argument(
         "--loader",
-        default="vanilla",
         type=str,
         choices=loader_list,
         help="Override the loader filter",

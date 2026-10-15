@@ -3,7 +3,6 @@ from typing import Literal, NotRequired, TypeAlias, TypedDict
 from ..shared import DependencyType, ProjectEnvironment, ProjectSide
 
 
-
 # Project Version
 class VersionDependency(TypedDict):
     version_id: NotRequired[str | None]
@@ -206,7 +205,9 @@ class SearchHit(TypedDict):
     """The ID of the latest version of the project"""
     license_id: str
     """The SPDX license ID of a project"""
-    project_environments: list[ProjectEnvironment]  # For plugin it is almost certainly always be server-only, but whatever I can't assume
+    project_environments: list[
+        ProjectEnvironment
+    ]  # For plugin it is almost certainly always be server-only, but whatever I can't assume
     """All the environments that versions of this project support. Not in any particular order, we recommend using the environment information on a version instead. For an explanation of each environment, see the blog post here: https://modrinth.com/news/article/new-environments/#new-system"""
     disclosure_types: list[
         Literal[

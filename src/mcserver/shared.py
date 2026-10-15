@@ -3,7 +3,9 @@
 import shutil
 import sys
 import textwrap
+import logging as log
 from pathlib import Path
+
 
 # MCServer
 from .constants import iec_prefixes, si_prefixes
@@ -145,6 +147,7 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
 
 def set_loader_context(loader_name: str) -> None:
     global loader_context
+    log.debug("set_loader_context was called!")
 
     if loader_name in mod_loaders:
         loader_context = {"project_directory": mods_dir, "project_label": "mod"}
@@ -173,6 +176,7 @@ def wrap_string(
             subsequent_indent=subsequent_indent,
         )
     )
+
 
 # ANSI
 def ansi(name: str):
@@ -207,6 +211,7 @@ def wrap_ansi(string: str, ansi_name: str):
 #         return wrap_ansi(f"{'Unknown': <{padding}}", "gray")
 #     return f"{environment: <{padding}}"
 
+
 def project_environment_name(project_environment):
     project_environments = {
         "client_only": "Client-side only",
@@ -217,11 +222,10 @@ def project_environment_name(project_environment):
         "client_only_server_optional": "Optional on server",
         "client_or_server_prefers_both": "Works best on both",
         "client_or_server": "Works the same on either",
-        "singleplayer_only": "Singleplayer only"
+        "singleplayer_only": "Singleplayer only",
     }
 
     return project_environments[project_environment]
-
 
 
 def print_status(message: str, dynamic: str | None = None):
