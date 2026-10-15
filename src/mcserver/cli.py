@@ -5,6 +5,20 @@ def main() -> int:
     from .modrinth.shared import search_sort_index
     from .shared import loader_list
 
+    def bound_int(min_integer: int, max_integer: int | None = None):
+        def parse(cli_string: str):
+            try:
+                integer = int(cli_string)
+            except TypeError:
+                raise argparse.ArgumentTypeError(f"{cli_string} is not an integer")
+
+            if integer <= min_integer:
+                raise argparse.ArgumentTypeError(f"{integer} must be higher than or equal to {min_integer}")
+            if max_integer is not None and integer >= max_integer:
+                raise argparse.ArgumentTypeError(f"{integer} must be between {min_integer} and {max_integer} (inclusive)")
+            return integer
+        return parse
+
     def command_function(args: argparse.Namespace) -> int:
         command_name: str = args.command_name
 
@@ -170,24 +184,24 @@ def main() -> int:
     init_command.add_argument(
         "--min-ram",
         default=512,
-        type=int,
-        help="Minimum RAM for the server (in MebiBytes)",
+        type=bound_int(1024),
+        help="Minimum RAM for the server (in MebiBytes) (minimum value: 1024)",
         metavar="Size",
     )
 
     init_command.add_argument(
         "--max-ram",
-        default=2048,
+        default=bound_int(1024),
         type=int,
-        help="Maximum RAM for the server (in MebiBytes)",
+        help="Maximum RAM for the server (in MebiBytes) (minimum value: 1024)",
         metavar="Size",
     )
 
     init_command.add_argument(
         "--search-limit",
         default=20,
-        type=int,
-        help="Default search limit value",
+        type=bound_int(1, 100),
+        help="Default search limit value (value between (inclusive): 1-100)",
         metavar="Number",
         dest="search_limit",
     )
@@ -250,8 +264,8 @@ def main() -> int:
     search_command.add_argument(
         "--limit",
         default=20,
-        type=int,
-        help="Search projects per page",
+        type=bound_int(1, 100),
+        help="Search projects per page (value between (inclusive): 1-100)",
         metavar="Number",
         dest="search_limit",
     )
@@ -259,8 +273,8 @@ def main() -> int:
     search_command.add_argument(
         "--page",
         default=1,
-        type=int,
-        help="Show mods in page number",
+        type=bound_int(1),
+        help="Show mods in page number (minimum value: 1)",
         metavar="Number",
         dest="page_number",
     )
@@ -324,15 +338,6 @@ def main() -> int:
     )
 
     stop_command.set_defaults(command_name="stop")
-
-    # "update" command
-    update_command = commands.add_parser(
-        "update",
-        help="Update projects from Modrinth",
-        description="Update projects from Modrinth",
-    )
-
-    update_command.set_defaults(command_name="update")
 
     # 'whitelist' command
     whitelist_command = commands.add_parser(
