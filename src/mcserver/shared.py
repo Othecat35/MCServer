@@ -40,7 +40,6 @@ default_configs = {
         "ram": {"_comment": "Memory size in MebiByte (MiB)", "min": 512, "max": 2_048},
         "jarfile": "Server.jar",
         "is_nogui": True,
-        "force_stop": 5,
     },
     "modrinth": {"search_limit": 20, "sort_by": "relevance"},
     "server": {
