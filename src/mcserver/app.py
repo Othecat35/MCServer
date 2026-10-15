@@ -1,7 +1,7 @@
 def main():
     import sys
 
-    if (sys.argv[1] if len(sys.argv) > 1 else "") == "cake":
+    if (sys.argv[1] if len(sys.argv) > 1 else "") == "hello":
         from .mysterious import nothing_to_see_here_move_along
 
         nothing_to_see_here_move_along()

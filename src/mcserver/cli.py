@@ -13,10 +13,15 @@ def main() -> int:
                 raise argparse.ArgumentTypeError(f"{cli_string} is not an integer")
 
             if integer <= min_integer:
-                raise argparse.ArgumentTypeError(f"{integer} must be higher than or equal to {min_integer}")
+                raise argparse.ArgumentTypeError(
+                    f"{integer} must be higher than or equal to {min_integer}"
+                )
             if max_integer is not None and integer >= max_integer:
-                raise argparse.ArgumentTypeError(f"{integer} must be between {min_integer} and {max_integer} (inclusive)")
+                raise argparse.ArgumentTypeError(
+                    f"{integer} must be between {min_integer} and {max_integer} (inclusive)"
+                )
             return integer
+
         return parse
 
     def command_function(args: argparse.Namespace) -> int:
