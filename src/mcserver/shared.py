@@ -6,7 +6,6 @@ import textwrap
 import logging as log
 from pathlib import Path
 
-
 # MCServer
 from .constants import iec_prefixes, si_prefixes
 
@@ -41,7 +40,7 @@ default_configs = {
         "jarfile": "Server.jar",
         "is_nogui": True,
     },
-    "modrinth": {"search_limit": 20, "sort_by": "relevance"},
+    "modrinth": {"search_limit": 20, "sort_index": "relevance"},
     "server": {
         "game_version": "",  # Auto-fetched the latest version when init without --mc-version
         "loader": {"name": "vanilla", "version": None},

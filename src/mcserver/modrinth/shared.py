@@ -29,5 +29,9 @@ SearchSortIndex: TypeAlias = Literal[
 # Variables
 modrinth_dir: Path = mcserver_dir / "modrinth"
 search_sort_index: list[str] = [
-    "relevance", "downloads", "follows", "newest", "updated"
+    "relevance",
+    "downloads",
+    "follows",
+    "newest",
+    "updated",
 ]

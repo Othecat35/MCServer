@@ -5,7 +5,6 @@ def main() -> int:
     from .modrinth.shared import search_sort_index
     from .shared import loader_list
 
-
     def command_function(args: argparse.Namespace) -> int:
         command_name: str = args.command_name
 
@@ -184,6 +183,25 @@ def main() -> int:
         metavar="Size",
     )
 
+    init_command.add_argument(
+        "--search-limit",
+        default=20,
+        type=int,
+        help="Default search limit value",
+        metavar="Number",
+        dest="search_limit",
+    )
+
+    init_command.add_argument(
+        "--search-sort",
+        default="relevance",
+        type=str,
+        choices=search_sort_index,
+        help="Default search sort index",
+        metavar="Index",
+        dest="search_limit",
+    )
+
     # 'list' command
     list_command = commands.add_parser(
         "list", help="List all added projects", description="List all added projects."
@@ -235,7 +253,7 @@ def main() -> int:
         type=int,
         help="Search projects per page",
         metavar="Number",
-        dest="result_limit",
+        dest="search_limit",
     )
 
     search_command.add_argument(
@@ -253,7 +271,7 @@ def main() -> int:
         type=str,
         choices=search_sort_index,
         help="Sort by index",
-        metavar="Number",
+        metavar="Index",
         dest="sort_index",
     )
 

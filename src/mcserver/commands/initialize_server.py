@@ -2,6 +2,8 @@ from argparse import Namespace
 
 
 def main(args: Namespace) -> int:
+    from ..modrinth.shared import SearchSortIndex
+
     # CLI Arguments
     game_version: str = args.game_version
 
@@ -10,6 +12,9 @@ def main(args: Namespace) -> int:
 
     min_ram: int = args.min_ram
     max_ram: int = args.max_ram
+
+    search_limit: int = args.search_limit
+    sort_index: SearchSortIndex = args.sort_index
 
     # Imports
     import copy
@@ -99,6 +104,12 @@ def main(args: Namespace) -> int:
         match config_name:
             case "launcher":
                 config_override = {"ram": {"min": min_ram, "max": max_ram}}
+
+            case "modrinth":
+                config_override = {
+                    "search_limit": search_limit,
+                    "sort_index": sort_index,
+                }
 
             case "server":
                 config_override = {

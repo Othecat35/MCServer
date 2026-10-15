@@ -254,7 +254,7 @@ class SearchResult(TypedDict):
     """The list of results"""
     result_offset: int
     """The number of results that were skipped by the query"""
-    result_limit: int
+    search_limit: int
     """The number of results that were returned by the query"""
     total_hits: int
     """The total number of results that match the query"""

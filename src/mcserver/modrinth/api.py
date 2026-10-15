@@ -258,7 +258,7 @@ class SearchResult(TypedDict):
     """The list of results"""
     result_offset: int
     """The number of results that were skipped by the query"""
-    result_limit: int
+    search_limit: int
     """The number of results that were returned by the query"""
     total_hits: int
     """The total number of results that match the query"""
@@ -744,7 +744,7 @@ def search_projects(
         "relevance", "downloads", "follows", "newest", "updated"
     ] = "relevance",
     result_offset: int = 0,
-    result_limit: int = 10,
+    search_limit: int = 10,
 ) -> SearchResult:
     """Search projects in Modrinth
 
@@ -753,15 +753,15 @@ def search_projects(
         search_facets: Filtering in search results
         sort_index: Search sorting
         result_offset: The offsets of results
-        result_limit: Limit the search results
+        search_limit: Limit the search results
 
     Raises:
-        ValueError: result_limit is more than 100
+        ValueError: search_limit is more than 100
 
     Returns:
         SearchResult: Representing the whole search result
     """
-    if result_limit > 100:
+    if search_limit > 100:
         raise ValueError("Result limit cannot be over 100")
 
     search_result: SearchResult = {}
