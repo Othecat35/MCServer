@@ -22,5 +22,7 @@ ProjectEnvironment: TypeAlias = Literal[
     "unknown",
 ]
 
+SearchSortIndex: TypeAlias = Literal["relevance", "downloads", "follows", "newest", "updated"]
+
 # Variables
 modrinth_dir: Path = mcserver_dir / "modrinth"

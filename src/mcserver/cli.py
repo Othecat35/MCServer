@@ -231,6 +231,16 @@ def main() -> int:
         type=int,
         help="Show mods in page number",
         metavar="Number",
+        dest="page_number"
+    )
+
+    search_command.add_argument(
+        "--sort",
+        default="relevance",
+        type=str,
+        help="Sort by index",
+        metavar="Number",
+        dest="sort_index"
     )
 
     search_command.add_argument(

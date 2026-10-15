@@ -1,13 +1,13 @@
 from typing import Literal
+
+from ..shared import SearchSortIndex
 from .typed_dicts import SearchResult
 
 
 def main(
     search_query: str | list[str] | None = None,
     search_facets: list[list[list[str] | str]] | None = None,
-    sort_index: Literal[
-        "relevance", "downloads", "follows", "newest", "updated"
-    ] = "relevance",
+    sort_index: SearchSortIndex = "relevance",
     search_offset: int = 0,
     result_limit: int = 10,
 ) -> SearchResult:

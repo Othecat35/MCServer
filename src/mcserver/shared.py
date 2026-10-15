@@ -9,9 +9,9 @@ from pathlib import Path
 from .constants import iec_prefixes, si_prefixes
 
 # Variables
-mods_loader = ["fabric"]  # , "quilt"]
-plugins_loader = ["paper", "purpur"]
-loader_list = ["vanilla"] + mods_loader + plugins_loader
+mod_loaders = ["fabric"]  # , "quilt"]
+plugin_loaders = ["paper", "purpur"]
+loader_list = ["vanilla"] + mod_loaders + plugin_loaders
 
 loader_context = {"project_directory": None, "project_label": "project"}
 
@@ -146,9 +146,9 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
 def set_loader_context(loader_name: str) -> None:
     global loader_context
 
-    if loader_name in mods_loader:
+    if loader_name in mod_loaders:
         loader_context = {"project_directory": mods_dir, "project_label": "mod"}
-    elif loader_name in plugins_loader:
+    elif loader_name in plugin_loaders:
         loader_context = {"project_directory": plugins_dir, "project_label": "plugin"}
 
 

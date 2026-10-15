@@ -2,8 +2,10 @@ from argparse import Namespace
 
 
 def main(args: Namespace) -> int:
+    from ..modrinth.shared import SearchSortIndex
     query: list[str] = args.query
-    page: int = args.page
+    page_number: int = args.page_number
+    sort_index: SearchSortIndex = args.sort_index
     game_version: str = args.game_version
     loader_name: str = args.loader_name
     import logging as log
@@ -23,7 +25,7 @@ def main(args: Namespace) -> int:
         server_config = config.load_config("server")
         set_loader_context(server_config["loader"]["name"])
     except FileNotFoundError:
-        log.warning("Server configuration file (.mcserver/config/server.json) does not exist")
+        pass # ignore because it doesn't really need the file. just as "personalization" per server
 
     log.info(f"Searching {pluralize(shared.loader_context['project_label'])}")
     search_result = search_projects(
@@ -47,7 +49,7 @@ def main(args: Namespace) -> int:
 
         print(f"{wrap_ansi(hit['project_name'], "bold")} ({slug_or_id}) {project_author}")
         print(f"> {', '.join(project_environments)} | Downloads: {format_number(hit['download_count'])} | Follows: {format_number(hit['follow_count'])}")
-        print(f"> https://modrinth.com/{shared.loader_context['project_label']}/{slug_or_id}")
+        print(f"> https://modrinth.com/{hit['project_type']}/{slug_or_id}")
         print(wrap_string(hit["short_description"], initial_indent=2, subsequent_indent=1))
 
         if (count + 1) < len(search_hits):
