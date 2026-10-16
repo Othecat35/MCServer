@@ -26,10 +26,12 @@ SearchSortIndex: TypeAlias = Literal[
     "relevance", "downloads", "follows", "newest", "updated"
 ]
 
+
 # TypedDict
 class FileHashes(TypedDict):
     sha512: NotRequired[str]
     sha1: NotRequired[str]
+
 
 class VersionFile(TypedDict):
     file_hashes: FileHashes
@@ -56,6 +58,7 @@ class VersionFile(TypedDict):
     ]
     file_id: NotRequired[str | None]
     """UNDOCUMENTED!"""
+
 
 # Variables
 modrinth_dir: Path = mcserver_dir / "modrinth"
