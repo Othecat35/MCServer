@@ -1,6 +1,6 @@
 from typing import Literal, NotRequired, TypeAlias, TypedDict
 
-from ..shared import DependencyType, ProjectEnvironment, ProjectSide
+from ..shared import DependencyType, ProjectEnvironment, ProjectSide, VersionFile
 
 
 # Project Version
@@ -13,38 +13,6 @@ class VersionDependency(TypedDict):
     """The file name of the dependency, mostly used for showing external dependencies on modpacks"""
     dependency_type: DependencyType
     """The type of dependency that this version has"""
-
-
-class FileHashes(TypedDict):
-    sha512: NotRequired[str]
-    sha1: NotRequired[str]
-
-
-class VersionFile(TypedDict):
-    file_hashes: FileHashes
-    """A map of hashes of the file. The key is the hashing algorithm and the value is the string version of the hash."""
-    download_url: str
-    """A direct link to the file"""
-    filename: str
-    """The name of the file"""
-    is_primary: bool
-    """Whether this file is the primary one for its version. Only a maximum of one file per version will have this set to true. If there are not any primary files, it can be inferred that the first file is the primary one."""
-    file_size: int
-    """The size of the file in bytes"""
-    file_type: NotRequired[
-        Literal[
-            "required-resource-pack",
-            "optional-resource-pack",
-            "sources-jar",
-            "dev-jar",
-            "javadoc-jar",
-            "unknown",
-            "signature",
-        ]
-        | None
-    ]
-    file_id: NotRequired[str | None]
-    """UNDOCUMENTED!"""
 
 
 class ProjectVersion(TypedDict):
