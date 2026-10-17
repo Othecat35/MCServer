@@ -7,12 +7,22 @@ from .shared import project_records_dir, DependencyType, ProjectEnvironment, Ver
 
 
 class ProjectRecordData(TypedDict):
-    version_number: NotRequired[str]
-    version_id: str
-    project_id: str
-    added_time: str  # probably ISO-8601
+    # Project
+    project_slug: str
     project_environment: ProjectEnvironment
+
+    # Version
+    version_id: str
+    version_name: str
+    version_number: NotRequired[str]
+
+    # Metadata
+    added_time: str  # probably ISO-8601
     file: VersionFile
+
+    # Relationships
+    is_manual: bool
+    highest_type: DependencyType
     dependencies: dict[str, DependencyType]
     dependents: dict[str, DependencyType]
 

@@ -3,9 +3,6 @@
 from pathlib import Path
 from typing import Literal, NotRequired, TypedDict, TypeAlias
 
-# MCServer
-from ..shared import mcserver_dir
-
 # TypeAliases
 DependencyType: TypeAlias = Literal["embedded", "optional", "required", "incompatible"]
 ProjectSide: TypeAlias = Literal["required", "optional", "unsupported", "unknown"]
