@@ -58,8 +58,6 @@ class VersionFile(TypedDict):
 
 
 # Variables
-modrinth_dir: Path = mcserver_dir / "modrinth"
-project_records_dir: Path = modrinth_dir / "project_records"
 search_sort_index: list[str] = [
     "relevance",
     "downloads",

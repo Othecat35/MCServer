@@ -18,7 +18,9 @@ def main():
     from . import cli
 
     debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
-    log_level = log.DEBUG if debug_mode else log.INFO
-    log.basicConfig(level=log_level, format="[%(levelname)s]: %(message)s")
+    if debug_mode:
+        log.basicConfig(level=log.DEBUG, format="[%(levelname)s] [%(module)s]: %(message)s")
+    else:
+        log.basicConfig(level=log.INFO, format="[%(levelname)s]: %(message)s")
 
     sys.exit(cli.main())
