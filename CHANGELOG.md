@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New `--game-version` and `--loader` options to the `search` command
+- New `--search-sort` and `--search-limit` options to the `init` command
+- 
+
+### Changed
+
+- Better `search` info message
+- slug_index.json is now a global cache
+
+### Fixes
+
+- Typo in the `add` command help
+
 ## [3.0.0] - 2026-08-18
 
 ### Added
