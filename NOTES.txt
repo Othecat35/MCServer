@@ -337,3 +337,5 @@ no update command yet
 for the remove command, I would use the resolver I already had. But it would be more complicated once we're dealing with mod that shared dependencies with other. I don't know ;-; I haven't even finished the add commad yet, but it is in incremental so don't rush me >:c
 make a visualize command to visualize installed projects that output to graphviz format seems really cool
 we should merge the metadata.json and relationships.json back into one file :o
+
+look at myterious.py, idk why yiu thought it would be a good idea to make it more fun, and dynamic even.
