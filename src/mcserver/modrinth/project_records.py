@@ -4,7 +4,7 @@ from .paths import modrinth_dir
 from .shared import DependencyType, ProjectEnvironment, VersionFile
 
 
-project_records_dir = modrinth_dir / "project_records_dir"
+project_records_dir = modrinth_dir / "project_records"
 
 # Wait, what data a record actually store?
 # For now it is whatever the get_project_version returns
