@@ -9,6 +9,7 @@ if xdg_cache_dir:
 
 mcserver_cache_dir = cache_dir / "mcserver"
 
+
 def create_file(file_name: str, file_data: bytes):
     mcserver_cache_dir.mkdir(parents=True, exist_ok=True)
     cache_file = mcserver_cache_dir / file_name

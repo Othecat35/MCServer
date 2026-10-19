@@ -25,6 +25,19 @@ SearchSortIndex: TypeAlias = Literal[
 
 
 # TypedDict
+class ProjectLicense(TypedDict):
+    license_id: NotRequired[str]
+    """The SPDX license ID of a project"""
+    license_name: NotRequired[str]
+    """The long name of a license"""
+    license_url: NotRequired[str | None]
+    """The URL to this license"""
+
+
+class DonationPlatforms(TypedDict):
+    donation_id: NotRequired[str]
+
+
 class FileHashes(TypedDict):
     sha512: NotRequired[str]
     sha1: NotRequired[str]

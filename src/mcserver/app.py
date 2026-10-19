@@ -19,7 +19,9 @@ def main():
 
     debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
     if debug_mode:
-        log.basicConfig(level=log.DEBUG, format="[%(levelname)s] [%(module)s]: %(message)s")
+        log.basicConfig(
+            level=log.DEBUG, format="[%(levelname)s] [%(module)s]: %(message)s"
+        )
     else:
         log.basicConfig(level=log.INFO, format="[%(levelname)s]: %(message)s")
 

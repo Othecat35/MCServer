@@ -8,16 +8,19 @@ from typing import TypedDict
 # MCServer
 from ..paths import mcserver_cache_dir
 
+
 # TypedDict
 class SlugIndex(TypedDict):
     project_id: str
-    last_updated_time: str # ISO-8601
+    last_updated_time: str  # ISO-8601
+
 
 # Variables
 _slug_index: dict[str, SlugIndex] | None = None
 
 # Paths
 slug_index_file = mcserver_cache_dir / "slug_index.json"
+
 
 # Functions
 def _load_slug_index() -> None:
@@ -27,7 +30,9 @@ def _load_slug_index() -> None:
         return
 
     if not slug_index_file.exists():
-        log.debug(f"{slug_index_file} does not exist, setting _slug_index to empty dictionary")
+        log.debug(
+            f"{slug_index_file} does not exist, setting _slug_index to empty dictionary"
+        )
         _slug_index = {}
         return
 
@@ -36,10 +41,14 @@ def _load_slug_index() -> None:
     try:
         _slug_index = json.loads(slug_index_json)
         if not isinstance(_slug_index, dict):
-            log.warning(f"{slug_index_file} should be an object! Rebuilding it from scratch") # that's all I can say.
+            log.warning(
+                f"{slug_index_file} should be an object! Rebuilding it from scratch"
+            )  # that's all I can say.
             _slug_index = {}
     except json.JSONDecodeError:
-        log.warning(f"{slug_index_file} is corrupted! Rebuilding it from scratch") # that's all I can say.
+        log.warning(
+            f"{slug_index_file} is corrupted! Rebuilding it from scratch"
+        )  # that's all I can say.
         _slug_index = {}
 
 
@@ -48,14 +57,16 @@ def is_index_expired(project_slug: str) -> bool:
 
     global _slug_index
     if _slug_index is None:
-        log.debug("Slug index is 'None'") #well, idk how can this get triggered even though _load_slug_index at least set it to {}
+        log.debug(
+            "Slug index is 'None'"
+        )  # well, idk how can this get triggered even though _load_slug_index at least set it to {}
         return True
 
     slug_index = _slug_index.get(project_slug)
     if slug_index is None:
         log.debug(f"Project slug ({project_slug}) is not known yet")
         return True
-    
+
     last_updated_time = slug_index.get("last_updated_time")
     if last_updated_time is None:
         return True
@@ -68,7 +79,7 @@ def is_index_expired(project_slug: str) -> bool:
 
     time_now = datetime.now(tz=timezone.utc)
     time_to_live = timedelta(days=7)
-    if  time_now - last_updated > time_to_live:
+    if time_now - last_updated > time_to_live:
         return True
 
     return False
@@ -88,7 +99,9 @@ def slug_to_id(project_slug: str) -> str:
         return project_slug
 
     project_id = slug_index.get("project_id")
-    if project_id is None: #even though pyright thinks this code is unreachable, we can't trust the user
+    if (
+        project_id is None
+    ):  # even though pyright thinks this code is unreachable, we can't trust the user
         return project_slug
 
     return project_id
@@ -103,10 +116,11 @@ def update_slug_index(project_slug: str, project_id: str):
 
     slug_index: SlugIndex = {
         "project_id": project_id,
-        "last_updated_time": datetime.now(tz=timezone.utc).isoformat()
+        "last_updated_time": datetime.now(tz=timezone.utc).isoformat(),
     }
 
     _slug_index[project_slug] = slug_index
+
 
 def save_slug_index() -> None:
     global _slug_index
