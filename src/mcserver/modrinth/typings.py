@@ -1,6 +1,6 @@
 from typing import Literal, NotRequired, TypedDict
 
-type Environments = Literal[
+type Environment = Literal[
     "client_and_server",
     "client_only",
     "client_only_server_optional",
@@ -12,7 +12,7 @@ type Environments = Literal[
     "client_or_server_prefers_both",
     "unknown",
 ]
-type ProjectTypes = Literal["mod", "modpack", "resourcepack", "shader"]
+type ProjectType = Literal["mod", "modpack", "resourcepack", "shader"]
 type ProjectStatus = Literal[
     "approved",
     "archived",
@@ -83,13 +83,13 @@ class ProjectInformation(TypedDict):
     """A long form description of the project"""
     status: ProjectStatus
     """The status of the project"""
-    project_type: ProjectTypes
+    project_type: ProjectType
     """The project type of the project"""
     categories: list[str]
     """A list of the featured categories that the project has."""
     additional_categories: list[str]
     """A list of additional categories that the project also has. These are supplementary to the featured categories, and does not include them again."""
-    environments: list[Environments]
+    environments: list[Environment]
     """All the environments that versions of this project support. Not in any particular order, we recommend using the environment information on a version instead. For an explanation of each environment, see the blog post here: https://modrinth.com/news/article/new-environments/#new-system"""
     game_versions: list[str]
     """A list of all of the game versions supported by the project"""
