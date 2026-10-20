@@ -84,7 +84,7 @@ def main(args: Namespace) -> int:
 
     for count, hit in enumerate(search_hits):
         slug_or_id = hit["project_slug"] if "project_slug" in hit else hit["project_id"]
-        project_author = wrap_ansi(f"by {hit["author_username"]}", "gray")
+        project_author = wrap_ansi(f"by {hit['author_username']}", "gray")
 
         project_environments = []
         if len(hit["project_environments"]) == 0:
@@ -96,7 +96,7 @@ def main(args: Namespace) -> int:
                 )
 
         print(
-            f"{wrap_ansi(hit['project_name'], "bold")} ({slug_or_id}) {project_author}"
+            f"{wrap_ansi(hit['project_name'], 'bold')} ({slug_or_id}) {project_author}"
         )
         print(
             f"> {', '.join(project_environments)} | Downloads: {format_number(hit['download_count'])} | Follows: {format_number(hit['follow_count'])}"

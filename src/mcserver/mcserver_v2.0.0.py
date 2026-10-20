@@ -398,7 +398,7 @@ def resolve_projects(
             version_dependency_types["incompatible"],
         ):
             log.debug(
-                f"Indexing project '{project_id}' with type {project_type} and manual {project_data["relationship"]['manual']}"
+                f"Indexing project '{project_id}' with type {project_type} and manual {project_data['relationship']['manual']}"
             )
             # write_project_index(project_id, project_data)
             if project_index_exists(project_id):
@@ -472,15 +472,15 @@ def add_projects(args):
 
             total_size += project_file["file_size"]
             required_project_name.append(
-                f"{project["metadata"]['project_title']} ({project["metadata"]['project_slug']})"
+                f"{project['metadata']['project_title']} ({project['metadata']['project_slug']})"
             )
         elif project_type == version_dependency_types["optional"]:
             optional_project_name.append(
-                f"{project["metadata"]['project_title']} ({project["metadata"]['project_slug']})"
+                f"{project['metadata']['project_title']} ({project['metadata']['project_slug']})"
             )
         elif project_type == version_dependency_types["incompatible"]:
             incompatible_project_name.append(
-                f"{project["metadata"]['project_title']} ({project["metadata"]['project_slug']})"
+                f"{project['metadata']['project_title']} ({project['metadata']['project_slug']})"
             )
 
     if required_project_name:
@@ -537,7 +537,7 @@ def add_projects(args):
     if required_project_name:
         project_count = len(resolved_data)
         log.info(
-            f"Will download {format_number(total_size, 'iec')} worth of {pluralize(project_label, project_count)} {pluralize("file", project_count)}."
+            f"Will download {format_number(total_size, 'iec')} worth of {pluralize(project_label, project_count)} {pluralize('file', project_count)}."
         )
     else:
         log.info(
@@ -561,7 +561,7 @@ def add_projects(args):
             if (project_dir / project_file["filename"]).exists():
                 continue
 
-            log.info(f"Downloading version {project["metadata"]['version_name']}...")
+            log.info(f"Downloading version {project['metadata']['version_name']}...")
             download_url(
                 project_file["url"],
                 project_dir / project_file["filename"],
@@ -809,7 +809,7 @@ def search_projects(args):
         )
 
         server_side = wrap_ansi(
-            f"Server: {mod_environment_color(project.get('server_side', "unknown"), server_side_width)}",
+            f"Server: {mod_environment_color(project.get('server_side', 'unknown'), server_side_width)}",
             "bold",
         )
         client_side = mod_environment_color(

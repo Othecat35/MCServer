@@ -14,7 +14,7 @@ def main(args: Namespace) -> int:
     current_state = state.get_state()
     if current_state["is_active"]:
         log.error(
-            f"There's another active MCServer process ({current_state["action"]}) running with process ID: {current_state["process_id"]}"
+            f"There's another active MCServer process ({current_state['action']}) running with process ID: {current_state['process_id']}"
         )
         return 1
 

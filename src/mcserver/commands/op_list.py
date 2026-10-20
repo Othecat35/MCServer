@@ -16,7 +16,7 @@ def main(args: Namespace) -> int:
     players: list[str] = []
     for player in operator_players:
         players.append(
-            f"{player['player_name']} ({player['player_uuid']}) Level: {player["permission_level"]}"
+            f"{player['player_name']} ({player['player_uuid']}) Level: {player['permission_level']}"
         )
 
     players.sort()
@@ -27,6 +27,6 @@ def main(args: Namespace) -> int:
         log.info("There's no operator player.")
         return 0
 
-    log.info(f"All {player_count} operator {pluralize("player", player_count)}:")
+    log.info(f"All {player_count} operator {pluralize('player', player_count)}:")
     print(sorted_players)
     return 0

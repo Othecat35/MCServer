@@ -70,7 +70,9 @@ class SearchHit(TypedDict):
     """The name of the organization that owns this project"""
     organization_id: NotRequired[str | None]
     """The ID of the organization that owns this project"""
-    featured_gallery: NotRequired[str | None] # What does this means? an URL? I haven't tested it yet
+    featured_gallery: NotRequired[
+        str | None
+    ]  # What does this means? an URL? I haven't tested it yet
     """The featured gallery image of the project"""
     icon_color: NotRequired[int | None]
     """The RGB color of the project, automatically generated from the project icon"""
