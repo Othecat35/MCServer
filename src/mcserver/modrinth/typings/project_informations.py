@@ -1,18 +1,7 @@
 from typing import Literal, NotRequired, TypedDict
+from .shared import Environment, EnvironmentSide, ProjectType
 
-type Environment = Literal[
-    "client_and_server",
-    "client_only",
-    "client_only_server_optional",
-    "singleplayer_only",
-    "server_only",
-    "server_only_client_optional",
-    "dedicated_server_only",
-    "client_or_server",
-    "client_or_server_prefers_both",
-    "unknown",
-]
-type ProjectType = Literal["mod", "modpack", "resourcepack", "shader"]
+type MonetizationStatus = Literal["monetized", "demonetized", "force-demonetized"]
 type ProjectStatus = Literal[
     "approved",
     "archived",
@@ -25,9 +14,7 @@ type ProjectStatus = Literal[
     "private",
     "unknown",
 ]
-type MonetizationStatus = Literal["monetized", "demonetized", "force-demonetized"]
 type RequestedStatus = Literal["approved", "archived", "unlisted", "private", "draft"]
-type EnvironmentSide = Literal["required", "optional", "unsupported", "unknown"]
 
 
 class ProjectLicense(TypedDict):
@@ -116,7 +103,7 @@ class ProjectInformation(TypedDict):
     """The slug of a project, used for vanity URLs."""
     organization_id: NotRequired[str | None]
     """The ID of the organization that owns this project"""
-    requested_status: NotRequired[RequestedStatus]
+    requested_status: NotRequired[RequestedStatus | None]
     """The requested status when submitting for review or scheduling the project for release. Approved status refers to “Public” visibility."""
     approved_time: NotRequired[str | None]
     """The date the project was first published (format: ISO-8601)"""
