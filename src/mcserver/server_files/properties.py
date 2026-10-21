@@ -19,6 +19,7 @@ def loads(properties_data: str) -> ParsedProperties:
 
         if line.startswith("#"):
             parsed_properties["comments"].append(line[1:])
+            continue
 
         if not "=" in line:
             continue
