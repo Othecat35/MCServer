@@ -1,5 +1,6 @@
 def main() -> int:
     import argparse
+    import sys
 
     from . import __version__
     from .modrinth.shared import search_sort_index
@@ -107,6 +108,7 @@ def main() -> int:
                 return 1
 
     # Parser Setup
+
     parser = argparse.ArgumentParser(
         prog="mcserver",
         description="A CLI tool for managing Minecraft: Java Edition servers.",
@@ -116,9 +118,11 @@ def main() -> int:
         add_help=True,
         allow_abbrev=False,
         exit_on_error=True,
-        suggest_on_error=True,
-        color=True,
     )
+
+    if sys.version_info >= (3, 14):
+        parser.suggest_on_error = True
+        parser.color = True
 
     parser.set_defaults(func=command_function, command_name="help", parser=parser)
     parser.add_argument(

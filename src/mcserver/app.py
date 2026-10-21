@@ -1,7 +1,7 @@
 def main():
     import sys
 
-    MIN_PYTHON_VERSION: tuple[int, int] = (3, 14)
+    MIN_PYTHON_VERSION: tuple[int, int] = (3, 12)
     if sys.version_info < MIN_PYTHON_VERSION:
         sys.exit(
             f"MCServer requires Python {'.'.join(map(str, MIN_PYTHON_VERSION))} or newer."
@@ -12,8 +12,8 @@ def main():
 
         nothing_to_see_here_move_along()
 
-    import logging as log
     import os
+    import logging as log
 
     from . import cli
 
