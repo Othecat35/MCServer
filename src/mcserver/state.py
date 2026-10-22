@@ -83,7 +83,3 @@ def get_state() -> CurrentState:
         current_state["is_active"] = True
 
     return current_state
-
-
-def clear_state() -> None:
-    state_file.write_text(json.dumps({}))
