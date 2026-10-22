@@ -72,11 +72,11 @@ def main(project_ids: list[str] | str) -> list[ProjectInformation]:
 
         additional_categories: list[str] = []
         for additional_category in information["additional_categories"]:
-            categories.append(additional_category)
+            additional_categories.append(additional_category)
 
         environments: list[Environment] = []
         for environment in information["environment"]:
-            if environment in shared.ENVIRONMENT:
+            if environment not in shared.ENVIRONMENT:
                 log.debug(f"Unknown environment: {environment}")
 
             environments.append(environment)
