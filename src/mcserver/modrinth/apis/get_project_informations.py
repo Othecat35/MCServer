@@ -47,23 +47,23 @@ def main(project_ids: list[str] | str) -> list[ProjectInformation]:
         # Checks
         project_status: ProjectStatus = information["status"]
         if project_status not in shared.PROJECT_STATUS:
-            log.debug(f"Unknown project status: {project_status}")
+            log.warning(f"Unknown project status: {project_status}")
 
         project_type: ProjectType = information["project_type"]
         if project_type not in shared.PROJECT_TYPE:
-            log.debug(f"Unknown project type: {project_type}")
+            log.warning(f"Unknown project type: {project_type}")
 
         monetization_status: MonetizationStatus = information["monetization_status"]
         if monetization_status not in shared.MONETIZATION_STATUS:
-            log.debug(f"Unknown monetization status: {monetization_status}")
+            log.warning(f"Unknown monetization status: {monetization_status}")
 
         client_side: EnvironmentSide = information["client_side"]
         if client_side not in shared.ENVIRONMENT_SIDE:
-            log.debug(f"Unknown client side: {client_side}")
+            log.warning(f"Unknown client side: {client_side}")
 
         server_side: EnvironmentSide = information["server_side"]
         if server_side not in shared.ENVIRONMENT_SIDE:
-            log.debug(f"Unknown server side: {server_side}")
+            log.warning(f"Unknown server side: {server_side}")
 
         # Lists
         categories: list[str] = []
@@ -77,7 +77,7 @@ def main(project_ids: list[str] | str) -> list[ProjectInformation]:
         environments: list[Environment] = []
         for environment in information["environment"]:
             if environment not in shared.ENVIRONMENT:
-                log.debug(f"Unknown environment: {environment}")
+                log.warning(f"Unknown environment: {environment}")
 
             environments.append(environment)
 

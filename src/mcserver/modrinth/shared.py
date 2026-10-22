@@ -86,8 +86,8 @@ search_sort_index: list[str] = [
     "updated",
 ]
 
-ENVIRONMENT: frozenset[str] = frozenset(get_args(Environment))
-ENVIRONMENT_SIDE: frozenset[str] = frozenset(get_args(EnvironmentSide))
-MONETIZATION_STATUS: frozenset[str] = frozenset(get_args(MonetizationStatus))
-PROJECT_STATUS: frozenset[str] = frozenset(get_args(ProjectStatus))
-PROJECT_TYPE: frozenset[str] = frozenset(get_args(ProjectType))
+ENVIRONMENT: frozenset[str] = frozenset(get_args(Environment.__value__))
+ENVIRONMENT_SIDE: frozenset[str] = frozenset(get_args(EnvironmentSide.__value__))
+MONETIZATION_STATUS: frozenset[str] = frozenset(get_args(MonetizationStatus.__value__))
+PROJECT_STATUS: frozenset[str] = frozenset(get_args(ProjectStatus.__value__))
+PROJECT_TYPE: frozenset[str] = frozenset(get_args(ProjectType.__value__))
