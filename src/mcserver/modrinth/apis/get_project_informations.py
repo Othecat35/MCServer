@@ -38,7 +38,6 @@ def main(project_ids: list[str] | str) -> list[ProjectInformation]:
     response = networking.request(
         f"{constants.modrinth_api_url}/v2/projects", query_parameters
     )
-    print(response)
 
     if "json" not in response:
         raise GetProjectInformationError("Cannot load JSON response")
