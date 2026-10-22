@@ -8,7 +8,7 @@ Supported platforms:
 - and Termux.
 
 ## Requirements
-- Python 3.14 or newer
+- Python 3.12 or newer (Python 3.14 is recommended)
 - JRE (depends on Minecraft version)
 
 ## How to install
