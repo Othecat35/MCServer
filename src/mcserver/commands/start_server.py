@@ -49,7 +49,7 @@ def main(args: Namespace) -> int:
         loader_version = server_loader["version"]
 
         if loader_name != "vanilla" and loader_version is None:
-            log.error(f"Loader version cannot be null")
+            log.error("Loader version cannot be null")
             return 1
 
         match loader_name:

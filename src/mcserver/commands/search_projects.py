@@ -14,8 +14,8 @@ def main(args: Namespace) -> int:
 
     import logging as log
 
-    from .. import config
-    from .. import shared
+    from .. import config, shared
+    from ..modrinth.apis import search_projects
     from ..shared import (
         format_number,
         pluralize,
@@ -24,9 +24,6 @@ def main(args: Namespace) -> int:
         wrap_ansi,
         wrap_string,
     )
-
-    from ..modrinth.apis import search_projects
-    from ..modrinth.apis import SearchResult
 
     # def search_projects(**kargs) -> SearchResult:
     #     return {

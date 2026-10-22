@@ -1,9 +1,9 @@
 # Modules
 # Standard
+import logging as log
 import shutil
 import sys
 import textwrap
-import logging as log
 from pathlib import Path
 
 # MCServer

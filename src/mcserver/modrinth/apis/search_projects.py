@@ -1,4 +1,3 @@
-from typing import Literal
 
 from ..shared import SearchSortIndex
 from .typed_dicts import SearchResult
@@ -28,9 +27,9 @@ def main(
 
     import json
 
-    from .typed_dicts import ProjectEnvironment, SearchHit
     from ... import networking
     from ...constants import modrinth_api_url
+    from .typed_dicts import ProjectEnvironment, SearchHit
 
     if search_facets is None:
         search_facets = []

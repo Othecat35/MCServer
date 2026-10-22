@@ -2,7 +2,7 @@
 # Standard
 import json
 import logging as log
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TypedDict
 
 # MCServer
@@ -77,7 +77,7 @@ def is_index_expired(project_slug: str) -> bool:
         log.debug("Invalid ISO formatted time, do not mess with it pls")
         return True
 
-    time_now = datetime.now(tz=timezone.utc)
+    time_now = datetime.now(tz=UTC)
     time_to_live = timedelta(days=7)
     if time_now - last_updated > time_to_live:
         return True
@@ -116,7 +116,7 @@ def update_slug_index(project_slug: str, project_id: str):
 
     slug_index: SlugIndex = {
         "project_id": project_id,
-        "last_updated_time": datetime.now(tz=timezone.utc).isoformat(),
+        "last_updated_time": datetime.now(tz=UTC).isoformat(),
     }
 
     _slug_index[project_slug] = slug_index

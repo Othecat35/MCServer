@@ -12,8 +12,8 @@ def main():
 
         nothing_to_see_here_move_along()
 
-    import os
     import logging as log
+    import os
 
     from . import cli
 

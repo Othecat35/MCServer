@@ -1,4 +1,4 @@
-from typing import Literal, NotRequired, TypeAlias, TypedDict
+from typing import Literal, NotRequired, TypedDict
 
 from ..shared import DependencyType, ProjectEnvironment, ProjectSide, VersionFile
 

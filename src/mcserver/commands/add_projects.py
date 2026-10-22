@@ -3,16 +3,15 @@ from argparse import Namespace
 
 def main(args: Namespace) -> int:
     projects: list[str] = args.projects
-    import logging as log
 
     # from ..modrinth.apis import get_project_versions
+    from ..config import load_config
     from ..resolver import (
         Dependency,
         human_to_resolver,
         resolve_dependencies,
         resolver_to_human,
     )
-    from ..config import load_config
 
     def get_project_versions(
         project_id, loader_names, game_versions, featured=None, include_changelog=True

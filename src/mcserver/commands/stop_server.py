@@ -7,8 +7,7 @@ def main(args: Namespace) -> int:
 
     import logging as log
     import os
-    import time
-    from signal import SIGKILL, SIGTERM
+    from signal import SIGTERM
 
     from .. import state
 

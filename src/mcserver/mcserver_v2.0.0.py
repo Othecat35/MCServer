@@ -1,37 +1,43 @@
 # Modules
-import argparse, json, math, os, shutil, sys, textwrap, time
+import argparse
+import json
 import logging as log
+import math
+import os
+import shutil
+import sys
+import textwrap
+import time
+from collections import deque
+from pathlib import Path
 
 from config import default_configs, generate_config, load_config
 from constants import __version__
 from indexing import (
-    project_index_exists,
     create_project_index,
-    read_project_index,
-    slug_to_id,
-    slug_id_file,
-    slug_id,
     indexes_dir,
+    project_index_exists,
+    read_project_index,
+    slug_id,
+    slug_id_file,
+    slug_to_id,
     update_project_index,
 )
 from modrinth_api import (
-    get_project_versions,
     ProjectVersionDependency,
+    get_project_versions,
     modrinth_base_api,
 )
 from networking import download_url, request_url
 from shared import (
     ansi,
+    confirmation_prompt,
+    format_number,
     mcserver_dir,
     mod_environment_color,
     pluralize,
-    format_number,
     wrap_ansi,
-    confirmation_prompt,
 )
-
-from pathlib import Path
-from collections import deque
 
 # Variables
 debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
@@ -285,7 +291,7 @@ def resolve_projects(
                         project_id, incompatible_dependants
                     )
 
-                log.debug(f"Keeping existing data")
+                log.debug("Keeping existing data")
                 project_relationship["dependants"].update(
                     existing_entry_relationship["dependants"]
                 )
@@ -419,7 +425,7 @@ def resolve_projects(
 def check_eula_agreed():
     try:
         with open("eula.txt") as file:
-            for line in file.readlines():
+            for line in file:
                 if line.startswith("eula=true"):
                     return True
     except FileNotFoundError:
@@ -579,9 +585,9 @@ def initialize_server(args):
     max_ram = args.max_ram
 
     if not mcserver_dir.exists():
-        log.info(f"Initializing server configuration...")
+        log.info("Initializing server configuration...")
     else:
-        log.info(f"Reinitializing server configuration...")
+        log.info("Reinitializing server configuration...")
 
     update_project_label(loader)
 
@@ -744,7 +750,7 @@ def search_projects(args):
 
     projects_list = response.get("hits", [])
     if not projects_list:
-        raise SearchProjectsError(f"No mod found.")
+        raise SearchProjectsError("No mod found.")
 
     server_side_width = 0
     client_side_width = 0
@@ -922,7 +928,7 @@ def start_server(args):
 
     if memory_limit["min"] > memory_limit["max"]:
         log.error(
-            f"Minimum RAM cannot be larger that maximum RAM, please check configuration for `launcher`"
+            "Minimum RAM cannot be larger that maximum RAM, please check configuration for `launcher`"
         )
         return 1
 

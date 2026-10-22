@@ -1,4 +1,5 @@
 from typing import Literal, NotRequired, TypedDict
+
 from .shared import Environment, EnvironmentSide, ProjectType
 
 type MonetizationStatus = Literal["monetized", "demonetized", "force-demonetized"]

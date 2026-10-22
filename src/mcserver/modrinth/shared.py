@@ -1,7 +1,6 @@
 # Modules
 # Standard
-from pathlib import Path
-from typing import Literal, NotRequired, TypedDict, TypeAlias
+from typing import Literal, NotRequired, TypeAlias, TypedDict
 
 # TypeAliases
 DependencyType: TypeAlias = Literal["embedded", "optional", "required", "incompatible"]

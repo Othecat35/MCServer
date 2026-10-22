@@ -16,10 +16,9 @@ def main(
     """
     import json
 
-    from .typed_dicts import FileHashes, ProjectVersion, VersionDependency, VersionFile
-
     from ... import networking
     from ...constants import modrinth_api_url
+    from .typed_dicts import FileHashes, ProjectVersion, VersionDependency, VersionFile
 
     if isinstance(loader_names, str):
         loader_names = [loader_names]

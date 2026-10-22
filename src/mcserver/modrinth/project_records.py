@@ -1,5 +1,6 @@
 import json
 from typing import NotRequired, TypedDict
+
 from .paths import modrinth_dir
 from .shared import DependencyType, ProjectEnvironment, ProjectLicense, VersionFile
 
