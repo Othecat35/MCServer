@@ -7,22 +7,28 @@ from typing import Any
 from .paths import configs_dir
 
 
-class ConfigVersionError(Exception): pass
+class ConfigVersionError(Exception):
+    pass
+
 
 # Functions
-def write_config(config_name: str, format_version: int, config_data: dict[str, Any]) -> None:
+def write_config(
+    config_name: str, format_version: int, config_data: dict[str, Any]
+) -> None:
     """Write the configuration data to a file
 
     Args:
         config_name: The name of the configuration
         format_version: The format version of this configuration data
         config_data: The configuration data
-    
+
     Raises:
         FileNotFoundError: The configuration directory does not exist
     """
     if not configs_dir.exists():
-        raise FileNotFoundError(f"COnfiguration directory '{configs_dir}' does not exist")
+        raise FileNotFoundError(
+            f"COnfiguration directory '{configs_dir}' does not exist"
+        )
 
     config_filename = f"{config_name}.json"
     config_path = configs_dir / config_filename
@@ -31,13 +37,14 @@ def write_config(config_name: str, format_version: int, config_data: dict[str, A
     config_json = json.dumps(config_data)
     config_path.write_text(config_json)
 
+
 def read_config(config_name: str, current_format_version: int) -> dict[str, Any]:
     """Read a configuration file
 
     Args:
         config_name: The name of the configuration
         current_format_version: The current format version for the configuration
-    
+
     Raises:
         FileNotFoundError: The configuration file does not exist
     """
@@ -46,7 +53,9 @@ def read_config(config_name: str, current_format_version: int) -> dict[str, Any]
     config_path = configs_dir / config_filename
 
     if not config_path.exists():
-        raise FileNotFoundError(f"Configuration file for '{config_name}' does not exist")
+        raise FileNotFoundError(
+            f"Configuration file for '{config_name}' does not exist"
+        )
 
     config_json = config_path.read_text()
     config_data = json.loads(config_json)
