@@ -1,4 +1,3 @@
-
 from ..shared import SearchSortIndex
 from .typed_dicts import SearchResult
 

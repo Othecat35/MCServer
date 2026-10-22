@@ -38,11 +38,11 @@ class GalleryImage(TypedDict):
     """The description of the gallery image"""
     created_time: str
     """The date and time the gallery image was created (format: ISO-8601)"""
-    order_number: NotRequired[int]
+    ordering_number: NotRequired[int]
     """The order of the gallery image. Gallery images are sorted by this field and then alphabetically by title."""
 
 
-class DonationPlatforms(TypedDict):
+class DonationPlatform(TypedDict):
     platform_id: NotRequired[str]
     """The ID of the donation platform"""
     platform_name: NotRequired[str]
@@ -69,7 +69,7 @@ class ProjectInformation(TypedDict):
     """A short sentence summarizing the project, no more than a sentence or two."""
     description: str
     """A long form description of the project"""
-    status: ProjectStatus
+    project_status: ProjectStatus
     """The status of the project"""
     project_type: ProjectType
     """The project type of the project"""
@@ -100,6 +100,7 @@ class ProjectInformation(TypedDict):
     thread_id: str
     """The ID of the moderation thread associated with this project"""
     monetization_status: MonetizationStatus
+    """No description from Modrinth ;-;"""
     project_slug: NotRequired[str | None]
     """The slug of a project, used for vanity URLs."""
     organization_id: NotRequired[str | None]
@@ -124,7 +125,7 @@ class ProjectInformation(TypedDict):
     """An optional link to the project's wiki page or other relevant information"""
     discord_url: NotRequired[str | None]
     """An optional invite link to the project's discord"""
-    donation_platforms: NotRequired[list[DonationPlatforms] | None]
+    donation_platforms: NotRequired[list[DonationPlatform] | None]
     """A list of donation links for the project"""
     client_side: EnvironmentSide
     """Deprecated - use environment instead."""

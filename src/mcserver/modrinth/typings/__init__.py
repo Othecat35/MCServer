@@ -4,7 +4,7 @@
 # Literals
 # TypedDicts
 from .project_informations import (
-    DonationPlatforms,
+    DonationPlatform,
     GalleryImage,
     ModeratorMessage,
     MonetizationStatus,

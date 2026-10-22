@@ -1,6 +1,14 @@
 # Modules
 # Standard
-from typing import Literal, NotRequired, TypeAlias, TypedDict
+from typing import Literal, NotRequired, TypeAlias, TypedDict, get_args
+
+from .typings import (
+    Environment,
+    EnvironmentSide,
+    MonetizationStatus,
+    ProjectStatus,
+    ProjectType,
+)
 
 # TypeAliases
 DependencyType: TypeAlias = Literal["embedded", "optional", "required", "incompatible"]
@@ -77,3 +85,9 @@ search_sort_index: list[str] = [
     "newest",
     "updated",
 ]
+
+ENVIRONMENT: frozenset[str] = frozenset(get_args(Environment))
+ENVIRONMENT_SIDE: frozenset[str] = frozenset(get_args(EnvironmentSide))
+MONETIZATION_STATUS: frozenset[str] = frozenset(get_args(MonetizationStatus))
+PROJECT_STATUS: frozenset[str] = frozenset(get_args(ProjectStatus))
+PROJECT_TYPE: frozenset[str] = frozenset(get_args(ProjectType))
