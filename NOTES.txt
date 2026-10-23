@@ -340,3 +340,6 @@ make a visualize command to visualize installed projects that output to graphviz
 we should merge the metadata.json and relationships.json back into one file :o
 
 look at myterious.py, idk why yiu thought it would be a good idea to make it more fun, and dynamic even.
+mcserver export --client-setup seems nice
+mcserver add thdilos-fox-origin -y is better
+mcserver add jade --include-optional make sense, but for specifically requested mod that is client_only_server_optional, include them. otherwise, put them into "suggested" mods.
