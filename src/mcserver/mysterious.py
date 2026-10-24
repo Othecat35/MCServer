@@ -16,6 +16,7 @@ def nothing_to_see_here_move_along() -> NoReturn:
         "Wow, someone actually found this?",
         "The sun is a deadly laser.",
         "Oh, hi {username}!",
+        "404 Not Found",
     ]
 
     message = random.choice(messages)
