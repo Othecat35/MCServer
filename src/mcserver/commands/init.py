@@ -59,10 +59,6 @@ def init(args: Namespace) -> int:
                     if version["is_stable"]:
                         loader_version = version["loader_version"]
                         break
-                
-                if loader_version == "latest":
-                    log.error("No stable version found")
-                    return 1
 
                 log.info(f"Latest Fabric loader version is: {loader_version}")
             # case "legacy_fabric":

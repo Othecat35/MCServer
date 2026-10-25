@@ -1,7 +1,7 @@
 from argparse import Namespace
 
 
-def main(args: Namespace) -> int:
+def start(args: Namespace) -> int:
     import logging as log
 
     from .. import state
@@ -19,7 +19,7 @@ def main(args: Namespace) -> int:
         error_message += " running"
 
         if "process_id" in current_state:
-            error_message += " with process ID: {current_state['process_id']}"
+            error_message += f" with process ID: {current_state['process_id']}"
         error_message += "."
 
         log.error(error_message)

@@ -104,6 +104,9 @@ def download(
     if hashes.get("sha512"):
         hash_algorithm = hashlib.sha512()
         hash_name = "sha512"
+    elif hashes.get("sha256"):
+        hash_algorithm = hashlib.sha256()
+        hash_name = "sha256"
     elif hashes.get("sha1"):
         hash_algorithm = hashlib.sha1()
         hash_name = "sha1"

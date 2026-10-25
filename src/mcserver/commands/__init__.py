@@ -10,7 +10,7 @@ from .remove_projects import main as remove_projects
 from .search import search
 from .server_status import main as server_status
 from .show_projects import main as show_projects
-from .start_server import main as start_server
+from .start import start
 from .stop_server import main as stop_server
 from .update_projects import main as update_projects
 from .whitelist_add import main as whitelist_add
@@ -30,7 +30,7 @@ __all__ = [
     "search",
     "server_status",
     "show_projects",
-    "start_server",
+    "start",
     "stop_server",
     "update_projects",
     "whitelist_add",
