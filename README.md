@@ -36,9 +36,9 @@ Supported platforms:
 - List whitelisted players: `mcserver whitelist list`
 
 ### Example
-- Create a 1.20.1 Fabric (0.19.5) server on current directory
+- Create and start a Fabric 1.20.1 server on current directory
 ```bash
-mcserver init --mc-version=1.20.1 --loader=fabric --loader-version=0.19.5
+mcserver init --game-version=1.20.1 --loader=fabric
 mcserver start
 ```
 
@@ -47,11 +47,11 @@ mcserver start
 mcserver op list
 mcserver whitelist list
 ```
+
 - Stop (sigterm) a server on current directory
 ```bash
 mcserver stop
 ```
-
 
 ## Note
 This is a **Personal Project**, things may be unstable.
