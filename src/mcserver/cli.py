@@ -1,13 +1,16 @@
+
+
 def main() -> int:
     import argparse
     import sys
 
+    from types import FunctionType
     from . import __version__
     from .modrinth.shared import search_sort_index
     from .shared import loader_list
 
-    def bound_int(min_integer: int, max_integer: int | None = None):
-        def parse(cli_string: str):
+    def bound_int(min_integer: int, max_integer: int | None = None) -> FunctionType:
+        def parse(cli_string: str) -> int:
             try:
                 integer = int(cli_string)
             except TypeError:
@@ -42,9 +45,9 @@ def main() -> int:
 
                 return print_help(args)
             case "init":
-                from .commands import initialize_server
+                from .commands import init
 
-                return initialize_server(args)
+                return init(args)
             case "list":
                 from .commands import list_projects
 
@@ -200,8 +203,8 @@ def main() -> int:
 
     init_command.add_argument(
         "--max-ram",
-        default=bound_int(1024),
-        type=int,
+        default=1024,
+        type=bound_int(1024),
         help="Maximum RAM for the server (in MebiBytes) (minimum value: 1024)",
         metavar="Size",
     )
@@ -222,7 +225,7 @@ def main() -> int:
         choices=search_sort_index,
         help="Default search sort index",
         metavar="Index",
-        dest="search_limit",
+        dest="sort_index",
     )
 
     # 'list' command

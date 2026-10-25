@@ -1,7 +1,7 @@
 from argparse import Namespace
 
 
-def main(args: Namespace) -> int:
+def init(args: Namespace) -> int:
     from ..modrinth.shared import SearchSortIndex
 
     # CLI Arguments
@@ -119,7 +119,7 @@ def main(args: Namespace) -> int:
 
         config_data = shared.merge_dict(default_config, config_override)
         try:
-            config.generate_config(config_name, config_data)
+            config.write_config(config_name, 1, config_data)
         except FileExistsError:
             log.debug(f"Configuration file {config_name} already exists")
 

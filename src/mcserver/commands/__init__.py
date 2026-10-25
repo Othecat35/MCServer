@@ -1,6 +1,6 @@
 from .add_projects import main as add_projects
 from .import_setup import main as import_setup
-from .initialize_server import main as initialize_server
+from .init import init
 from .list_projects import main as list_projects
 from .op_grant import main as op_grant
 from .op_list import main as op_list
@@ -20,7 +20,7 @@ from .whitelist_remove import main as whitelist_remove
 __all__ = [
     "add_projects",
     "import_setup",
-    "initialize_server",
+    "init",
     "list_projects",
     "op_grant",
     "op_list",
