@@ -3,7 +3,7 @@
 # Project Informations
 # Literals
 # TypedDicts
-from .project_informations import (
+from .project_information import (
     DonationPlatform,
     GalleryImage,
     ModeratorMessage,
@@ -22,7 +22,7 @@ from .shared import Environment, EnvironmentSide, ProjectType
 
 __all__ = [
     "AllProjectType",
-    "DonationPlatforms",
+    "DonationPlatform",
     "Environment",
     "EnvironmentSide",
     "GalleryImage",

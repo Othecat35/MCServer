@@ -1,4 +1,3 @@
-from mcserver.modrinth.typings.project_informations import ModeratorMessage
 from ..typings import ProjectInformation
 
 
@@ -28,6 +27,7 @@ def main(project_ids: list[str] | str) -> list[ProjectInformation]:
         Environment,
         EnvironmentSide,
         GalleryImage,
+        ModeratorMessage,
         MonetizationStatus,
         ProjectLicense,
         ProjectStatus,
