@@ -1,6 +1,9 @@
+from ..typings import ProjectVersion
 
+class GetProjectVersionsError(Exception):
+    pass
 
-def main(
+def get_project_versions(
     project_id: str,
     loader_names: list[str] | str | None = None,
     game_versions: list[str] | str | None = None,
@@ -16,17 +19,17 @@ def main(
         featured: Allows to filter for featured or non-featured versions only (trinary)
         include_changelog: Allows you to toggle the inclusion of the changelog field in the response. It is highly recommended to use include_changelog=false in most cases unless you specifically need the changelog for all versions.
     """
-    import json
-
-    from ... import networking
-    from ...constants import modrinth_api_url
-    from .typed_dicts import FileHashes, ProjectVersion, VersionDependency, VersionFile
-
     if isinstance(loader_names, str):
         loader_names = [loader_names]
 
     if isinstance(game_versions, str):
         game_versions = [game_versions]
+
+    import json
+
+    from ... import networking
+    from .. import constants, shared
+    from ..typings import VersionFileHashes, VersionDependency, VersionFile
 
     query_parameters = {"include_changelog": json.dumps(include_changelog)}
 
@@ -89,7 +92,7 @@ def main(
             "version_id": version["id"],
             "project_id": version["project_id"],
             "author_id": version["author_id"],
-            "published_time": version["date_published"],
+            "published_tProjectVersionime": version["date_published"],
             "download_count": version["downloads"],
             "environment": version["environment"],
             "files": files,

@@ -5,7 +5,7 @@ class GetProjectInformationsError(Exception):
     pass
 
 
-def main(project_ids: list[str] | str) -> list[ProjectInformation]:
+def get_project_informations(project_ids: list[str] | str) -> list[ProjectInformation]:
     """Get information about Modrinth projects
 
     Args:
@@ -77,7 +77,7 @@ def main(project_ids: list[str] | str) -> list[ProjectInformation]:
 
         environments: list[Environment] = []
         for environment in information["environment"]:
-            if environment not in shared.ENVIRONMENT:
+            if environment in shared.ENVIRONMENT:
                 environments.append(environment)
             else:
                 log.warning(

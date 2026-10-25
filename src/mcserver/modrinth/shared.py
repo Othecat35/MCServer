@@ -3,6 +3,7 @@
 from typing import Literal, NotRequired, TypeAlias, TypedDict, get_args
 
 from .typings import (
+    DependencyType,
     Environment,
     EnvironmentSide,
     MonetizationStatus,
@@ -11,7 +12,6 @@ from .typings import (
 )
 
 # TypeAliases
-DependencyType: TypeAlias = Literal["embedded", "optional", "required", "incompatible"]
 ProjectSide: TypeAlias = Literal["required", "optional", "unsupported", "unknown"]
 ProjectEnvironment: TypeAlias = Literal[
     "client_and_server",
@@ -86,8 +86,14 @@ search_sort_index: list[str] = [
     "updated",
 ]
 
+DEPENDENCY_TYPE: frozenset[str] = frozenset(get_args(DependencyType.__value__))
 ENVIRONMENT: frozenset[str] = frozenset(get_args(Environment.__value__))
 ENVIRONMENT_SIDE: frozenset[str] = frozenset(get_args(EnvironmentSide.__value__))
 MONETIZATION_STATUS: frozenset[str] = frozenset(get_args(MonetizationStatus.__value__))
 PROJECT_STATUS: frozenset[str] = frozenset(get_args(ProjectStatus.__value__))
 PROJECT_TYPE: frozenset[str] = frozenset(get_args(ProjectType.__value__))
+REQUESTED_PROJECT_STATUS: frozenset[str] = frozenset(get_args(.__value__))
+REQUESTED_VERSION_STATUS: frozenset[str] = frozenset(get_args(.__value__))
+VERSION_FILE_TYPE: frozenset[str] = frozenset(get_args(.__value__))
+VERSION_STATUS: frozenset[str] = frozenset(get_args(.__value__))
+VERSION_TYPE: frozenset[str] = frozenset(get_args(.__value__))
