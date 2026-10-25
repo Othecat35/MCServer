@@ -9,13 +9,13 @@ from .project_information import (
     RequestedProjectStatus,
 )
 from .project_version import (
+    Dependency,
     DependencyType,
+    FileHashes,
+    FileType,
     ProjectVersion,
     RequestedVersionStatus,
-    VersionDependency,
     VersionFile,
-    VersionFileHashes,
-    VersionFileType,
     VersionStatus,
     VersionType,
 )
@@ -24,10 +24,13 @@ from .shared import Environment, EnvironmentSide, ProjectType
 
 __all__ = [
     "AllProjectType",
+    "Dependency",
     "DependencyType",
     "DonationPlatform",
     "Environment",
     "EnvironmentSide",
+    "FileHashes",
+    "FileType",
     "GalleryImage",
     "ModeratorMessage",
     "MonetizationStatus",
@@ -40,10 +43,7 @@ __all__ = [
     "RequestedVersionStatus",
     "SearchHit",
     "SearchResult",
-    "VersionDependency",
     "VersionFile",
-    "VersionFileHashes",
-    "VersionFileType",
     "VersionStatus",
     "VersionType",
 ]

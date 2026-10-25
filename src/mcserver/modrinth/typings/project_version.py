@@ -3,7 +3,7 @@ from typing import Literal, NotRequired, TypedDict
 from .shared import Environment
 
 type DependencyType = Literal["required", "optional", "incompatible", "embedded"]
-type VersionFileType = Literal[
+type FileType = Literal[
     "required-resource-pack",
     "optional-resource-pack sources-jar",
     "dev-jar",
@@ -18,7 +18,7 @@ type VersionStatus = Literal[
 type VersionType = Literal["release", "beta", "alpha"]
 
 
-class VersionDependency(TypedDict):
+class Dependency(TypedDict):
     version_id: NotRequired[str | None]
     """The ID of the version that this version depends on"""
     project_id: NotRequired[str | None]
@@ -29,7 +29,7 @@ class VersionDependency(TypedDict):
     """The type of dependency that this version has"""
 
 
-class VersionFileHashes(TypedDict):
+class FileHashes(TypedDict):
     sha512: NotRequired[str]
     """No description from Modrinth ;-;"""
     sha1: NotRequired[str]
@@ -37,7 +37,7 @@ class VersionFileHashes(TypedDict):
 
 
 class VersionFile(TypedDict):
-    file_hashes: VersionFileHashes
+    file_hashes: FileHashes
     """A map of hashes of the file. The key is the hashing algorithm and the value is the string version of the hash."""
     download_url: str
     """A direct link to the file"""
@@ -47,7 +47,7 @@ class VersionFile(TypedDict):
     """Whether this file is the primary one for its version. Only a maximum of one file per version will have this set to true. If there are not any primary files, it can be inferred that the first file is the primary one."""
     file_size: int
     """The size of the file in bytes"""
-    file_type: NotRequired[VersionFileType | None]
+    file_type: NotRequired[FileType | None]
     """No description from Modrinth ;-;"""
 
 
@@ -58,7 +58,7 @@ class ProjectVersion(TypedDict):
     """The version number. Ideally will follow semantic versioning"""
     changelog: NotRequired[str | None]
     """The changelog for this version"""
-    dependencies: NotRequired[list[VersionDependency]]
+    dependencies: NotRequired[list[Dependency]]
     """A list of specific versions of projects that this version depends on"""
     game_versions: NotRequired[list[str]]
     """A list of versions of Minecraft that this version supports"""
@@ -86,5 +86,5 @@ class ProjectVersion(TypedDict):
     """A link to the changelog for this version. Always null, only kept for legacy compatibility."""
     environment: Environment
     """The environment a project or version supports. For an explanation of each environment, see the blog post here: https://modrinth.com/news/article/new-environments/#new-system"""
-    version_files: list[VersionFile]
+    files: list[VersionFile]
     """A list of files available for download for this version"""

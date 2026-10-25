@@ -32,7 +32,7 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
         ProjectLicense,
         ProjectStatus,
         ProjectType,
-        RequestedProjectStatus
+        RequestedProjectStatus,
     )
 
     query_parameters = {"ids": json.dumps(project_ids)}
@@ -59,7 +59,9 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
         if monetization_status not in shared.MONETIZATION_STATUS:
             log.warning(f"Unknown monetization status: {monetization_status}")
 
-        requested_project_status: RequestedProjectStatus = information["requested_status"]
+        requested_project_status: RequestedProjectStatus = information[
+            "requested_status"
+        ]
         if requested_project_status not in shared.REQUESTED_PROJECT_STATUS:
             log.warning(f"Unknown monetization status: {monetization_status}")
 
@@ -83,9 +85,7 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
         environments: list[Environment] = information["environment"]
         for environment in environments:
             if environment not in shared.ENVIRONMENT:
-                log.warning(
-                    f"Unknown environment: {environment}"
-                )
+                log.warning(f"Unknown environment: {environment}")
 
         game_versions: list[str] = []
         for game_version in information["game_versions"]:

@@ -6,9 +6,14 @@ from .typings import (
     DependencyType,
     Environment,
     EnvironmentSide,
+    FileType,
     MonetizationStatus,
     ProjectStatus,
     ProjectType,
+    RequestedProjectStatus,
+    RequestedVersionStatus,
+    VersionStatus,
+    VersionType,
 )
 
 # TypeAliases
@@ -92,8 +97,12 @@ ENVIRONMENT_SIDE: frozenset[str] = frozenset(get_args(EnvironmentSide.__value__)
 MONETIZATION_STATUS: frozenset[str] = frozenset(get_args(MonetizationStatus.__value__))
 PROJECT_STATUS: frozenset[str] = frozenset(get_args(ProjectStatus.__value__))
 PROJECT_TYPE: frozenset[str] = frozenset(get_args(ProjectType.__value__))
-REQUESTED_PROJECT_STATUS: frozenset[str] = frozenset(get_args(.__value__))
-REQUESTED_VERSION_STATUS: frozenset[str] = frozenset(get_args(.__value__))
-VERSION_FILE_TYPE: frozenset[str] = frozenset(get_args(.__value__))
-VERSION_STATUS: frozenset[str] = frozenset(get_args(.__value__))
-VERSION_TYPE: frozenset[str] = frozenset(get_args(.__value__))
+REQUESTED_PROJECT_STATUS: frozenset[str] = frozenset(
+    get_args(RequestedProjectStatus.__value__)
+)
+REQUESTED_VERSION_STATUS: frozenset[str] = frozenset(
+    get_args(RequestedVersionStatus.__value__)
+)
+FILE_TYPE: frozenset[str] = frozenset(get_args(FileType.__value__))
+VERSION_STATUS: frozenset[str] = frozenset(get_args(VersionStatus.__value__))
+VERSION_TYPE: frozenset[str] = frozenset(get_args(VersionType.__value__))

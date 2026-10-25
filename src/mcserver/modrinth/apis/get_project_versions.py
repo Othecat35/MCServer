@@ -1,7 +1,9 @@
 from ..typings import ProjectVersion
 
+
 class GetProjectVersionsError(Exception):
     pass
+
 
 def get_project_versions(
     project_id: str,
@@ -30,7 +32,12 @@ def get_project_versions(
 
     from ... import networking
     from .. import constants, shared
-    from ..typings import VersionFileHashes, VersionDependency, VersionFile, VersionFileType
+    from ..typings import (
+        VersionDependency,
+        VersionFile,
+        VersionFileHashes,
+        VersionFileType,
+    )
 
     query_parameters = {"include_changelog": json.dumps(include_changelog)}
 
@@ -44,7 +51,8 @@ def get_project_versions(
         query_parameters["featured"] = json.dumps(featured)
 
     response = networking.request(
-        f"{constants.modrinth_api_url}/v2/project/{project_id}/version", query=query_parameters
+        f"{constants.modrinth_api_url}/v2/project/{project_id}/version",
+        query=query_parameters,
     )
 
     if "json" not in response:
@@ -52,23 +60,22 @@ def get_project_versions(
 
     project_versions: list[ProjectVersion] = []
     for version in response["json"]:
-        dependencies: list[VersionDependency] = []
-        if "dependencies" in version:
-            for dependency in version["dependencies"]:
-                version_dependency: VersionDependency = {
-                    "dependency_type": dependency["dependency_type"]
-                }
+        version_dependencies: list[VersionDependency] = []
+        for dependency in version.get("dependencies", []):
+            version_dependency: VersionDependency = {
+                "dependency_type": dependency["dependency_type"]
+            }
 
-                if "version_id" in dependency:
-                    version_dependency["version_id"] = dependency["version_id"]
+            if "version_id" in dependency:
+                version_dependency["version_id"] = dependency["version_id"]
 
-                if "project_id" in dependency:
-                    version_dependency["project_id"] = dependency["project_id"]
+            if "project_id" in dependency:
+                version_dependency["project_id"] = dependency["project_id"]
 
-                if "file_name" in dependency:
-                    version_dependency["file_name"] = dependency["file_name"]
+            if "file_name" in dependency:
+                version_dependency["file_name"] = dependency["file_name"]
 
-                dependencies.append(version_dependency)
+            dependencies.append(version_dependency)
 
         version_files: list[VersionFile] = []
         for file in version["files"]:
@@ -89,7 +96,7 @@ def get_project_versions(
                 "download_url": file["url"],
                 "file_name": file["filename"],
                 "is_primary": file["primary"],
-                "file_size": file["size"]
+                "file_size": file["size"],
             }
 
             if "file_type" in file:

@@ -15,7 +15,9 @@ type ProjectStatus = Literal[
     "private",
     "unknown",
 ]
-type RequestedProjectStatus = Literal["approved", "archived", "unlisted", "private", "draft"]
+type RequestedProjectStatus = Literal[
+    "approved", "archived", "unlisted", "private", "draft"
+]
 
 
 class ProjectLicense(TypedDict):

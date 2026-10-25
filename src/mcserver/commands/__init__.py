@@ -7,7 +7,7 @@ from .op_list import main as op_list
 from .op_revoke import main as op_revoke
 from .print_help import main as print_help
 from .remove_projects import main as remove_projects
-from .search_projects import main as search_projects
+from .search import search
 from .server_status import main as server_status
 from .show_projects import main as show_projects
 from .start_server import main as start_server
@@ -27,7 +27,7 @@ __all__ = [
     "op_revoke",
     "print_help",
     "remove_projects",
-    "search_projects",
+    "search",
     "server_status",
     "show_projects",
     "start_server",

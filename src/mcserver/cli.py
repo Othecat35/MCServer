@@ -66,9 +66,9 @@ def main() -> int:
 
                 return remove_projects(args)
             case "search":
-                from .commands import search_projects
+                from .commands import search
 
-                return search_projects(args)
+                return search(args)
             case "show":
                 from .commands import show_projects
 
