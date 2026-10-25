@@ -1,8 +1,3 @@
-# Shared
-# Literals
-# Project Informations
-# Literals
-# TypedDicts
 from .project_information import (
     DonationPlatform,
     GalleryImage,
@@ -13,15 +8,23 @@ from .project_information import (
     ProjectStatus,
     RequestedStatus,
 )
-
-# Search Projects
-# Literals
-# TypedDicts
+from .project_version import (
+    DependencyType,
+    ProjectVersion,
+    RequestedVersionStatus,
+    VersionDependency,
+    VersionFile,
+    VersionFileHashes,
+    VersionFileType,
+    VersionStatus,
+    VersionType,
+)
 from .search_projects import AllProjectType, SearchHit, SearchResult
 from .shared import Environment, EnvironmentSide, ProjectType
 
 __all__ = [
     "AllProjectType",
+    "DependencyType",
     "DonationPlatform",
     "Environment",
     "EnvironmentSide",
@@ -32,7 +35,15 @@ __all__ = [
     "ProjectLicense",
     "ProjectStatus",
     "ProjectType",
+    "ProjectVersion",
     "RequestedStatus",
+    "RequestedVersionStatus",
     "SearchHit",
     "SearchResult",
+    "VersionDependency",
+    "VersionFile",
+    "VersionFileHashes",
+    "VersionFileType",
+    "VersionStatus",
+    "VersionType",
 ]

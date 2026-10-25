@@ -1,4 +1,4 @@
-from ..typings import ProjectVersion
+
 
 def main(
     project_id: str,

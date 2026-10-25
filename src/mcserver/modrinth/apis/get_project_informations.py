@@ -80,7 +80,9 @@ def main(project_ids: list[str] | str) -> list[ProjectInformation]:
             if environment not in shared.ENVIRONMENT:
                 environments.append(environment)
             else:
-                log.warning(f"Unknown environment: {environment}. Not appending to 'environment'.")
+                log.warning(
+                    f"Unknown environment: {environment}. Not appending to 'environment'."
+                )
 
         game_versions: list[str] = []
         for game_version in information["game_versions"]:
