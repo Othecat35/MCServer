@@ -15,7 +15,7 @@ type ProjectStatus = Literal[
     "private",
     "unknown",
 ]
-type RequestedStatus = Literal["approved", "archived", "unlisted", "private", "draft"]
+type RequestedProjectStatus = Literal["approved", "archived", "unlisted", "private", "draft"]
 
 
 class ProjectLicense(TypedDict):
@@ -105,7 +105,7 @@ class ProjectInformation(TypedDict):
     """The slug of a project, used for vanity URLs."""
     organization_id: NotRequired[str | None]
     """The ID of the organization that owns this project"""
-    requested_status: NotRequired[RequestedStatus | None]
+    requested_project_status: NotRequired[RequestedProjectStatus | None]
     """The requested status when submitting for review or scheduling the project for release. Approved status refers to “Public” visibility."""
     approved_time: NotRequired[str | None]
     """The date the project was first published (format: ISO-8601)"""

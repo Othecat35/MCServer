@@ -184,7 +184,7 @@ def main(project_ids: list[str] | str) -> list[ProjectInformation]:
             project_information["organization_id"] = information["organization"]
 
         if "requested_status" in information:
-            project_information["requested_status"] = information["requested_status"]
+            project_information["requested_project_status"] = information["requested_status"]
 
         if "approved" in information:
             project_information["approved_time"] = information["approved"]
