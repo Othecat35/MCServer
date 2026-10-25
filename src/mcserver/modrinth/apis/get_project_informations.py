@@ -1,7 +1,8 @@
+from mcserver.modrinth.typings.project_informations import ModeratorMessage
 from ..typings import ProjectInformation
 
 
-class GetProjectInformationError(Exception):
+class GetProjectInformationsError(Exception):
     pass
 
 
@@ -12,7 +13,7 @@ def main(project_ids: list[str] | str) -> list[ProjectInformation]:
         project_ids: The ID of the projects
 
     Returns:
-        List of project informations
+        List of information for the projects
     """
     if isinstance(project_ids, str):
         project_ids = [project_ids]
@@ -40,7 +41,7 @@ def main(project_ids: list[str] | str) -> list[ProjectInformation]:
     )
 
     if "json" not in response:
-        raise GetProjectInformationError("Cannot load JSON response")
+        raise GetProjectInformationsError("Cannot load JSON response")
 
     project_informations: list[ProjectInformation] = []
     for information in response["json"]:
@@ -77,9 +78,9 @@ def main(project_ids: list[str] | str) -> list[ProjectInformation]:
         environments: list[Environment] = []
         for environment in information["environment"]:
             if environment not in shared.ENVIRONMENT:
-                log.warning(f"Unknown environment: {environment}")
-
-            environments.append(environment)
+                environments.append(environment)
+            else:
+                log.warning(f"Unknown environment: {environment}. Not appending to 'environment'.")
 
         game_versions: list[str] = []
         for game_version in information["game_versions"]:
@@ -138,6 +139,14 @@ def main(project_ids: list[str] | str) -> list[ProjectInformation]:
 
         if "url" in information_license:
             project_license["license_url"] = information_license["url"]
+
+        moderator_message: ModeratorMessage = {}
+        information_moderator_message = information["moderator_message"]
+        if "message" in information_moderator_message:
+            moderator_message["message"] = information_moderator_message["message"]
+
+        if "body" in information_moderator_message:
+            moderator_message["body"] = information_moderator_message["body"]
 
         # Construction
         project_information: ProjectInformation = {
@@ -209,7 +218,7 @@ def main(project_ids: list[str] | str) -> list[ProjectInformation]:
             project_information["body_url"] = information["body_url"]
 
         if "moderator_message" in information:
-            project_information["moderator_message"] = information["moderator_message"]
+            project_information["moderator_message"] = moderator_message
 
         project_informations.append(project_information)
 
