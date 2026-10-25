@@ -6,7 +6,7 @@ from .project_information import (
     ProjectInformation,
     ProjectLicense,
     ProjectStatus,
-    RequestedStatus,
+    RequestedProjectStatus,
 )
 from .project_version import (
     DependencyType,
@@ -36,7 +36,7 @@ __all__ = [
     "ProjectStatus",
     "ProjectType",
     "ProjectVersion",
-    "RequestedStatus",
+    "RequestedProjectStatus",
     "RequestedVersionStatus",
     "SearchHit",
     "SearchResult",

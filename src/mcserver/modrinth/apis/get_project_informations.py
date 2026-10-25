@@ -32,6 +32,7 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
         ProjectLicense,
         ProjectStatus,
         ProjectType,
+        RequestedProjectStatus
     )
 
     query_parameters = {"ids": json.dumps(project_ids)}
@@ -58,6 +59,10 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
         if monetization_status not in shared.MONETIZATION_STATUS:
             log.warning(f"Unknown monetization status: {monetization_status}")
 
+        requested_project_status: RequestedProjectStatus = information["requested_status"]
+        if requested_project_status not in shared.REQUESTED_PROJECT_STATUS:
+            log.warning(f"Unknown monetization status: {monetization_status}")
+
         client_side: EnvironmentSide = information["client_side"]
         if client_side not in shared.ENVIRONMENT_SIDE:
             log.warning(f"Unknown client side: {client_side}")
@@ -75,13 +80,11 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
         for additional_category in information["additional_categories"]:
             additional_categories.append(additional_category)
 
-        environments: list[Environment] = []
-        for environment in information["environment"]:
-            if environment in shared.ENVIRONMENT:
-                environments.append(environment)
-            else:
+        environments: list[Environment] = information["environment"]
+        for environment in environments:
+            if environment not in shared.ENVIRONMENT:
                 log.warning(
-                    f"Unknown environment: {environment}. Not appending to 'environment'."
+                    f"Unknown environment: {environment}"
                 )
 
         game_versions: list[str] = []
@@ -184,7 +187,7 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
             project_information["organization_id"] = information["organization"]
 
         if "requested_status" in information:
-            project_information["requested_project_status"] = information["requested_status"]
+            project_information["requested_project_status"] = requested_project_status
 
         if "approved" in information:
             project_information["approved_time"] = information["approved"]
