@@ -25,7 +25,7 @@ class VersionDependency(TypedDict):
     """The ID of the project that this version depends on"""
     file_name: NotRequired[str | None]
     """The file name of the dependency, mostly used for showing external dependencies on modpacks"""
-    dependencies_type: DependencyType
+    dependency_type: DependencyType
     """The type of dependency that this version has"""
 
 

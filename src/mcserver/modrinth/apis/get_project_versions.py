@@ -9,7 +9,7 @@ def get_project_versions(
     game_versions: list[str] | str | None = None,
     featured: bool | None = None,
     include_changelog: bool = True,
-):
+) -> list[ProjectVersion]:
     """List project's versions
 
     Args:
@@ -26,10 +26,11 @@ def get_project_versions(
         game_versions = [game_versions]
 
     import json
+    import logging as log
 
     from ... import networking
     from .. import constants, shared
-    from ..typings import VersionFileHashes, VersionDependency, VersionFile
+    from ..typings import VersionFileHashes, VersionDependency, VersionFile, VersionFileType
 
     query_parameters = {"include_changelog": json.dumps(include_changelog)}
 
@@ -43,12 +44,14 @@ def get_project_versions(
         query_parameters["featured"] = json.dumps(featured)
 
     response = networking.request(
-        f"{modrinth_api_url}/v2/project/{project_id}/version", query=query_parameters
+        f"{constants.modrinth_api_url}/v2/project/{project_id}/version", query=query_parameters
     )
-    response_json = json.loads(response["text"])
+
+    if "json" not in response:
+        raise GetProjectVersionsError("Cannot load JSON response")
 
     project_versions: list[ProjectVersion] = []
-    for version in response_json:
+    for version in response["json"]:
         dependencies: list[VersionDependency] = []
         if "dependencies" in version:
             for dependency in version["dependencies"]:
@@ -58,44 +61,50 @@ def get_project_versions(
 
                 if "version_id" in dependency:
                     version_dependency["version_id"] = dependency["version_id"]
+
                 if "project_id" in dependency:
                     version_dependency["project_id"] = dependency["project_id"]
+
                 if "file_name" in dependency:
-                    version_dependency["filename"] = dependency["file_name"]
+                    version_dependency["file_name"] = dependency["file_name"]
+
                 dependencies.append(version_dependency)
 
-        files: list[VersionFile] = []
+        version_files: list[VersionFile] = []
         for file in version["files"]:
-            # Overcomplicate now because yes
-            file_hashes: FileHashes = {}
-            for hash_algorithm, hash_value in file["hashes"].items():
-                if hash_algorithm in ["sha512", "sha1"]:
-                    file_hashes[hash_algorithm] = hash_value
+            file_type: VersionFileType = file["file_type"]
+            if file_type not in shared.VERSION_FILE_TYPE:
+                log.debug(f"Unknown file type: {file_type}")
+
+            version_file_hashes: VersionFileHashes = {}
+            file_hashes = file["hashes"]
+            if "sha512" in file["hashes"]:
+                version_file_hashes["sha512"] = file_hashes["sha512"]
+
+            if "sha1" in file["hashes"]:
+                version_file_hashes["sha1"] = file_hashes["sha1"]
 
             version_file: VersionFile = {
                 "file_hashes": file_hashes,
                 "download_url": file["url"],
-                "filename": file["filename"],
+                "file_name": file["filename"],
                 "is_primary": file["primary"],
-                "file_size": file["size"],
+                "file_size": file["size"]
             }
 
             if "file_type" in file:
                 version_file["file_type"] = file["file_type"]
 
-            if "id" in file:
-                version_file["file_id"] = file["id"]
-
-            files.append(version_file)
+            version_files.append(version_file)
 
         project_version: ProjectVersion = {
             "version_id": version["id"],
             "project_id": version["project_id"],
             "author_id": version["author_id"],
-            "published_tProjectVersionime": version["date_published"],
+            "published_time": version["date_published"],
             "download_count": version["downloads"],
             "environment": version["environment"],
-            "files": files,
+            "version_files": version_files,
         }
 
         if "name" in version:
@@ -123,10 +132,10 @@ def get_project_versions(
             project_version["is_featured"] = version["featured"]
 
         if "status" in version:
-            project_version["status"] = version["status"]
+            project_version["version_status"] = version["status"]
 
         if "requested_status" in version:
-            project_version["requested_status"] = version["requested_status"]
+            project_version["requested_version_status"] = version["requested_status"]
 
         if "changelog_url" in version:
             project_version["changelog_url"] = version["changelog_url"]
