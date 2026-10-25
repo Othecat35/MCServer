@@ -1,5 +1,3 @@
-
-
 def main() -> int:
     import argparse
     import sys

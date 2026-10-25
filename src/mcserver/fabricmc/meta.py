@@ -38,4 +38,4 @@ def get_loader_versions() -> list[LoaderVersion]:
 
 
 def download_url(game_version: str, loader_version: str, installer_version) -> str:
-    return f"{fabricmc_meta_url}/v2/versions/loader/{loader_version}/{game_version}/{installer_version}/server/jar"
+    return f"{fabricmc_meta_url}/v2/versions/loader/{game_version}/{loader_version}/{installer_version}/server/jar"

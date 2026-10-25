@@ -13,9 +13,16 @@ def main(args: Namespace) -> int:
 
     current_state = state.get_state()
     if current_state["is_active"]:
-        log.error(
-            f"There's another active MCServer process ({current_state['action']}) running with process ID: {current_state['process_id']}"
-        )
+        error_message = "There's another active MCServer process"
+        if "action" in current_state:
+            error_message += f" ({current_state['action']})"
+        error_message += " running"
+
+        if "process_id" in current_state:
+            error_message += " with process ID: {current_state['process_id']}"
+        error_message += "."
+
+        log.error(error_message)
         return 1
 
     # Set state
@@ -26,9 +33,10 @@ def main(args: Namespace) -> int:
     from pathlib import Path
 
     from .. import config
+    from .. import shared
 
     # Load configs
-    launcher_config = config.load_config("launcher")
+    launcher_config = config.read_config("launcher", shared.default_configs["launcher"]["format_version"])
 
     jarfile = Path(launcher_config["jarfile"])
     memory_config = launcher_config["ram"]
@@ -41,7 +49,7 @@ def main(args: Namespace) -> int:
 
         state.set_state("downloading_server")
 
-        server_config = config.load_config("server")
+        server_config = config.read_config("server", shared.default_configs["server"]["format_version"])
         game_version = server_config["game_version"]
         server_loader = server_config["loader"]
 
@@ -61,16 +69,17 @@ def main(args: Namespace) -> int:
                     f"Downloading Fabric loader {loader_version} for Minecraft version {game_version}..."
                 )
                 networking.download(
-                    fabricmc_meta.download_url(game_version, loader_version, "1.0.1"),
+                    fabricmc_meta.download_url(game_version, loader_version, "1.1.2"),
                     jarfile,
                 )
 
-            #            case "quilt":
-            #                log.info(f"Downloading Quilt loader {loader_version} for Minecraft version {game_version}...")
-            #                networking.download(f"https://")
+            # case "quilt":
+            #     from ..quiltmc import meta
+            #     log.info(f"Downloading Quilt loader {loader_version} for Minecraft version {game_version}...")
+            #     networking.download(meta., jarfile)
 
-            #            case "legacy-fabric":
-            #                pass
+            # case "legacy-fabric":
+            #     pass
 
             # Plugin loaders
             case "paper":
@@ -86,7 +95,7 @@ def main(args: Namespace) -> int:
                 networking.download(
                     download_prop["download_url"],
                     jarfile,
-                    hashes=download_prop["file_hashes"],
+                    hashes={"sha256": download_prop["file_hashes"]["sha256"]},
                 )
             case "purpur":
                 from ..purpurmc import api as purpurmc_api

@@ -16,12 +16,17 @@ def init(args: Namespace) -> int:
     search_limit: int = args.search_limit
     sort_index: SearchSortIndex = args.sort_index
 
+
     # Imports
     import copy
     import logging as log
 
     from .. import __version__, config, shared, state
     from ..metadata import metadata_file, set_metadata
+
+    if min_ram > max_ram:
+        log.error("Minimum RAM cannot be larger than maximum RAM")
+        return 1
 
     # Special loader version
     if loader_name == "vanilla":
@@ -54,18 +59,22 @@ def init(args: Namespace) -> int:
                     if version["is_stable"]:
                         loader_version = version["loader_version"]
                         break
+                
+                if loader_version == "latest":
+                    log.error("No stable version found")
+                    return 1
 
                 log.info(f"Latest Fabric loader version is: {loader_version}")
-            case "legacyfabric":
-                pass
-            case "quilt":
-                log.info("Fetching the latest version for Quilt Loader...")
-                from ..quiltmc import meta as quiltmc_meta
+            # case "legacy_fabric":
+            #     pass
+            # case "quilt":
+            #     log.info("Fetching the latest version for Quilt Loader...")
+            #     from ..quiltmc import meta as quiltmc_meta
 
-                loader_versions = quiltmc_meta.get_loader_versions()
-                latest_quilt_version = loader_versions[0]
-                loader_version = str(latest_quilt_version["loader_version"])
-                log.info(f"Latest Quilt loader version is: {loader_version}")
+            #     loader_versions = quiltmc_meta.get_loader_versions()
+            #     latest_quilt_version = loader_versions[0]
+            #     loader_version = str(latest_quilt_version["loader_version"])
+            #     log.info(f"Latest Quilt loader version is: {loader_version}")
             # Plugin Loader
             case "paper":
                 log.info("Fetching the latest version for Paper...")
@@ -90,6 +99,10 @@ def init(args: Namespace) -> int:
                 log.error(f"Unknown loader: {loader_name}")
                 return 1
 
+        if loader_version == "latest":
+            log.error("No stable version found")
+            return 1
+
     # Is first initializing
     is_first_initialize = not metadata_file.exists()
     shared.set_loader_context(loader_name)
@@ -104,7 +117,8 @@ def init(args: Namespace) -> int:
 
     # Write configuration to file
     for config_name in shared.default_configs.keys():
-        default_config = copy.deepcopy(shared.default_configs[config_name])
+        configuration = shared.default_configs[config_name]
+        default_config = copy.deepcopy(configuration["config_data"])
 
         config_override: dict = {}
         match config_name:
@@ -125,9 +139,12 @@ def init(args: Namespace) -> int:
 
         config_data = shared.merge_dict(default_config, config_override)
         try:
-            config.write_config(config_name, 1, config_data)
+            config.write_config(config_name, configuration["format_version"], config_data)
         except FileExistsError:
-            log.debug(f"Configuration file {config_name} already exists")
+            if is_first_initialize:
+                log.debug(f"Configuration file {config_name} already exists")
+            else:
+                log.info(f"Configuration for '{config_name}' already exist, skipping...")
 
     if is_first_initialize:
         set_metadata(__version__)
