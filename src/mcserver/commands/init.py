@@ -33,9 +33,11 @@ def init(args: Namespace) -> int:
 
         match game_version:
             case "latest" | "latest-release":
+                log.info("Fetching the latest release version for Minecraft...")
                 game_version = mojang_manifest.get_latest_release_version()
                 log.info(f"Latest Minecraft release version is: {game_version}")
             case "latest-snapshot":
+                log.info("Fetching the latest snapshot version for Minecraft...")
                 game_version = mojang_manifest.get_latest_snapshot_version()
                 log.info(f"Latest Minecraft snapshot version is: {game_version}")
 
@@ -44,6 +46,7 @@ def init(args: Namespace) -> int:
         match loader_name:
             # Mod Loaders
             case "fabric":
+                log.info("Fetching the latest version for Fabric Loader...")
                 from ..fabricmc import meta as fabricmc_meta
 
                 loader_versions = fabricmc_meta.get_loader_versions()
@@ -56,6 +59,7 @@ def init(args: Namespace) -> int:
             case "legacyfabric":
                 pass
             case "quilt":
+                log.info("Fetching the latest version for Quilt Loader...")
                 from ..quiltmc import meta as quiltmc_meta
 
                 loader_versions = quiltmc_meta.get_loader_versions()
@@ -64,6 +68,7 @@ def init(args: Namespace) -> int:
                 log.info(f"Latest Quilt loader version is: {loader_version}")
             # Plugin Loader
             case "paper":
+                log.info("Fetching the latest version for Paper...")
                 from ..papermc import api as papermc_api
 
                 latest_paper_version = papermc_api.get_latest_project_build(
@@ -72,6 +77,7 @@ def init(args: Namespace) -> int:
                 loader_version = str(latest_paper_version["build_id"])
                 log.info(f"Latest Paper build version is: {loader_version}")
             case "purpur":
+                log.info("Fetching the latest version for Purpur...")
                 from ..purpurmc import api as purpurmc_api
 
                 latest_purpur_version = purpurmc_api.get_latest_project_build(
