@@ -52,7 +52,7 @@ def _load_slug_index() -> None:
         _slug_index = {}
 
 
-def is_index_expired(project_slug: str) -> bool:
+def is_index_outdated(project_slug: str) -> bool:
     _load_slug_index()
 
     global _slug_index
@@ -86,7 +86,7 @@ def is_index_expired(project_slug: str) -> bool:
 
 
 def slug_to_id(project_slug: str) -> str:
-    if is_index_expired(project_slug):
+    if is_index_outdated(project_slug):
         return project_slug
 
     global _slug_index
