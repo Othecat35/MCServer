@@ -34,7 +34,7 @@ def write_config(
     config_path = configs_dir / config_filename
     config_data["format_version"] = format_version
 
-    config_json = json.dumps(config_data)
+    config_json = json.dumps(config_data, indent=2)
     config_path.write_text(config_json)
 
 
