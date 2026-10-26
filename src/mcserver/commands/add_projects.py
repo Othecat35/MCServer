@@ -5,7 +5,7 @@ def main(args: Namespace) -> int:
     projects: list[str] = args.projects
 
     # from ..modrinth.apis import get_project_versions
-    from ..config import load_config
+    from .. import config, shared
     from ..resolver import (
         Dependency,
         human_to_resolver,
@@ -97,7 +97,7 @@ def main(args: Namespace) -> int:
         ]
         return a
 
-    server_config = load_config("server")
+    server_config = config.read_config("server", shared.default_configs["server"]["format_version"])
     loader_name = server_config["loader"]["name"]
     game_version = server_config["game_version"]
 
