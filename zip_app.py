@@ -16,7 +16,7 @@ python_interpreter = "/usr/bin/env python3"
 
 # Print Information
 print(f"""\
-Source      : '{source_dir}'
+Source      : '{source_dir}/'
 Interpreter : '{python_interpreter}'
 Target      : '{target_file}'
 """)
@@ -39,6 +39,7 @@ print("Creating archive...")
 zipapp.create_archive(
     source=source_dir,
     target=target_file,
+    compressed=True,
     interpreter=python_interpreter,
     filter=filter_path,
 )
