@@ -1,8 +1,8 @@
 def main() -> int:
     import argparse
     import sys
-
     from types import FunctionType
+
     from . import __version__
     from .modrinth.shared import search_sort_index
     from .shared import loader_list

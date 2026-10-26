@@ -16,7 +16,6 @@ def init(args: Namespace) -> int:
     search_limit: int = args.search_limit
     sort_index: SearchSortIndex = args.sort_index
 
-
     # Imports
     import copy
     import logging as log
@@ -135,12 +134,16 @@ def init(args: Namespace) -> int:
 
         config_data = shared.merge_dict(default_config, config_override)
         try:
-            config.write_config(config_name, configuration["format_version"], config_data)
+            config.write_config(
+                config_name, configuration["format_version"], config_data
+            )
         except FileExistsError:
             if is_first_initialize:
                 log.debug(f"Configuration file {config_name} already exists")
             else:
-                log.info(f"Configuration for '{config_name}' already exist, skipping...")
+                log.info(
+                    f"Configuration for '{config_name}' already exist, skipping..."
+                )
 
     if is_first_initialize:
         set_metadata(__version__)

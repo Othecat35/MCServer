@@ -97,7 +97,9 @@ def main(args: Namespace) -> int:
         ]
         return a
 
-    server_config = config.read_config("server", shared.default_configs["server"]["format_version"])
+    server_config = config.read_config(
+        "server", shared.default_configs["server"]["format_version"]
+    )
     loader_name = server_config["loader"]["name"]
     game_version = server_config["game_version"]
 

@@ -38,18 +38,25 @@ default_configs = {
     "launcher": {
         "format_version": 1,
         "config_data": {
-            "ram": {"_comment": "Memory size in MebiByte (MiB)", "min": 512, "max": 2_048},
+            "ram": {
+                "_comment": "Memory size in MebiByte (MiB)",
+                "min": 512,
+                "max": 2_048,
+            },
             "jarfile": "Server.jar",
             "is_nogui": True,
-        }
+        },
     },
-    "modrinth": {"format_version": 1, "config_data": {"search_limit": 20, "sort_index": "relevance"}},
+    "modrinth": {
+        "format_version": 1,
+        "config_data": {"search_limit": 20, "sort_index": "relevance"},
+    },
     "server": {
         "format_version": 1,
         "config_data": {
-        "game_version": "",  # Auto-fetched the latest version when init without --mc-version
-        "loader": {"name": "vanilla", "version": None},
-        }
+            "game_version": "",  # Auto-fetched the latest version when init without --mc-version
+            "loader": {"name": "vanilla", "version": None},
+        },
     },
 }
 

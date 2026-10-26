@@ -2,39 +2,30 @@ import json
 from typing import NotRequired, TypedDict
 
 from .paths import modrinth_dir
-from .shared import DependencyType, ProjectEnvironment, ProjectLicense, VersionFile
+from .typings import DependencyType, Environment, FileHashes
 
 project_records_dir = modrinth_dir / "project_records"
 
-# Wait, what data a record actually store?
-# For now it is whatever the get_project_version returns
+
+current_format_version = 1
+
+
+class ProjectRecordFile(TypedDict):
+    file_hashes: FileHashes
+    file_name: str
 
 
 class ProjectRecordData(TypedDict):
-    # Project
-    project_name: str
-    """The title or name of the project"""
-    project_slug: str
-    """"""
-    short_description: str
-    """A short sentence summarizing the project, no more than a sentence or two."""
-    categories: list[str]
-    """A list of the featured categories that the project has."""
-    additional_categories: list[str]
-    """A list of additional categories that the project also has. These are supplementary to the featured categories, and does not include them again."""
-    project_license: ProjectLicense
-    published_time: str
+    format_version: int
 
-    # Version
+    # Version (Following the project_version typings)
     version_id: str
-    version_name: str
-    version_number: NotRequired[str]
-    project_environment: ProjectEnvironment
-    """All the environments that versions of this project support. Not in any particular order, we recommend using the environment information on a version instead. For an explanation of each environment, see the blog post here: https://modrinth.com/news/article/new-environments/#new-system"""
+    version_name: NotRequired[str]
+    version_environment: Environment
 
     # Metadata
     added_time: str  # probably ISO-8601
-    file: VersionFile
+    file: ProjectRecordFile
 
     # Relationships
     is_manual: bool
@@ -85,7 +76,8 @@ def read_record(project_id: str) -> ProjectRecordData:
             f"Failed to read record data for project ID '{project_id}': File {project_record_file} does not exist"
         )
 
-    record_data: ProjectRecordData = {}
+    record_json = project_record_file.read_text()
+    record_data: ProjectRecordData = json.loads(record_json)
     return record_data
 
 

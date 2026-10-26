@@ -34,9 +34,7 @@ def write_config(
     config_filename = f"{config_name}.json"
     config_path = configs_dir / config_filename
 
-    configuration_data = {
-        "format_version": format_version
-    }
+    configuration_data = {"format_version": format_version}
 
     configuration_data.update(copy.deepcopy(config_data))
     config_json = json.dumps(configuration_data, indent=2)
@@ -66,6 +64,8 @@ def read_config(config_name: str, current_format_version: int) -> dict[str, Any]
     config_data = json.loads(config_json)
 
     if config_data["format_version"] > current_format_version:
-        raise ConfigVersionError(f"The configuration for {config_name}'s format version is higher than this version of MCServer.")
+        raise ConfigVersionError(
+            f"The configuration for {config_name}'s format version is higher than this version of MCServer."
+        )
 
     return config_data

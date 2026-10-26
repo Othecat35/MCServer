@@ -32,11 +32,12 @@ def start(args: Namespace) -> int:
     import shutil
     from pathlib import Path
 
-    from .. import config
-    from .. import shared
+    from .. import config, shared
 
     # Load configs
-    launcher_config = config.read_config("launcher", shared.default_configs["launcher"]["format_version"])
+    launcher_config = config.read_config(
+        "launcher", shared.default_configs["launcher"]["format_version"]
+    )
 
     jarfile = Path(launcher_config["jarfile"])
     memory_config = launcher_config["ram"]
@@ -49,7 +50,9 @@ def start(args: Namespace) -> int:
 
         state.set_state("downloading_server")
 
-        server_config = config.read_config("server", shared.default_configs["server"]["format_version"])
+        server_config = config.read_config(
+            "server", shared.default_configs["server"]["format_version"]
+        )
         game_version = server_config["game_version"]
         server_loader = server_config["loader"]
 
