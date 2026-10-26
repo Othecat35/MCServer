@@ -183,7 +183,9 @@ check_dependency_conflicts: no
 resolve_dependencies: ok... what are dependencies of mod b?
 (some dialogue later)
 resolve_dependencies: ok, there's no more dependency. here you go "return the list of dependencies"
-user: why are there 29 mods including dependencies 0_0
+user: why are there 29 mods including dependencies 0_0 (basucally the resolver works)
+
+on second thought, the caller is the one that handle conflict.
 
 thx chatgpt but I can't prove it yet
 
@@ -199,7 +201,15 @@ thx chatgpt but I can't prove it yet
 - Review codes, especially TypedDict, because why not
 - Avoid making myself suffer in this project, potentially abandoning this cool project
 - I hate CurseForge personally.
+
+
+
 - And yet I still have no friend (to talk about my weird hobby of computer, including this)
+
+- Oh hi Finjer! idk if you are reading this, cool. so uh... idk I added stuff I guess, or remove stuff.
+
+
+
 - Add command such as 'whitelist add/remove/list', 'ban/unban/ban-list', and probably 'op/deop <player> <level>'
 
 MCServer™ Naming Convention: (the Trademark is just a joke)
