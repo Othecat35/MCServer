@@ -10,14 +10,16 @@ project_records_dir = modrinth_dir / "project_records"
 current_format_version = 1
 
 
+class ProjectRecordFormatVersionError(Exception):
+    pass
+
+
 class ProjectRecordFile(TypedDict):
     file_hashes: FileHashes
     file_name: str
 
 
-class ProjectRecordData(TypedDict):
-    format_version: int
-
+class ProjectRecordPayload(TypedDict):
     # Version (Following the project_version typings)
     version_id: str
     version_name: NotRequired[str]
@@ -34,7 +36,11 @@ class ProjectRecordData(TypedDict):
     dependents: dict[str, DependencyType]
 
 
-def write_record(project_id: str, record_data: ProjectRecordData) -> None:
+class ProjectRecordData(ProjectRecordPayload):
+    format_version: 1
+
+
+def write_record(project_id: str, record_payload: ProjectRecordPayload) -> None:
     """Write a record for a project record (create a new record or overwrite it)
     Args:
         project_id: The id of the Modrinth project
@@ -55,6 +61,8 @@ def write_record(project_id: str, record_data: ProjectRecordData) -> None:
         )
 
     project_record_file = project_records_dir / f"{project_id}.json"
+    record_data = copy.deepcopy()
+    record_data["format_version"] = current_format_version
     record_json = json.dumps(record_data)
     project_record_file.write_text(record_json)
 
@@ -78,6 +86,12 @@ def read_record(project_id: str) -> ProjectRecordData:
 
     record_json = project_record_file.read_text()
     record_data: ProjectRecordData = json.loads(record_json)
+
+    if record_data["format_version"] > current_format_version:
+        raise ProjectRecordFormatVersionError(
+            f"Format version of a record for project '{project_id}' is higher than this version of MCServer"
+        )
+
     return record_data
 
 
