@@ -61,8 +61,7 @@ def write_record(project_id: str, record_payload: ProjectRecordPayload) -> None:
         )
 
     project_record_file = project_records_dir / f"{project_id}.json"
-    record_data = copy.deepcopy()
-    record_data["format_version"] = current_format_version
+    record_data: ProjectRecordData = {**record_payload, "format_version": current_format_version}
     record_json = json.dumps(record_data)
     project_record_file.write_text(record_json)
 
