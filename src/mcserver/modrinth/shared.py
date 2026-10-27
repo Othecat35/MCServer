@@ -1,6 +1,6 @@
 # Modules
 # Standard
-from typing import Literal, NotRequired, TypeAlias, TypedDict, get_args
+from typing import Literal, NotRequired, TypedDict, get_args
 
 from .typings import (
     DependencyType,
@@ -16,8 +16,7 @@ from .typings import (
     VersionType,
 )
 
-# TypeAliases
-SearchSortIndex: TypeAlias = Literal[
+type SearchSortIndex = Literal[
     "relevance", "downloads", "follows", "newest", "updated"
 ]
 
