@@ -83,6 +83,10 @@ def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]
     return projects
 
 
+# required then incompatible is caller's to handle. not resolver
+# - Othecat35
+
+
 def resolve_dependencies(
     project_ids: list[str] | str,
     get_dependencies: Callable[[str], dict[str, int]],

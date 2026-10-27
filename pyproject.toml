@@ -28,3 +28,8 @@ packages = ["src/mcserver"]
 
 [tool.hatch.version]
 path = "src/mcserver/__init__.py"
+
+[tool.ruff.lint]
+ignore = [
+  "LOG015"
+]
