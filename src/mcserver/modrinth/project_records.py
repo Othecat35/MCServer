@@ -37,7 +37,7 @@ class ProjectRecordPayload(TypedDict):
 
 
 class ProjectRecordData(ProjectRecordPayload):
-    format_version: 1
+    format_version: int
 
 
 def write_record(project_id: str, record_payload: ProjectRecordPayload) -> None:
