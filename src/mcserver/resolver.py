@@ -1,9 +1,10 @@
 import logging as log
 from collections import deque
 from collections.abc import Callable
-from typing import Literal, TypeAlias, TypedDict
+from typing import Literal, NotRequired, TypedDict
 
-DependencyType: TypeAlias = Literal["embedded", "optional", "required", "incompatible"]
+type DependencyType = Literal["required", "optional", "incompatible", "embedded"]
+
 dependency_types: dict[DependencyType, int] = {
     "embedded": 0,
     "optional": 1,
@@ -25,7 +26,8 @@ class Dependency(TypedDict):
 
 class Project(TypedDict):
     is_manual: bool
-    highest_type: int
+    highest_type: NotRequired[int]
+    """Not present if the project is manual and has not dependents"""
     dependencies: dict[str, int]
     dependents: dict[str, int]
 
@@ -85,7 +87,6 @@ def resolve_dependencies(
     project_ids: list[str] | str,
     get_dependencies: Callable[[str], dict[str, int]],
     queue_filter: Callable[[int], bool],
-    manual_type: int,
 ) -> dict[str, Project]:
     """Resolve dependency tree using BFS
 
@@ -93,7 +94,6 @@ def resolve_dependencies(
         project_ids: Projects to start with
         get_dependencies: Callback that returns a dictionary
         queue_filter: Callback that returns a bool
-        manual_type: Number that is treated as required
     """
     if isinstance(project_ids, str):
         project_ids = [project_ids]
@@ -107,7 +107,6 @@ def resolve_dependencies(
         queued_projects.append(project_id)
         project: Project = {
             "is_manual": True,
-            "highest_type": manual_type,
             "dependencies": {},
             "dependents": {},
         }
@@ -126,15 +125,22 @@ def resolve_dependencies(
             if dependency_id in dependency_graph:
                 dependency_project = dependency_graph[dependency_id]
 
-                if not queue_filter(
-                    dependency_project["highest_type"]
-                ) and queue_filter(dependency_type):
-                    log.debug(f"Adding previous dependency '{dependency_id}' to queue")
-                    queued_projects.append(dependency_id)
+                if "highest_type" in dependency_project:
+                    if not queue_filter(
+                        dependency_project["highest_type"]
+                    ) and queue_filter(dependency_type):
+                        log.debug(
+                            f"Adding previous dependency '{dependency_id}' to queue"
+                        )
+                        queued_projects.append(dependency_id)
 
-                dependency_project["highest_type"] = max(
-                    dependency_type, dependency_project["highest_type"]
-                )
+                    dependency_project["highest_type"] = max(
+                        dependency_type, dependency_project["highest_type"]
+                    )
+
+                else:
+                    dependency_project["highest_type"] = dependency_type
+
                 dependency_project["dependents"][project_id] = dependency_type
             else:
                 dependency_graph[dependency_id] = {
@@ -202,7 +208,6 @@ def main():
                 ],
                 test_dependencies,
                 required_only,
-                2,
             ),
             indent=2,
         )
