@@ -79,10 +79,7 @@ def is_index_outdated(project_slug: str) -> bool:
 
     time_now = datetime.now(tz=UTC)
     time_to_live = timedelta(days=7)
-    if time_now - last_updated > time_to_live:
-        return True
-
-    return False
+    return time_now - last_updated > time_to_live
 
 
 def slug_to_id(project_slug: str) -> str:
