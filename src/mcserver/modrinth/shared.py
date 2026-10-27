@@ -16,9 +16,7 @@ from .typings import (
     VersionType,
 )
 
-type SearchSortIndex = Literal[
-    "relevance", "downloads", "follows", "newest", "updated"
-]
+type SearchSortIndex = Literal["relevance", "downloads", "follows", "newest", "updated"]
 
 
 # TypedDict

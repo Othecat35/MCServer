@@ -1,7 +1,9 @@
-import logging as log
+import logging
 from collections import deque
 from collections.abc import Callable
 from typing import Literal, NotRequired, TypedDict
+
+logger = logging.getLogger(__name__)
 
 type DependencyType = Literal["required", "optional", "incompatible", "embedded"]
 
@@ -89,15 +91,15 @@ def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]
 
 def resolve_dependencies(
     project_ids: list[str] | str,
+    process_filter: Callable[[int], bool],
     get_dependencies: Callable[[str], dict[str, int]],
-    queue_filter: Callable[[int], bool],
 ) -> dict[str, Project]:
     """Resolve dependency tree using BFS
 
     Args:
         project_ids: Projects to start with
+        process_filter: Callback that returns a bool
         get_dependencies: Callback that returns a dictionary
-        queue_filter: Callback that returns a bool
     """
     if isinstance(project_ids, str):
         project_ids = [project_ids]
@@ -107,7 +109,7 @@ def resolve_dependencies(
     dependency_graph: dict[str, Project] = {}
 
     for project_id in project_ids:
-        log.debug(f"Adding project '{project_id}' to the queue")
+        logger.debug(f"Adding project '{project_id}' to the queue")
         queued_projects.append(project_id)
         project: Project = {
             "is_manual": True,
@@ -118,8 +120,20 @@ def resolve_dependencies(
 
     while queued_projects:
         project_id = queued_projects.popleft()
+        project = dependency_graph[project_id]
+
+        if (
+            not project["is_manual"]
+            and "highest_type" in project
+            and not process_filter(project["highest_type"])
+        ):
+            logger.debug(
+                f"Project '{project_id}' is skipped because highest_type did not pass process_filter: {project['highest_type']}"
+            )
+            continue
+
         if project_id in visited_projects:
-            log.debug(f"Project '{project_id}' has already been visited")
+            logger.debug(f"Project '{project_id}' has already been visited")
             continue
 
         dependencies = get_dependencies(project_id)
@@ -130,18 +144,9 @@ def resolve_dependencies(
                 dependency_project = dependency_graph[dependency_id]
 
                 if "highest_type" in dependency_project:
-                    if not queue_filter(
-                        dependency_project["highest_type"]
-                    ) and queue_filter(dependency_type):
-                        log.debug(
-                            f"Adding previous dependency '{dependency_id}' to queue"
-                        )
-                        queued_projects.append(dependency_id)
-
                     dependency_project["highest_type"] = max(
                         dependency_type, dependency_project["highest_type"]
                     )
-
                 else:
                     dependency_project["highest_type"] = dependency_type
 
@@ -154,9 +159,7 @@ def resolve_dependencies(
                     "dependents": {project_id: dependency_type},
                 }
 
-                if queue_filter(dependency_type):
-                    log.debug(f"Adding dependency '{dependency_id}' to queue")
-                    queued_projects.append(dependency_id)
+            queued_projects.append(dependency_id)
 
         visited_projects.add(project_id)
 
@@ -198,7 +201,7 @@ def test_dependencies(project_id: str) -> dict[str, int]:
 
 
 def main():
-    log.basicConfig(level=log.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
     import json
 
     print(
@@ -210,8 +213,8 @@ def main():
                     "jade",
                     "just-enough-resources-jer",
                 ],
-                test_dependencies,
                 required_only,
+                test_dependencies,
             ),
             indent=2,
         )
