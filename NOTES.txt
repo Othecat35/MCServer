@@ -355,3 +355,4 @@ mcserver add thdilos-fox-origin -y is better
 mcserver add jade --include-optional make sense, but for specifically requested mod that is client_only_server_optional, include them. otherwise, put them into "suggested" mods.
 
 yo the get_project_informations() is broken because moderator_message can be null
+as for every API interface/client, we can instead return parsed (for those who we already know the structure), and then another, extra (just a dict[str, Any]). call the new typeddict, *Data.
