@@ -36,7 +36,7 @@ class FileHashes(TypedDict):
     """No description from Modrinth ;-;"""
 
 
-class VersionFile(TypedDict):
+class File(TypedDict):
     file_hashes: FileHashes
     """A map of hashes of the file. The key is the hashing algorithm and the value is the string version of the hash."""
     download_url: str
@@ -86,5 +86,5 @@ class ProjectVersion(TypedDict):
     """A link to the changelog for this version. Always null, only kept for legacy compatibility."""
     environment: Environment
     """The environment a project or version supports. For an explanation of each environment, see the blog post here: https://modrinth.com/news/article/new-environments/#new-system"""
-    files: list[VersionFile]
+    files: list[File]
     """A list of files available for download for this version"""

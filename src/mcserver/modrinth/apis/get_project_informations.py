@@ -74,30 +74,10 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
             log.warning(f"Unknown server side: {server_side}")
 
         # Lists
-        categories: list[str] = []
-        for category in information["categories"]:
-            categories.append(category)
-
-        additional_categories: list[str] = []
-        for additional_category in information["additional_categories"]:
-            additional_categories.append(additional_category)
-
         environments: list[Environment] = information["environment"]
         for environment in environments:
             if environment not in shared.ENVIRONMENT:
                 log.warning(f"Unknown environment: {environment}")
-
-        game_versions: list[str] = []
-        for game_version in information["game_versions"]:
-            game_versions.append(game_version)
-
-        loader_names: list[str] = []
-        for loader_name in information["loaders"]:
-            loader_names.append(loader_name)
-
-        version_ids: list[str] = []
-        for version_id in information["versions"]:
-            version_ids.append(version_id)
 
         gallery: list[GalleryImage] = []
         for image in information["gallery"]:
@@ -162,12 +142,12 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
             "description": information["body"],
             "project_status": project_status,
             "project_type": project_type,
-            "categories": categories,
-            "additional_categories": additional_categories,
+            "categories": information["categories"],
+            "additional_categories": information["additional_categories"],
             "environments": environments,
-            "game_versions": game_versions,
-            "loader_names": loader_names,
-            "version_ids": version_ids,
+            "game_versions": information["game_versions"],
+            "loader_names": information["loaders"],
+            "version_ids": information["versions"],
             "project_license": project_license,
             "published_time": information["published"],
             "updated_time": information["updated"],

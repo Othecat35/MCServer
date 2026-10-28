@@ -28,16 +28,21 @@ def get_project_versions(
         game_versions = [game_versions]
 
     import json
-    import logging as log
+    import logging
 
     from ... import networking
     from .. import constants, shared
     from ..typings import (
-        VersionDependency,
-        VersionFile,
-        VersionFileHashes,
-        VersionFileType,
+        Dependency,
+        File,
+        FileHashes,
+        FileType,
+        RequestedVersionStatus,
+        VersionStatus,
+        VersionType,
     )
+
+    logger = logging.getLogger(__name__)
 
     query_parameters = {"include_changelog": json.dumps(include_changelog)}
 
@@ -60,9 +65,9 @@ def get_project_versions(
 
     project_versions: list[ProjectVersion] = []
     for version in response["json"]:
-        version_dependencies: list[VersionDependency] = []
+        dependencies: list[Dependency] = []
         for dependency in version.get("dependencies", []):
-            version_dependency: VersionDependency = {
+            version_dependency: Dependency = {
                 "dependency_type": dependency["dependency_type"]
             }
 
@@ -77,13 +82,13 @@ def get_project_versions(
 
             dependencies.append(version_dependency)
 
-        version_files: list[VersionFile] = []
+        files: list[File] = []
         for file in version["files"]:
-            file_type: VersionFileType = file["file_type"]
-            if file_type not in shared.VERSION_FILE_TYPE:
-                log.debug(f"Unknown file type: {file_type}")
+            file_type: FileType = file["file_type"]
+            if file_type not in shared.FILE_TYPE:
+                logger.debug(f"Unknown file type: {file_type}")
 
-            version_file_hashes: VersionFileHashes = {}
+            version_file_hashes: FileHashes = {}
             file_hashes = file["hashes"]
             if "sha512" in file["hashes"]:
                 version_file_hashes["sha512"] = file_hashes["sha512"]
@@ -91,7 +96,7 @@ def get_project_versions(
             if "sha1" in file["hashes"]:
                 version_file_hashes["sha1"] = file_hashes["sha1"]
 
-            version_file: VersionFile = {
+            version_file: File = {
                 "file_hashes": file_hashes,
                 "download_url": file["url"],
                 "file_name": file["filename"],
@@ -102,7 +107,7 @@ def get_project_versions(
             if "file_type" in file:
                 version_file["file_type"] = file["file_type"]
 
-            version_files.append(version_file)
+            files.append(version_file)
 
         project_version: ProjectVersion = {
             "version_id": version["id"],
@@ -111,7 +116,7 @@ def get_project_versions(
             "published_time": version["date_published"],
             "download_count": version["downloads"],
             "environment": version["environment"],
-            "version_files": version_files,
+            "files": files,
         }
 
         if "name" in version:
@@ -130,7 +135,11 @@ def get_project_versions(
             project_version["game_versions"] = version["game_versions"]
 
         if "version_type" in version:
-            project_version["version_type"] = version["version_type"]
+            version_type: VersionType = version["version_type"]
+            if version_type not in shared.VERSION_TYPE:
+                logger.debug(f"Unknown version_type: {version_type}")
+
+            project_version["version_type"] = version_type
 
         if "loaders" in version:
             project_version["loader_names"] = version["loaders"]
@@ -139,10 +148,18 @@ def get_project_versions(
             project_version["is_featured"] = version["featured"]
 
         if "status" in version:
-            project_version["version_status"] = version["status"]
+            version_status: VersionStatus = version["status"]
+            if version_status not in shared.VERSION_STATUS:
+                logger.debug(f"Unknown version_status: {version_status}")
+
+            project_version["version_status"] = version_status
 
         if "requested_status" in version:
-            project_version["requested_version_status"] = version["requested_status"]
+            requested_status_version: RequestedVersionStatus = version["requested_status"]
+            if requested_status_version not in shared.REQUESTED_VERSION_STATUS:
+                logger.info(f"Unknown requested_status_version: {requested_status_version}")
+
+            project_version["requested_version_status"] = requested_status_version
 
         if "changelog_url" in version:
             project_version["changelog_url"] = version["changelog_url"]

@@ -11,11 +11,11 @@ from .project_information import (
 from .project_version import (
     Dependency,
     DependencyType,
+    File,
     FileHashes,
     FileType,
     ProjectVersion,
     RequestedVersionStatus,
-    VersionFile,
     VersionStatus,
     VersionType,
 )
@@ -29,6 +29,7 @@ __all__ = [
     "DonationPlatform",
     "Environment",
     "EnvironmentSide",
+    "File",
     "FileHashes",
     "FileType",
     "GalleryImage",
@@ -43,7 +44,6 @@ __all__ = [
     "RequestedVersionStatus",
     "SearchHit",
     "SearchResult",
-    "VersionFile",
     "VersionStatus",
     "VersionType",
 ]
