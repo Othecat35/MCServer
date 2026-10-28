@@ -353,3 +353,5 @@ look at myterious.py, idk why yiu thought it would be a good idea to make it mor
 mcserver export --client-setup seems nice
 mcserver add thdilos-fox-origin -y is better
 mcserver add jade --include-optional make sense, but for specifically requested mod that is client_only_server_optional, include them. otherwise, put them into "suggested" mods.
+
+yo the get_project_informations() is broken because moderator_message can be null
