@@ -9,12 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Working `show` command
 - New `--game-version` and `--loader` options to the `search` command
 - New `--search-sort` and `--search-limit` options to the `init` command
-- 
 
 ### Changed
 
+- Moved `slug_index.json` to global `.mcserver` cache
+- More information that the `show` command output
 - Better `search` info message
 - slug_index.json is now a global cache
 

@@ -31,6 +31,7 @@ Supported platforms:
 ## Usage
 - Initialize a server: `mcserver init [options]`
 - List operator players: `mcserver op list`
+- Show information about projects: `mcserver show <projects>`
 - Start the server: `mcserver start`
 - Stop the server: `mcserver stop`
 - List whitelisted players: `mcserver whitelist list`
