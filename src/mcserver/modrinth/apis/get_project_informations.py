@@ -125,14 +125,6 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
         if "url" in information_license:
             project_license["license_url"] = information_license["url"]
 
-        moderator_message: ModeratorMessage = {}
-        information_moderator_message = information["moderator_message"]
-        if "message" in information_moderator_message:
-            moderator_message["message"] = information_moderator_message["message"]
-
-        if "body" in information_moderator_message:
-            moderator_message["body"] = information_moderator_message["body"]
-
         # Construction
         project_information: ProjectInformation = {
             "project_id": information["id"],
@@ -203,6 +195,16 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
             project_information["body_url"] = information["body_url"]
 
         if "moderator_message" in information:
+            moderator_message: ModeratorMessage | None = None
+            if information["moderator_message"] is not None:
+                moderator_message = {}
+                information_moderator_message = information["moderator_message"]
+                if "message" in information_moderator_message:
+                    moderator_message["message"] = information_moderator_message["message"]
+
+                if "body" in information_moderator_message:
+                    moderator_message["body"] = information_moderator_message["body"]
+
             project_information["moderator_message"] = moderator_message
 
         project_informations.append(project_information)

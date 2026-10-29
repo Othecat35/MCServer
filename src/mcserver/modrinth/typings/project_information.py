@@ -135,5 +135,5 @@ class ProjectInformation(TypedDict):
     """Deprecated - use environment instead."""
     body_url: NotRequired[str | None]
     """Deprecated - The link to the long description of the project. Always null, only kept for legacy compatibility."""
-    moderator_message: NotRequired[ModeratorMessage]
+    moderator_message: NotRequired[ModeratorMessage | None]
     """Deprecated - A message that a moderator sent regarding the project"""

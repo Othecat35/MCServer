@@ -9,7 +9,7 @@ from .print_help import main as print_help
 from .remove_projects import main as remove_projects
 from .search import search
 from .server_status import main as server_status
-from .show_projects import main as show_projects
+from .show import show
 from .start import start
 from .stop_server import main as stop_server
 from .update_projects import main as update_projects
@@ -29,7 +29,7 @@ __all__ = [
     "remove_projects",
     "search",
     "server_status",
-    "show_projects",
+    "show",
     "start",
     "stop_server",
     "update_projects",
