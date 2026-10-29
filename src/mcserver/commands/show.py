@@ -32,6 +32,14 @@ def show(args: Namespace) -> int:
             readable_categories.append(category.replace("-", " ").title())
         print(f"{pluralize("Category", len(categories))}: {', '.join(readable_categories)}")
 
+        if "additional_categories" in project_information:
+            additional_categories = project_information["additional_categories"]
+            readable_additional_categories: list[str] = []
+            for additional_category in additional_categories:
+                readable_additional_categories.append(additional_category.replace("-", " ").title())
+            print(f"Additional {pluralize("Category", len(additional_categories))}: {', '.join(readable_additional_categories)}")
+
+
         loader_names = project_information["loader_names"]
         loaders: list[str] = []
         for loader in loader_names:
@@ -47,7 +55,32 @@ def show(args: Namespace) -> int:
             readable_environments.append(shared.project_environment_name(environment))
         print(f"{pluralize("Environment", len(environments))}: {', '.join(readable_environments)}")
 
+        project_license = project_information["project_license"]
+        license_string = ""
+        if "license_name" in project_license:
+            license_string = project_license["license_name"]
+
+        if "license_id" in project_license:
+            if license_string != "":
+                license_string += f"({project_license['license_id']})"
+            else:
+                license_string = project_license["license_id"]
+        print(f"License: {license_string}")
+
         print(f"Homepage: https://modrinth.com/{project_information["project_type"]}/{slug_or_id}")
+
+        if "source_url" in project_information:
+            print(f"Source Code: {project_information["source_url"]}")
+
+        if "issues_url" in project_information:
+            print(f"Issues: {project_information["issues_url"]}")
+
+        if "wiki_url" in project_information:
+            print(f"Wiki: {project_information["wiki_url"]}")
+
+        if "discord_url" in project_information:
+            print(f"Discord: {project_information["discord_url"]}")
+
         print(f"Description: {project_information["short_description"]}")
 
     return 0
