@@ -11,14 +11,14 @@ def main() -> int:
         def parse(cli_string: str) -> int:
             try:
                 integer = int(cli_string)
-            except TypeError:
+            except ValueError:
                 raise argparse.ArgumentTypeError(f"{cli_string} is not an integer")
 
-            if integer <= min_integer:
+            if integer < min_integer:
                 raise argparse.ArgumentTypeError(
                     f"{integer} must be higher than or equal to {min_integer}"
                 )
-            if max_integer is not None and integer >= max_integer:
+            if max_integer is not None and integer > max_integer:
                 raise argparse.ArgumentTypeError(
                     f"{integer} must be between {min_integer} and {max_integer} (inclusive)"
                 )
@@ -83,9 +83,9 @@ def main() -> int:
 
                 return server_status(args)
             case "stop":
-                from .commands import stop_server
+                from .commands import stop
 
-                return stop_server(args)
+                return stop(args)
             case "update":
                 from .commands import update_projects
 
@@ -194,8 +194,8 @@ def main() -> int:
     init_command.add_argument(
         "--min-ram",
         default=512,
-        type=bound_int(1024),
-        help="Minimum RAM for the server (in MebiBytes) (minimum value: 1024)",
+        type=bound_int(512),
+        help="Minimum RAM for the server (in MebiBytes) (minimum value: 512)",
         metavar="Size",
     )
 
@@ -349,6 +349,7 @@ def main() -> int:
 
     stop_command.set_defaults(command_name="stop")
 
+    # update is not going to be implemented in this version
     # 'whitelist' command
     whitelist_command = commands.add_parser(
         "whitelist",

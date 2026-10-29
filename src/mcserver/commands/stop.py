@@ -1,22 +1,14 @@
 from argparse import Namespace
 
 
-def main(args: Namespace) -> int:
-    # CLI arguments
-    force_stop: bool = args.force_stop
-
+def stop(args: Namespace) -> int:
     import logging as log
     import os
     from signal import SIGTERM
 
     from .. import state
 
-    try:
-        current_state = state.get_state()
-    except FileNotFoundError:
-        log.error(f"File '{state.state_file}' not found; MCServer not initialized.")
-        return 1
-
+    current_state = state.get_state()
     if not current_state["is_active"]:
         log.error("Server is not running.")
         return 1

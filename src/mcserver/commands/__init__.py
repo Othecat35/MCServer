@@ -11,7 +11,7 @@ from .search import search
 from .server_status import main as server_status
 from .show import show
 from .start import start
-from .stop_server import main as stop_server
+from .stop import stop
 from .update_projects import main as update_projects
 from .whitelist_add import main as whitelist_add
 from .whitelist_list import main as whitelist_list

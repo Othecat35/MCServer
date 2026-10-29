@@ -27,6 +27,15 @@ def init(args: Namespace) -> int:
         log.error("Minimum RAM cannot be larger than maximum RAM")
         return 1
 
+    # Is first initializing
+    is_first_initialize = not metadata_file.exists()
+
+    if not is_first_initialize:
+        log.info("Server is already initialized, exiting...")
+        return 1
+
+    shared.set_loader_context(loader_name)
+
     # Special loader version
     if loader_name == "vanilla":
         loader_version = None
@@ -62,14 +71,14 @@ def init(args: Namespace) -> int:
                 log.info(f"Latest Fabric loader version is: {loader_version}")
             # case "legacy_fabric":
             #     pass
-            # case "quilt":
-            #     log.info("Fetching the latest version for Quilt Loader...")
-            #     from ..quiltmc import meta as quiltmc_meta
+            case "quilt":
+                log.info("Fetching the latest version for Quilt Loader...")
+                from ..quiltmc import meta as quiltmc_meta
 
-            #     loader_versions = quiltmc_meta.get_loader_versions()
-            #     latest_quilt_version = loader_versions[0]
-            #     loader_version = str(latest_quilt_version["loader_version"])
-            #     log.info(f"Latest Quilt loader version is: {loader_version}")
+                loader_versions = quiltmc_meta.get_loader_versions()
+                latest_quilt_version = loader_versions[0]
+                loader_version = str(latest_quilt_version["loader_version"])
+                log.info(f"Latest Quilt loader version is: {loader_version}")
             # Plugin Loader
             case "paper":
                 log.info("Fetching the latest version for Paper...")
@@ -98,10 +107,6 @@ def init(args: Namespace) -> int:
             log.error("No stable version found")
             return 1
 
-    # Is first initializing
-    is_first_initialize = not metadata_file.exists()
-    shared.set_loader_context(loader_name)
-
     shared.mcserver_dir.mkdir(exist_ok=True)
     state.set_state("initializing_server")
 
@@ -111,7 +116,7 @@ def init(args: Namespace) -> int:
         shared.loader_context["project_directory"].mkdir(exist_ok=True)
 
     # Write configuration to file
-    for config_name in shared.default_configs.keys():
+    for config_name in shared.default_configs:
         configuration = shared.default_configs[config_name]
         default_config = copy.deepcopy(configuration["config_data"])
 
@@ -145,10 +150,7 @@ def init(args: Namespace) -> int:
                     f"Configuration for '{config_name}' already exist, skipping..."
                 )
 
-    if is_first_initialize:
-        set_metadata(__version__)
-        log.info("Initialized server configurations.")
-    else:
-        log.info("Reinitialized server configurations.")
+    set_metadata(__version__)
+    log.info("Initialized server configurations.")
 
     return 0
