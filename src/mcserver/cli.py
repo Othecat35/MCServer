@@ -71,13 +71,13 @@ def main() -> int:
 
                 return search(args)
             case "show":
-                from .commands import show_projects
+                from .commands import show
 
-                return show_projects(args)
+                return show(args)
             case "start":
-                from .commands import start_server
+                from .commands import start
 
-                return start_server(args)
+                return start(args)
             case "status":
                 from .commands import server_status
 
