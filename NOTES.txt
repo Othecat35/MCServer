@@ -356,3 +356,28 @@ mcserver add jade --include-optional make sense, but for specifically requested 
 
 yo the get_project_informations() is broken because moderator_message can be null
 as for every API interface/client, we can instead return parsed (for those who we already know the structure), and then another, extra (just a dict[str, Any]). call the new typeddict, *Data.
+
+About lazy loading imports... what if I make it so that imports that are required regardless, just
+import it on the module instead? because if you do import it, you must have a reason to do so. Like,
+you don't import a module and not use it at all, right? so just move the imports outside the function.
+init.py:
+import argparse
+
+def init(args: argparse.Namespace):
+    import logging
+    ...
+
+
+init.py:
+import argparse
+import logging
+
+def init(args: argparse.Namespace):
+    ...
+
+so, if you import init, you of course want to run init() right? so lazy-laoding it is not just useless,
+it also make the code a bit more unreadable.
+When do we lazy-loading stuff? imports that aren't always needed. Like command invocation in cli.py
+with match case, because you don't need any to print the help message (except the help command itself),
+or if you did, like init, you don't neccesearily need to import the stop command right? and also other
+case is in init.py and start.pt. it import the appropriate loader and not other.
