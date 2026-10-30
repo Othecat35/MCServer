@@ -381,3 +381,8 @@ When do we lazy-loading stuff? imports that aren't always needed. Like command i
 with match case, because you don't need any to print the help message (except the help command itself),
 or if you did, like init, you don't neccesearily need to import the stop command right? and also other
 case is in init.py and start.pt. it import the appropriate loader and not other.
+
+hmmm yes, global .mcserver config, just like cache.
+it can be the default config of all your new Minecraft server derived from
+and yea
+
