@@ -3,7 +3,9 @@
 from typing import Literal, NotRequired, TypedDict, get_args
 
 from .typings import (
+    AllProjectType,
     DependencyType,
+    DisclosureType,
     Environment,
     EnvironmentSide,
     FileType,
@@ -74,7 +76,9 @@ search_sort_index: list[str] = [
     "updated",
 ]
 
+ALL_PROJECT_TYPE: frozenset[str] = frozenset(get_args(AllProjectType.__value__))
 DEPENDENCY_TYPE: frozenset[str] = frozenset(get_args(DependencyType.__value__))
+DISCLOSURE_TYPE: frozenset[str] = frozenset(get_args(DisclosureType.__value__))
 ENVIRONMENT: frozenset[str] = frozenset(get_args(Environment.__value__))
 ENVIRONMENT_SIDE: frozenset[str] = frozenset(get_args(EnvironmentSide.__value__))
 MONETIZATION_STATUS: frozenset[str] = frozenset(get_args(MonetizationStatus.__value__))

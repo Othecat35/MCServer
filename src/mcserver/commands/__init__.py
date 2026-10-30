@@ -31,7 +31,7 @@ __all__ = [
     "server_status",
     "show",
     "start",
-    "stop_server",
+    "stop",
     "update_projects",
     "whitelist_add",
     "whitelist_list",

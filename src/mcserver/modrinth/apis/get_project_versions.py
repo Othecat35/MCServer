@@ -155,9 +155,13 @@ def get_project_versions(
             project_version["version_status"] = version_status
 
         if "requested_status" in version:
-            requested_status_version: RequestedVersionStatus = version["requested_status"]
+            requested_status_version: RequestedVersionStatus = version[
+                "requested_status"
+            ]
             if requested_status_version not in shared.REQUESTED_VERSION_STATUS:
-                logger.info(f"Unknown requested_status_version: {requested_status_version}")
+                logger.info(
+                    f"Unknown requested_status_version: {requested_status_version}"
+                )
 
             project_version["requested_version_status"] = requested_status_version
 

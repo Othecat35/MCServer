@@ -19,13 +19,14 @@ from .project_version import (
     VersionStatus,
     VersionType,
 )
-from .search_projects import AllProjectType, SearchHit, SearchResult
+from .search_projects import AllProjectType, DisclosureType, SearchHit, SearchResult
 from .shared import Environment, EnvironmentSide, ProjectType
 
 __all__ = [
     "AllProjectType",
     "Dependency",
     "DependencyType",
+    "DisclosureType",
     "DonationPlatform",
     "Environment",
     "EnvironmentSide",

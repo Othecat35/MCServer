@@ -55,7 +55,6 @@ def _load_slug_index() -> None:
 def is_index_outdated(project_slug: str) -> bool:
     _load_slug_index()
 
-    global _slug_index
     if _slug_index is None:
         log.debug(
             "Slug index is 'None'"

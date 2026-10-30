@@ -200,7 +200,9 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
                 moderator_message = {}
                 information_moderator_message = information["moderator_message"]
                 if "message" in information_moderator_message:
-                    moderator_message["message"] = information_moderator_message["message"]
+                    moderator_message["message"] = information_moderator_message[
+                        "message"
+                    ]
 
                 if "body" in information_moderator_message:
                     moderator_message["body"] = information_moderator_message["body"]
