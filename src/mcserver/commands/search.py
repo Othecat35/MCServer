@@ -10,6 +10,7 @@ from ..shared import (
     format_number,
     pluralize,
     project_environment_name,
+    loader_context,
     set_loader_context,
 )
 
@@ -72,10 +73,33 @@ def search(args: Namespace) -> int:
         logger.error("sort_index is None (somehow, really!)")
         return 1
 
-    search_offset = search_limit * (page_number - 1)
-    search_facets = []
+    if loader_name is None:
+        logger.error("sort_index is None (somehow, really!)")
+        return 1
 
-    search_result = modrinth_apis.search_projects(search_query, search_facets, sort_index, search_offset, search_limit)
+    shared.set_loader_context(loader_name)
+    if shared.loader_context["project_label"] is None:
+        logger.error("project_label is None (somehow, really!)")
+        return 1
+
+    search_offset = search_limit * (page_number - 1)
+    search_facets = [["environment!=singleplayer_only"]]
+
+    if shared.loader_context["project_label"] != "project":
+        search_facets.append([f"project_type:{shared.loader_context["project_label"]}"])
+
+    if game_version is not None:
+        search_facets.append([f"versions:{game_version}"])
+
+    if loader_name is not None:
+        search_facets.append([f"categories:{loader_name}"])
+
+    search_info = f"Searching {pluralize(shared.loader_context["project_label"], search_limit)}"
+    if search_query:
+        search_info += f" for {' '.join(search_query)}"
+
+    logger.info(search_info)
+    #search_result = modrinth_apis.search_projects(search_query, search_facets, sort_index, search_offset, search_limit)
 
     for search_hit in search_result["search_hits"]:
         slug_or_id = search_hit.get("project_slug", search_hit["project_id"])

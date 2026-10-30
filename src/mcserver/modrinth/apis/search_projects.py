@@ -25,7 +25,7 @@ class SearchProjectsError(Exception):
 
 def search_projects(
     search_query: str | list[str] | None = None,
-    search_facets: list[list[list[str] | str]] | None = None,
+    search_facets: list[list[str]] | None = None,
     sort_index: SearchSortIndex = "relevance",
     search_offset: int = 0,
     search_limit: int = 10,
