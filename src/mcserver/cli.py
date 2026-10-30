@@ -273,7 +273,6 @@ def main() -> int:
 
     search_command.add_argument(
         "--limit",
-        default=20,
         type=bound_int(1, 100),
         help="Search projects per page (value between (inclusive): 1-100)",
         metavar="Number",
@@ -290,13 +289,11 @@ def main() -> int:
     )
 
     search_command.add_argument(
-        "--sort",
-        default="relevance",
+        "--sort-index",
         type=str,
         choices=search_sort_index,
         help="Sort by index",
         metavar="Index",
-        dest="sort_index",
     )
 
     search_command.add_argument(

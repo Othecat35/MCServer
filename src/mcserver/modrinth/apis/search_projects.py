@@ -30,7 +30,7 @@ def search_projects(
     search_offset: int = 0,
     search_limit: int = 10,
 ) -> SearchResult:
-    """Search projectsh["client_s
+    """Search projects
 
     Args:
         search_query: The query to search for
