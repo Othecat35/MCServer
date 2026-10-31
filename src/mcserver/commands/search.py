@@ -1,20 +1,22 @@
 import logging
+import math
 from argparse import Namespace
 
 from mcserver import paths
 
-from .. import config, shared
+from .. import config
 from ..modrinth import apis as modrinth_apis
 from ..modrinth.shared import SearchSortIndex
 from ..shared import (
+    default_configs,
     format_number,
+    get_loader_context,
     pluralize,
     project_environment_name,
-    loader_context,
-    set_loader_context,
 )
 
 logger = logging.getLogger(__name__)
+
 
 def search(args: Namespace) -> int:
     search_query: list[str] = args.search_query
@@ -26,40 +28,60 @@ def search(args: Namespace) -> int:
     loader_name: str | None = args.loader_name
 
     if search_limit is None or sort_index is None:
-        modrinth_default_config = shared.default_configs["modrinth"]
+        modrinth_default_config = default_configs["modrinth"]
         modrinth_config_path = paths.configs_dir / "modrinth.json"
 
         if search_limit is None:
             search_limit = modrinth_default_config["config_data"]["search_limit"]
-            logger.debug(f"search_limit is set to default modrinth configuration: {search_limit}")
+            logger.debug(
+                f"search_limit is set to default modrinth configuration: {search_limit}"
+            )
 
         if sort_index is None:
             sort_index = modrinth_default_config["config_data"]["sort_index"]
-            logger.debug(f"sort_index is set to default modrinth configuration: {sort_index}")
+            logger.debug(
+                f"sort_index is set to default modrinth configuration: {sort_index}"
+            )
 
         if modrinth_config_path.exists():
-            modrinth_config = config.read_config("modrinth", modrinth_default_config["format_version"])
+            modrinth_config = config.read_config(
+                "modrinth", modrinth_default_config["format_version"]
+            )
             if search_limit is None and "search_limit" in modrinth_config:
                 search_limit = modrinth_config["search_limit"]
-                logger.debug(f"search_limit is set to modrinth configuration file: {search_limit}")
+                logger.debug(
+                    f"search_limit is set to modrinth configuration file: {search_limit}"
+                )
 
             if sort_index is None and "sort_index" in modrinth_config:
                 sort_index = modrinth_config["sort_index"]
-                logger.debug(f"sort_index is set to modrinth configuration file: {sort_index}")
+                logger.debug(
+                    f"sort_index is set to modrinth configuration file: {sort_index}"
+                )
 
     if game_version is None or loader_name is None:
-        server_default_config = shared.default_configs["server"]
+        server_default_config = default_configs["server"]
         server_config_path = paths.configs_dir / "server.json"
 
         if server_config_path.exists():
-            server_config = config.read_config("server", server_default_config["format_version"])
+            server_config = config.read_config(
+                "server", server_default_config["format_version"]
+            )
             if game_version is None and "game_version" in server_config:
                 game_version = server_config["game_version"]
-                logger.debug(f"game_version is set to server configuration file: {game_version}")
+                logger.debug(
+                    f"game_version is set to server configuration file: {game_version}"
+                )
 
-            if loader_name is None and "loader" in server_config and "name" in server_config["loader"]:
+            if (
+                loader_name is None
+                and "loader" in server_config
+                and "name" in server_config["loader"]
+            ):
                 loader_name = server_config["loader"]["name"]
-                logger.debug(f"loader_name is set to server configuration file: {loader_name}")
+                logger.debug(
+                    f"loader_name is set to server configuration file: {loader_name}"
+                )
 
     if no_version:
         game_version = None
@@ -81,16 +103,13 @@ def search(args: Namespace) -> int:
         logger.error("Vanilla does not support mods or plugin.")
         return 1
 
-    shared.set_loader_context(loader_name)
-    if shared.loader_context["project_label"] is None:
-        logger.error("project_label is None (somehow, really!)")
-        return 1
+    project_label, _ = get_loader_context(loader_name)
 
     search_offset = search_limit * (page_number - 1)
-    search_facets = [["environment!=singleplayer_only"]]
-
-    if shared.loader_context["project_label"] != "project":
-        search_facets.append([f"project_type:{shared.loader_context["project_label"]}"])
+    search_facets = [
+        [f"project_type:{project_label}"],
+        ["environment!=singleplayer_only"],
+    ]
 
     if game_version is not None:
         search_facets.append([f"versions:{game_version}"])
@@ -106,8 +125,7 @@ def search(args: Namespace) -> int:
     # Searching for mod for Minecraft 1.20.1, Fabric sorted by relevance...
     # Wait, I don't really support datapack for now. no searching for vanilla lol
 
-
-    search_info = f"Searching {pluralize(shared.loader_context["project_label"], search_limit)}"
+    search_info = f"Searching {pluralize(project_label, search_limit)}"
     if search_query:
         search_info += f" with '{' '.join(search_query)}'"
 
@@ -118,86 +136,55 @@ def search(args: Namespace) -> int:
 
     if loader_name:
         search_info += f" {loader_name.capitalize()}"
-    
+
     search_info += f" sorted by {sort_index}..."
 
     logger.info(search_info)
-    #search_result = modrinth_apis.search_projects(search_query, search_facets, sort_index, search_offset, search_limit)
+    search_result = modrinth_apis.search_projects(
+        search_query, search_facets, sort_index, search_offset, search_limit
+    )
 
-    for search_hit in search_result["search_hits"]:
-        slug_or_id = search_hit.get("project_slug", search_hit["project_id"])
-        print(f"{search_hit['project_name']} ({slug_or_id}) by {search_hit['author_username']}")
+    total_hits = search_result["total_hits"]
+    total_pages = math.ceil(total_hits / search_limit)
 
-    # server_config = {}
+    search_hits = search_result["search_hits"]
 
-    # if not (loader_name and game_version):
-    #     try:
-    #         server_config = config.read_config("server", 1)
-    #     except FileNotFoundError:
-    #         pass  # ignore because it doesn't really need the config. just as "personalization" per server
+    if page_number > total_pages:
+        logger.error(
+            f"Page number is larger than total pages of {total_pages} available"
+        )
+        return 1
 
-    # game_version = game_version or server_config.get("game_version", "")
-    # loader_name = loader_name or server_config.get("loader", {}).get("name", "")
+    if search_result["total_hits"] == 0:
+        logger.error(f"No {project_label} found.")
+        return 1
 
-    # if no_version:
-    #     game_version = ""
+    logger.info(
+        f"Showing {len(search_hits)} {pluralize(project_label, len(search_hits))} out of {total_hits:,} {pluralize(project_label, total_hits)} (Page {page_number} out of {total_pages})"
+    )
 
-    # if not loader_name:
-    #     loader_name = "vanilla"
-    # elif loader_name != "vanilla":
-    #     set_loader_context(loader_name)
+    for count, hit in enumerate(search_hits):
+        slug_or_id = hit["project_slug"] if "project_slug" in hit else hit["project_id"]
+        project_author = f"by {hit['author_username']}"
 
-    # search_offset = search_limit * (page_number - 1)
+        environments = hit["environments"]
+        readable_environments: list[str] = []
+        for environment in environments:
+            readable_environments.append(project_environment_name(environment))
 
-    # search_info = f"Searching {pluralize(shared.loader_context['project_label'])}"
+        print(
+            f"{hit['project_name']} ({slug_or_id}) {project_author}"
+        )
+        print(f"> Downloads: {format_number(hit['download_count'])} | Follows: {format_number(hit['follower_count'])}")
+        print(
+            f"> {', '.join(readable_environments)}"
+        )
+        print(f"> https://modrinth.com/{hit['project_type']}/{slug_or_id}")
+        print(
+            hit["short_description"]
+        )
 
-    # if search_query:
-    #     search_info += f" with '{' '.join(search_query)}'"
-
-    # search_info += f" for {loader_name.capitalize()}"
-
-    # if game_version:
-    #     search_info += f", Minecraft {game_version}"
-
-    # search_info += f", sorted by {sort_index}"
-
-    # log.info(search_info + "...")
-    # search_result = search_projects(
-    #     search_query=search_query,
-    #     sort_index=sort_index,
-    #     search_limit=search_limit,
-    #     search_offset=search_offset,
-    # )
-
-    # search_hits = search_result["search_hits"]
-    # if len(search_hits) == 0:
-    #     log.error(f"No {shared.loader_context['project_label']} found.")
-
-    # for count, hit in enumerate(search_hits):
-    #     slug_or_id = hit["project_slug"] if "project_slug" in hit else hit["project_id"]
-    #     project_author = wrap_ansi(f"by {hit['author_username']}", "gray")
-
-    #     project_environments = []
-    #     if len(hit["project_environments"]) == 0:
-    #         project_environments.append("No environment")
-    #     else:
-    #         for project_environment in hit["project_environments"]:
-    #             project_environments.append(
-    #                 project_environment_name(project_environment)
-    #             )
-
-    #     print(
-    #         f"{wrap_ansi(hit['project_name'], 'bold')} ({slug_or_id}) {project_author}"
-    #     )
-    #     print(
-    #         f"> {', '.join(project_environments)} | Downloads: {format_number(hit['download_count'])} | Follows: {format_number(hit['follow_count'])}"
-    #     )
-    #     print(f"> https://modrinth.com/{hit['project_type']}/{slug_or_id}")
-    #     print(
-    #         wrap_string(hit["short_description"], initial_indent=2, subsequent_indent=1)
-    #     )
-
-    #     if (count + 1) < len(search_hits):
-    #         print()  # Print newline for readability
+        if (count + 1) < len(search_hits):
+            print()  # Print newline for readability
 
     return 0
