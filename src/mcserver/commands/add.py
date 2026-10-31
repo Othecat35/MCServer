@@ -27,6 +27,10 @@ def add(args: Namespace) -> int:
         logger.error("Vanilla does not support mod or plugin.")
         return 1
 
+    project_ids: list[str] = []
+    for project in projects:
+        modrinth_apis.get_project_versions(project, loader_name, game_version)
+
     def get_dependencies(project_id: str) -> dict[str, int]:
         dependencies: list[Dependency] = []
         if project_records.record_exists(project_id):
