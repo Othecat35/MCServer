@@ -5,11 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.0.0] - 2026-10-31
 
 ### Added
 
 - Working `show` command
+- Working `search` command
 - New `--game-version` and `--loader` options to the `search` command
 - New `--search-sort` and `--search-limit` options to the `init` command
 
@@ -214,7 +215,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased]: https://github.com/Othecat35/MCServer/compare/v3.0.0...HEAD
+[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/Othecat35/MCServer/compare/v3.0.0...v4.0.0
 [3.0.0]: https://github.com/Othecat35/MCServer/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/Othecat35/MCServer/compare/v1.13.16...v2.0.0
 [1.13.16]: https://github.com/Othecat35/MCServer/compare/v1.13.15...v1.13.16

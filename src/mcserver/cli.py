@@ -135,28 +135,6 @@ def main() -> int:
 
     commands = parser.add_subparsers(title="Commands")
 
-    # 'add' command
-    add_command = commands.add_parser(
-        "add",
-        help="Add Modrinth projects to the server",
-        description="Add Modrinth mods/plugins to the server",
-    )
-
-    add_command.set_defaults(command_name="add")
-    add_command.add_argument(
-        "projects", nargs="+", type=str, help="Modrinth project slugs or IDs"
-    )
-
-    # 'import' command
-    import_command = commands.add_parser(
-        "import",
-        help="Import a Modrinth modpack",
-        description="Import a Modrinth modpack from a file.",
-    )
-
-    import_command.set_defaults(command_name="import")
-    import_command.add_argument("file", type=str, help="The Modrinth modpack file")
-
     # 'init' command
     init_command = commands.add_parser(
         "init",
@@ -226,13 +204,6 @@ def main() -> int:
         dest="sort_index",
     )
 
-    # 'list' command
-    list_command = commands.add_parser(
-        "list", help="List all added projects", description="List all added projects."
-    )
-
-    list_command.set_defaults(command_name="list")
-
     # 'op' command
     op_command = commands.add_parser(
         "op", help="Manage operator players", description="Manage the operator status."
@@ -248,16 +219,6 @@ def main() -> int:
     )
 
     op_list_command.set_defaults(command_name="op_list")
-
-    # 'remove' command
-    remove_command = commands.add_parser(
-        "remove", help="Remove projects", description="Remove projects"
-    )
-
-    remove_command.set_defaults(command_name="remove")
-    remove_command.add_argument(
-        "projects", nargs="+", type=str, help="Modrinth project slugs or IDs"
-    )
 
     # 'search' command
     search_command = commands.add_parser(

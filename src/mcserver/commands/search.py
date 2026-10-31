@@ -178,7 +178,7 @@ def search(args: Namespace) -> int:
         )
         print(f"> https://modrinth.com/{hit['project_type']}/{slug_or_id}")
         print(
-            hit["short_description"]
+            f"  {hit['short_description']}"
         )
 
         if (count + 1) < len(search_hits):
