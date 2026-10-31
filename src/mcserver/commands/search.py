@@ -107,7 +107,7 @@ def search(args: Namespace) -> int:
     # Wait, I don't really support datapack for now. no searching for vanilla lol
 
 
-    search_info = f"Searching for {pluralize(shared.loader_context["project_label"], search_limit)}"
+    search_info = f"Searching {pluralize(shared.loader_context["project_label"], search_limit)}"
     if search_query:
         search_info += f" with '{' '.join(search_query)}'"
 
@@ -119,7 +119,7 @@ def search(args: Namespace) -> int:
     if loader_name:
         search_info += f" {loader_name.capitalize()}"
     
-    search_info += f" sorted by {sort_index}"
+    search_info += f" sorted by {sort_index}..."
 
     logger.info(search_info)
     #search_result = modrinth_apis.search_projects(search_query, search_facets, sort_index, search_offset, search_limit)
