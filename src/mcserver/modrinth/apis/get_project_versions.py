@@ -85,7 +85,7 @@ def get_project_versions(
         files: list[File] = []
         for file in version["files"]:
             file_type: FileType = file["file_type"]
-            if file_type not in shared.FILE_TYPE:
+            if file_type is not None and file_type not in shared.FILE_TYPE:
                 logger.debug(f"Unknown file type: {file_type}")
 
             version_file_hashes: FileHashes = {}
@@ -158,7 +158,7 @@ def get_project_versions(
             requested_status_version: RequestedVersionStatus = version[
                 "requested_status"
             ]
-            if requested_status_version not in shared.REQUESTED_VERSION_STATUS:
+            if requested_status_version is not None and requested_status_version not in shared.REQUESTED_VERSION_STATUS:
                 logger.info(
                     f"Unknown requested_status_version: {requested_status_version}"
                 )

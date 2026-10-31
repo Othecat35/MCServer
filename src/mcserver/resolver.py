@@ -37,6 +37,8 @@ class Project(TypedDict):
 class ProjectData(TypedDict):
     project_id: str
     is_manual: bool
+    highest_type: NotRequired[DependencyType]
+    """Not present if the project is manual and has not dependents"""
     dependencies: list[Dependency]
     dependents: list[Dependency]
 
@@ -54,9 +56,9 @@ def human_to_resolver(dependencies: list[Dependency]) -> dict[str, int]:
 
 def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]:
     projects: list[ProjectData] = []
-    for project_id, project_data in dependency_graph.items():
+    for project_id, project in dependency_graph.items():
         dependencies: list[Dependency] = []
-        for dependency_id, dependency_type in project_data["dependencies"].items():
+        for dependency_id, dependency_type in project["dependencies"].items():
             dependency: Dependency = {
                 "project_id": dependency_id,
                 "dependency_type": dependency_types2[dependency_type],
@@ -65,7 +67,7 @@ def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]
             dependencies.append(dependency)
 
         dependents: list[Dependency] = []
-        for dependency_id, dependency_type in project_data["dependents"].items():
+        for dependency_id, dependency_type in project["dependents"].items():
             dependent: Dependency = {
                 "project_id": dependency_id,
                 "dependency_type": dependency_types2[dependency_type],
@@ -73,14 +75,19 @@ def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]
 
             dependents.append(dependent)
 
-        project: ProjectData = {
+        project_data: ProjectData = {
             "project_id": project_id,
-            "is_manual": project_data["is_manual"],
+            "is_manual": project["is_manual"],
             "dependencies": dependencies,
             "dependents": dependents,
         }
 
-        projects.append(project)
+        if "highest_type" in project:
+            project_data["highest_type"] = dependency_types2[
+                project["highest_type"]
+            ]
+
+        projects.append(project_data)
 
     return projects
 
@@ -91,15 +98,15 @@ def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]
 
 def resolve_dependencies(
     project_ids: list[str] | str,
-    process_filter: Callable[[int], bool],
     get_dependencies: Callable[[str], dict[str, int]],
+    process_filter: Callable[[int], bool],
 ) -> dict[str, Project]:
     """Resolve dependency tree using BFS
 
     Args:
         project_ids: Projects to start with
-        process_filter: Callback that returns a bool
         get_dependencies: Callback that returns a dictionary
+        process_filter: Callback that returns a bool
     """
     if isinstance(project_ids, str):
         project_ids = [project_ids]
@@ -213,8 +220,8 @@ def main():
                     "jade",
                     "just-enough-resources-jer",
                 ],
-                required_only,
                 test_dependencies,
+                required_only,
             ),
             indent=2,
         )

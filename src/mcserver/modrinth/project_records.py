@@ -40,6 +40,9 @@ class ProjectRecordData(ProjectRecordPayload):
     format_version: int
 
 
+def record_exists(project_id: str) -> bool:
+    return (project_records_dir / f"{project_id}.json").exists()
+
 def write_record(project_id: str, record_payload: ProjectRecordPayload) -> None:
     """Write a record for a project record (create a new record or overwrite it)
     Args:

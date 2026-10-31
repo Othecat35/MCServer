@@ -1,4 +1,4 @@
-from .add_projects import main as add_projects
+from .add import add
 from .import_setup import main as import_setup
 from .init import init
 from .list_projects import main as list_projects
@@ -18,7 +18,7 @@ from .whitelist_list import main as whitelist_list
 from .whitelist_remove import main as whitelist_remove
 
 __all__ = [
-    "add_projects",
+    "add",
     "import_setup",
     "init",
     "list_projects",

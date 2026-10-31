@@ -5,6 +5,7 @@ home_dir = Path.home()
 current_dir = Path.cwd()
 
 mcserver_dir = current_dir / ".mcserver"
+metadata_file = mcserver_dir / "metadata.json"
 configs_dir = mcserver_dir / "configs"
 
 mods_dir = current_dir / "mods"

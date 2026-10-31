@@ -31,9 +31,9 @@ def main() -> int:
 
         match command_name:
             case "add":
-                from .commands import add_projects
+                from .commands import add
 
-                return add_projects(args)
+                return add(args)
             case "import":
                 from .commands import import_setup
 
