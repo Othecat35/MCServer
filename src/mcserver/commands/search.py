@@ -125,7 +125,8 @@ def search(args: Namespace) -> int:
     if search_query:
         search_info += f" with '{' '.join(search_query)}'"
 
-    search_info += " for"
+    if game_version or loader_name:
+        search_info += " for"
 
     if game_version:
         search_info += f" Minecraft {game_version},"
