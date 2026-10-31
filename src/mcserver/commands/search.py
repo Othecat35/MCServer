@@ -95,10 +95,6 @@ def search(args: Namespace) -> int:
         logger.error("sort_index is None (somehow, really!)")
         return 1
 
-    if loader_name is None:
-        logger.error("sort_index is None (somehow, really!)")
-        return 1
-
     if loader_name == "vanilla":
         logger.error("Vanilla does not support mods or plugin.")
         return 1
@@ -107,7 +103,6 @@ def search(args: Namespace) -> int:
 
     search_offset = search_limit * (page_number - 1)
     search_facets = [
-        [f"project_type:{project_label}"],
         ["environment!=singleplayer_only"],
     ]
 
@@ -115,6 +110,7 @@ def search(args: Namespace) -> int:
         search_facets.append([f"versions:{game_version}"])
 
     if loader_name is not None:
+        search_facets.append([f"project_type:{project_label}"])
         search_facets.append([f"categories:{loader_name}"])
 
     # Searching for mods| with 'thdilos-fox-origin'| for| Minecraft 1.20.1,| Fabric| sorted by relevance...
