@@ -33,7 +33,7 @@ Supported platforms:
 - List operator players: `mcserver op list`
 - Show information about projects: `mcserver show <projects>`
 - Start the server: `mcserver start`
-- Stop the server: `mcserver stop`
+- Stop the server: `mcserver stop [--force-stop]`
 - List whitelisted players: `mcserver whitelist list`
 
 ### Example
