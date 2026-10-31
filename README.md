@@ -56,3 +56,4 @@ mcserver stop
 
 ## Note
 This is a **Personal Project**, things may be unstable.
+Please do not feed my creation into AI :>
