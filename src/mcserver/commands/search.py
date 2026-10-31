@@ -77,6 +77,10 @@ def search(args: Namespace) -> int:
         logger.error("sort_index is None (somehow, really!)")
         return 1
 
+    if loader_name == "vanilla":
+        logger.error("Vanilla does not support mods or plugin.")
+        return 1
+
     shared.set_loader_context(loader_name)
     if shared.loader_context["project_label"] is None:
         logger.error("project_label is None (somehow, really!)")
@@ -94,9 +98,28 @@ def search(args: Namespace) -> int:
     if loader_name is not None:
         search_facets.append([f"categories:{loader_name}"])
 
-    search_info = f"Searching {pluralize(shared.loader_context["project_label"], search_limit)}"
+    # Searching for mods| with 'thdilos-fox-origin'| for| Minecraft 1.20.1,| Fabric| sorted by relevance...
+    # Searching for plugins with 'skinsrestorer' for Minecraft 1.20.1, Paper sorted by downloads...
+    # Searching for mods with 'thdilos-fox-origin' for Fabric sorted by relevance...
+    # Searching for mods for Fabric sorted by relevance...
+    # Searching for mods for Minecraft 1.20.1, Fabric sorted by relevance...
+    # Searching for mod for Minecraft 1.20.1, Fabric sorted by relevance...
+    # Wait, I don't really support datapack for now. no searching for vanilla lol
+
+
+    search_info = f"Searching for {pluralize(shared.loader_context["project_label"], search_limit)}"
     if search_query:
-        search_info += f" for {' '.join(search_query)}"
+        search_info += f" with '{' '.join(search_query)}'"
+
+    search_info += " for"
+
+    if game_version:
+        search_info += f" Minecraft {game_version},"
+
+    if loader_name:
+        search_info += f" {loader_name.capitalize()}"
+    
+    search_info += f" sorted by {sort_index}"
 
     logger.info(search_info)
     #search_result = modrinth_apis.search_projects(search_query, search_facets, sort_index, search_offset, search_limit)
