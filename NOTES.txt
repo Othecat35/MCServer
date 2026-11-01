@@ -389,3 +389,5 @@ hmmm yes, global .mcserver config, just like cache.
 it can be the default config of all your new Minecraft server derived from
 and yea
 
+
+2026-11-01, let's start not using AI?
