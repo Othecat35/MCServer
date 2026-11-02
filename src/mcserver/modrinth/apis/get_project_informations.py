@@ -1,5 +1,9 @@
+import json
+import logging
+
 from ..typings import ProjectInformation
 
+logger = logging.getLogger(__name__)
 
 class GetProjectInformationsError(Exception):
     pass
@@ -17,8 +21,6 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
     if isinstance(project_ids, str):
         project_ids = [project_ids]
 
-    import json
-    import logging as log
 
     from ... import networking
     from .. import constants, shared
@@ -49,35 +51,29 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
         # Checks
         project_status: ProjectStatus = information["status"]
         if project_status not in shared.PROJECT_STATUS:
-            log.warning(f"Unknown project status: {project_status}")
+            logger.warning(f"Unknown project status: {project_status}")
 
         project_type: ProjectType = information["project_type"]
         if project_type not in shared.PROJECT_TYPE:
-            log.warning(f"Unknown project type: {project_type}")
+            logger.warning(f"Unknown project type: {project_type}")
 
         monetization_status: MonetizationStatus = information["monetization_status"]
         if monetization_status not in shared.MONETIZATION_STATUS:
-            log.warning(f"Unknown monetization status: {monetization_status}")
-
-        requested_project_status: RequestedProjectStatus = information[
-            "requested_status"
-        ]
-        if requested_project_status not in shared.REQUESTED_PROJECT_STATUS:
-            log.warning(f"Unknown monetization status: {monetization_status}")
+            logger.warning(f"Unknown monetization status: {monetization_status}")
 
         client_side: EnvironmentSide = information["client_side"]
         if client_side not in shared.ENVIRONMENT_SIDE:
-            log.warning(f"Unknown client side: {client_side}")
+            logger.warning(f"Unknown client side: {client_side}")
 
         server_side: EnvironmentSide = information["server_side"]
         if server_side not in shared.ENVIRONMENT_SIDE:
-            log.warning(f"Unknown server side: {server_side}")
+            logger.warning(f"Unknown server side: {server_side}")
 
         # Lists
         environments: list[Environment] = information["environment"]
         for environment in environments:
             if environment not in shared.ENVIRONMENT:
-                log.warning(f"Unknown environment: {environment}")
+                logger.warning(f"Unknown environment: {environment}")
 
         gallery: list[GalleryImage] = []
         for image in information["gallery"]:
@@ -159,6 +155,10 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
             project_information["organization_id"] = information["organization"]
 
         if "requested_status" in information:
+            requested_project_status: RequestedProjectStatus | None = information["requested_status"]
+            if requested_project_status is not None and requested_project_status not in shared.REQUESTED_PROJECT_STATUS:
+                logger.warning(f"Unknown requested_project_status status: {monetization_status}")
+
             project_information["requested_project_status"] = requested_project_status
 
         if "approved" in information:
