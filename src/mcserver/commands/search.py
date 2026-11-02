@@ -139,14 +139,14 @@ def search(args: Namespace) -> int:
 
     search_hits = search_result["search_hits"]
 
+    if search_result["total_hits"] == 0:
+        logger.error(f"No {project_label} found.")
+        return 1
+
     if page_number > total_pages:
         logger.error(
             f"Page number is larger than total pages of {total_pages} available"
         )
-        return 1
-
-    if search_result["total_hits"] == 0:
-        logger.error(f"No {project_label} found.")
         return 1
 
     logger.info(
