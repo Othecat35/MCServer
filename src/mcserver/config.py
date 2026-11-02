@@ -2,11 +2,13 @@
 # Standard
 import copy
 import json
+import logging
 from typing import Any
 
 # MCServer
 from .paths import configs_dir
 
+logger = logging.getLogger(__name__)
 
 class ConfigVersionError(Exception):
     pass
@@ -38,6 +40,8 @@ def write_config(
 
     configuration_data.update(copy.deepcopy(config_data))
     config_json = json.dumps(configuration_data, indent=2)
+
+    logger.debug(f"Writing configuration data for {config_name}")
     config_path.write_text(config_json)
 
 
@@ -60,6 +64,7 @@ def read_config(config_name: str, current_format_version: int) -> dict[str, Any]
             f"Configuration file for '{config_name}' does not exist"
         )
 
+    logger.debug(f"Reading configuration for {config_name}")
     config_json = config_path.read_text()
     config_data = json.loads(config_json)
 
