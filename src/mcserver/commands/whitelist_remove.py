@@ -1,21 +1,39 @@
 import argparse
+import logging
 
 from ..server_files import whitelist
+from ..shared import pluralize
 
+logger = logging.getLogger(__name__)
 
 def run(args: argparse.Namespace) -> int:
     player_identifiers: list[str] = args.players
 
-    player_names: list[str] = []
     player_uuids: list[str] = []
+    player_names: list[str] = []
     for player in player_identifiers:
         if len(player) > 16:
-            print(f"{player} probably an UUID (I think)")
+            logger.debug(f"{player} is probably an UUID")
             player_uuids.append(player)
         else:
-            print(f"{player} is probably just a name (I think)")
+            logger.debug(f"{player} is probably a name")
             player_names.append(player)
 
-    print("Oh hi there!")
-    print(f"So I'm guessing that '{', '.join(player_names)}' is/are usernames and '{', '.join(player_uuids)}' are UUIDs?")
+    removed_players = whitelist.remove_players(player_uuids, player_names)
+
+    player_count: int = len(removed_players)
+    if player_count == 0:
+        logger.info("No matching player found.")
+        return 0
+
+    player_list: list[str] = []
+    for player in removed_players:
+        player_list.append(f"{player['player_name']} ({player['player_uuid']})")
+
+    logger.info(
+        f"There {pluralize('is', player_count)} {player_count} {pluralize('player', player_count)} that {pluralize('is', player_count)} removed:"
+    )
+
+    player_list.sort()
+    print("\n".join(player_list))
     return 0

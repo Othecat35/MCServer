@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 def run(args: argparse.Namespace) -> int:
-    whitelist_file = whitelist.whitelist_file
+    whitelist_file = whitelist.whitelist_file_path
     if not whitelist_file.exists():
         logger.error(f"Whitelist file ({whitelist_file}) does not exist!")
         return 1
