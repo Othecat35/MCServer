@@ -13,7 +13,7 @@ from ..resolver import (
 
 logger = logging.getLogger(__name__)
 
-def add(args: Namespace) -> int:
+def run(args: Namespace) -> int:
     projects: list[str] = args.projects
 
     if not (paths.configs_dir / "server.json").exists():

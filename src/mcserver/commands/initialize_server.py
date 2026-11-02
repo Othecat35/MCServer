@@ -1,7 +1,7 @@
 from argparse import Namespace
 
 
-def init(args: Namespace) -> int:
+def run(args: Namespace) -> int:
     from ..modrinth.shared import SearchSortIndex
 
     # CLI Arguments

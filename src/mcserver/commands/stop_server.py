@@ -1,7 +1,7 @@
 from argparse import Namespace
 
 
-def stop(args: Namespace) -> int:
+def run(args: Namespace) -> int:
     import logging as log
     import os
     from signal import SIGTERM

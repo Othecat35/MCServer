@@ -1,7 +1,7 @@
 from argparse import Namespace
 
 
-def show(args: Namespace) -> int:
+def run(args: Namespace) -> int:
     projects: list[str] = args.projects
 
     import logging

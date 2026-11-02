@@ -1,7 +1,7 @@
 from argparse import Namespace
 
 
-def start(args: Namespace) -> int:
+def run(args: Namespace) -> int:
     import logging as log
 
     from .. import state

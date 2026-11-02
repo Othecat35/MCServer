@@ -1,115 +1,118 @@
+import argparse
+import sys
+from types import FunctionType
+
+from . import __version__
+from .modrinth.shared import search_sort_index
+from .shared import loader_list
+
+
+def bound_int(min_integer: int, max_integer: int | None = None) -> FunctionType:
+    def parse(cli_string: str) -> int:
+        try:
+            integer = int(cli_string)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"{cli_string} is not an integer")
+
+        if integer < min_integer:
+            raise argparse.ArgumentTypeError(
+                f"{integer} must be higher than or equal to {min_integer}"
+            )
+        if max_integer is not None and integer > max_integer:
+            raise argparse.ArgumentTypeError(
+                f"{integer} must be between {min_integer} and {max_integer} (inclusive)"
+            )
+        return integer
+
+    return parse
+
+def command_function(args: argparse.Namespace) -> int:
+    command_name: str = args.command_name
+
+    match command_name:
+        case "add":
+            from .commands import add_projects
+
+            return add_projects(args)
+        case "import":
+            from .commands import import_setup
+
+            return import_setup(args)
+        case "help":
+            from .commands import print_help
+
+            return print_help(args)
+        case "init":
+            from .commands import initialize_server
+
+            return initialize_server(args)
+        case "list":
+            from .commands import list_projects
+
+            return list_projects(args)
+        case "op_grant":
+            from .commands import op_grant
+
+            return op_grant(args)
+        case "op_list":
+            from .commands import op_list
+
+            return op_list(args)
+        case "op_revoke":
+            from .commands import op_revoke
+
+            return op_revoke(args)
+        case "remove":
+            from .commands import remove_projects
+
+            return remove_projects(args)
+        case "search":
+            from .commands import search_projects
+
+            return search_projects(args)
+        case "show":
+            from .commands import show_projects
+
+            return show_projects(args)
+        case "start":
+            from .commands import start_server
+
+            return start_server(args)
+        case "status":
+            from .commands import server_status
+
+            return server_status(args)
+        case "stop":
+            from .commands import stop_server
+
+            return stop_server(args)
+        case "update":
+            from .commands import update_projects
+
+            return update_projects(args)
+        case "whitelist_add":
+            from .commands import whitelist_add
+
+            return whitelist_add(args)
+        case "whitelist_list":
+            from .commands import whitelist_list
+
+            return whitelist_list(args)
+        case "whitelist_remove":
+            from .commands import whitelist_remove
+
+            return whitelist_remove(args)
+        case _:
+            import logging
+
+            logger = logging.getLogger(__name__)
+
+            logger.error(f"Unknown command: {command_name}")
+            return 1
+
+
 def main() -> int:
-    import argparse
-    import sys
-    from types import FunctionType
-
-    from . import __version__
-    from .modrinth.shared import search_sort_index
-    from .shared import loader_list
-
-    def bound_int(min_integer: int, max_integer: int | None = None) -> FunctionType:
-        def parse(cli_string: str) -> int:
-            try:
-                integer = int(cli_string)
-            except ValueError:
-                raise argparse.ArgumentTypeError(f"{cli_string} is not an integer")
-
-            if integer < min_integer:
-                raise argparse.ArgumentTypeError(
-                    f"{integer} must be higher than or equal to {min_integer}"
-                )
-            if max_integer is not None and integer > max_integer:
-                raise argparse.ArgumentTypeError(
-                    f"{integer} must be between {min_integer} and {max_integer} (inclusive)"
-                )
-            return integer
-
-        return parse
-
-    def command_function(args: argparse.Namespace) -> int:
-        command_name: str = args.command_name
-
-        match command_name:
-            case "add":
-                from .commands import add
-
-                return add(args)
-            case "import":
-                from .commands import import_setup
-
-                return import_setup(args)
-            case "help":
-                from .commands import print_help
-
-                return print_help(args)
-            case "init":
-                from .commands import init
-
-                return init(args)
-            case "list":
-                from .commands import list_projects
-
-                return list_projects(args)
-            case "op_grant":
-                from .commands import op_grant
-
-                return op_grant(args)
-            case "op_list":
-                from .commands import op_list
-
-                return op_list(args)
-            case "op_revoke":
-                from .commands import op_revoke
-
-                return op_revoke(args)
-            case "remove":
-                from .commands import remove_projects
-
-                return remove_projects(args)
-            case "search":
-                from .commands import search
-
-                return search(args)
-            case "show":
-                from .commands import show
-
-                return show(args)
-            case "start":
-                from .commands import start
-
-                return start(args)
-            case "status":
-                from .commands import server_status
-
-                return server_status(args)
-            case "stop":
-                from .commands import stop
-
-                return stop(args)
-            case "update":
-                from .commands import update_projects
-
-                return update_projects(args)
-            case "whitelist_add":
-                from .commands import whitelist_add
-
-                return whitelist_add(args)
-            case "whitelist_list":
-                from .commands import whitelist_list
-
-                return whitelist_list(args)
-            case "whitelist_remove":
-                from .commands import whitelist_remove
-
-                return whitelist_remove(args)
-            case _:
-                import logging as log
-
-                log.error(f"Unknown command: {command_name}")
-                return 1
-
     # Parser Setup
-
     parser = argparse.ArgumentParser(
         prog="mcserver",
         description="A CLI tool for managing Minecraft: Java Edition servers.",
