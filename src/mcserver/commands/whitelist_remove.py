@@ -1,33 +1,21 @@
-from argparse import Namespace
+import argparse
+
+from ..server_files import whitelist
 
 
-def run(args: Namespace) -> int:
-    players: list[str] = args.players
-    import logging as log
+def run(args: argparse.Namespace) -> int:
+    player_identifiers: list[str] = args.players
 
-    # from uuid import UUID
-    # from ..server_files.whitelist import remove_players
-    # from ..minecraft.player_identity import PlayerID
+    player_names: list[str] = []
+    player_uuids: list[str] = []
+    for player in player_identifiers:
+        if len(player) > 16:
+            print(f"{player} probably an UUID (I think)")
+            player_uuids.append(player)
+        else:
+            print(f"{player} is probably just a name (I think)")
+            player_names.append(player)
 
-    log.error("Command is not implemented yet.")
-    # player_ids: list[PlayerID] = []
-    # for player in players:
-    #     try:
-    #         UUID(player)
-    #         log.debug(f"{player} is likely an UUID")
-    #         player_id: PlayerID = {"player_uuid": player}
-
-    #         player_ids.append(player_id)
-    #     except ValueError:
-    #         log.debug(f"{player} is likely a name")
-    #         player_id: PlayerID = {"player_name": player}
-
-    #         player_ids.append(player_id)
-
-    # try:
-    #     remove_players(player_ids)
-    # except FileNotFoundError as error:
-    #     log.error(error)
-    #     return 1
-
-    return 1
+    print("Oh hi there!")
+    print(f"So I'm guessing that '{', '.join(player_names)}' is/are usernames and '{', '.join(player_uuids)}' are UUIDs?")
+    return 0

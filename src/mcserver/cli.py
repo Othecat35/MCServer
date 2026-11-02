@@ -332,5 +332,15 @@ def main() -> int:
 
     whitelist_list_command.set_defaults(command_name="whitelist_list")
 
+    # 'whitelist remove'
+    whitelist_remove_command = whitelist_subcommands.add_parser(
+        "remove",
+        help="Remove players from the whitelist",
+        description="List all whitelisted players.",
+    )
+
+    whitelist_remove_command.set_defaults(command_name="whitelist_remove")
+    whitelist_remove_command.add_argument("players", nargs="+", type=str, help="List of player names or UUIDs")
+
     args = parser.parse_args()
     return args.func(args)
