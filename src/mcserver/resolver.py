@@ -83,9 +83,7 @@ def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]
         }
 
         if "highest_type" in project:
-            project_data["highest_type"] = dependency_types2[
-                project["highest_type"]
-            ]
+            project_data["highest_type"] = dependency_types2[project["highest_type"]]
 
         projects.append(project_data)
 

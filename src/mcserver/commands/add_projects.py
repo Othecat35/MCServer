@@ -3,7 +3,7 @@ from argparse import Namespace
 
 from .. import config, paths, shared
 from ..modrinth import apis as modrinth_apis
-from ..modrinth import project_records, slug_index
+from ..modrinth import project_records
 from ..resolver import (
     Dependency,
     human_to_resolver,
@@ -13,13 +13,18 @@ from ..resolver import (
 
 logger = logging.getLogger(__name__)
 
+
 def run(args: Namespace) -> int:
     projects: list[str] = args.projects
 
     if not (paths.configs_dir / "server.json").exists():
-        logger.error("Configuration file for server does not exist, is server initialized?")
+        logger.error(
+            "Configuration file for server does not exist, is server initialized?"
+        )
 
-    server_config = config.read_config("server", shared.default_configs["server"]["format_version"])
+    server_config = config.read_config(
+        "server", shared.default_configs["server"]["format_version"]
+    )
     game_version = server_config["game_version"]
     loader_name = server_config["loader"]["name"]
 
@@ -35,11 +40,12 @@ def run(args: Namespace) -> int:
         dependencies: list[Dependency] = []
         if project_records.record_exists(project_id):
             project_record = project_records.read_record(project_id)
-            for dependency_id, dependency_type in project_record["dependencies"].items():
-                dependencies.append({
-                    "project_id": dependency_id,
-                    "dependency_type": dependency_type
-                })
+            for dependency_id, dependency_type in project_record[
+                "dependencies"
+            ].items():
+                dependencies.append(
+                    {"project_id": dependency_id, "dependency_type": dependency_type}
+                )
 
         else:
             project_version = modrinth_apis.get_project_versions(
@@ -64,7 +70,9 @@ def run(args: Namespace) -> int:
 
         return human_to_resolver(dependencies)
 
-    resolved_dependencies = resolve_dependencies(projects, get_dependencies, required_only)
+    resolved_dependencies = resolve_dependencies(
+        projects, get_dependencies, required_only
+    )
     print(resolved_dependencies)
     return 0
 
@@ -153,7 +161,6 @@ def run(args: Namespace) -> int:
     #         )
     #     ]
     #     return a
-
 
     # server_config = config.read_config(
     #     "server", shared.default_configs["server"]["format_version"]

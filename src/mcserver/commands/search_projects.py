@@ -112,7 +112,7 @@ def run(args: Namespace) -> int:
         search_facets.append([f"project_type:{project_label}"])
         search_facets.append([f"categories:{loader_name}"])
     else:
-        search_facets.append(["project_type:mod","project_type:plugin"])
+        search_facets.append(["project_type:mod", "project_type:plugin"])
 
     search_info = f"Searching {pluralize(project_label, search_limit)}"
     if search_query:
@@ -165,17 +165,13 @@ def run(args: Namespace) -> int:
         for environment in environments:
             readable_environments.append(project_environment_name(environment))
 
+        print(f"{hit['project_name']} ({slug_or_id}) {project_author}")
         print(
-            f"{hit['project_name']} ({slug_or_id}) {project_author}"
+            f"> Downloads: {format_number(hit['download_count'])} | Follows: {format_number(hit['follower_count'])}"
         )
-        print(f"> Downloads: {format_number(hit['download_count'])} | Follows: {format_number(hit['follower_count'])}")
-        print(
-            f"> {', '.join(readable_environments)}"
-        )
+        print(f"> {', '.join(readable_environments)}")
         print(f"> https://modrinth.com/{hit['all_project_types'][0]}/{slug_or_id}")
-        print(
-            f"  {hit['short_description']}"
-        )
+        print(f"  {hit['short_description']}")
 
         if (count + 1) < len(search_hits):
             print()  # Print newline for readability

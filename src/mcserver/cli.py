@@ -26,6 +26,7 @@ def bound_int(min_integer: int, max_integer: int | None = None) -> FunctionType:
 
     return parse
 
+
 def command_function(args: argparse.Namespace) -> int:
     command_name: str = args.command_name
 

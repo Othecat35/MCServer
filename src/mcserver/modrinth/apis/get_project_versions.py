@@ -158,7 +158,10 @@ def get_project_versions(
             requested_status_version: RequestedVersionStatus = version[
                 "requested_status"
             ]
-            if requested_status_version is not None and requested_status_version not in shared.REQUESTED_VERSION_STATUS:
+            if (
+                requested_status_version is not None
+                and requested_status_version not in shared.REQUESTED_VERSION_STATUS
+            ):
                 logger.info(
                     f"Unknown requested_status_version: {requested_status_version}"
                 )

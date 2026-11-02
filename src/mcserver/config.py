@@ -10,6 +10,7 @@ from .paths import configs_dir
 
 logger = logging.getLogger(__name__)
 
+
 class ConfigVersionError(Exception):
     pass
 
