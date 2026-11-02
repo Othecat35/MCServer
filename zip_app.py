@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Imports
 import zipapp
 from pathlib import Path
