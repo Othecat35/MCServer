@@ -60,12 +60,11 @@ def search(args: Namespace) -> int:
                 )
 
     if game_version is None or loader_name is None:
-        server_default_config = default_configs["server"]
         server_config_path = paths.configs_dir / "server.json"
 
         if server_config_path.exists():
             server_config = config.read_config(
-                "server", server_default_config["format_version"]
+                "server", default_configs["server"]["format_version"]
             )
             if game_version is None and "game_version" in server_config:
                 game_version = server_config["game_version"]
@@ -112,14 +111,8 @@ def search(args: Namespace) -> int:
     if loader_name is not None:
         search_facets.append([f"project_type:{project_label}"])
         search_facets.append([f"categories:{loader_name}"])
-
-    # Searching for mods| with 'thdilos-fox-origin'| for| Minecraft 1.20.1,| Fabric| sorted by relevance...
-    # Searching for plugins with 'skinsrestorer' for Minecraft 1.20.1, Paper sorted by downloads...
-    # Searching for mods with 'thdilos-fox-origin' for Fabric sorted by relevance...
-    # Searching for mods for Fabric sorted by relevance...
-    # Searching for mods for Minecraft 1.20.1, Fabric sorted by relevance...
-    # Searching for mod for Minecraft 1.20.1, Fabric sorted by relevance...
-    # Wait, I don't really support datapack for now. no searching for vanilla lol
+    else:
+        search_facets.append(["project_type:mod","project_type:plugin"])
 
     search_info = f"Searching {pluralize(project_label, search_limit)}"
     if search_query:
@@ -164,7 +157,10 @@ def search(args: Namespace) -> int:
         slug_or_id = hit["project_slug"] if "project_slug" in hit else hit["project_id"]
         project_author = f"by {hit['author_username']}"
 
-        environments = hit["environments"]
+        environments: list[Environment] = hit["environments"]
+        if len(environments) == 0:
+            environments.append("No environment")
+
         readable_environments: list[str] = []
         for environment in environments:
             readable_environments.append(project_environment_name(environment))
@@ -176,7 +172,7 @@ def search(args: Namespace) -> int:
         print(
             f"> {', '.join(readable_environments)}"
         )
-        print(f"> https://modrinth.com/{hit['project_type']}/{slug_or_id}")
+        print(f"> https://modrinth.com/{hit['all_project_types'][0]}/{slug_or_id}")
         print(
             f"  {hit['short_description']}"
         )

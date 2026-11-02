@@ -245,7 +245,7 @@ def project_environment_name(project_environment):
         "singleplayer_only": "Singleplayer only",
     }
 
-    return project_environments[project_environment]
+    return project_environments.get(project_environment, project_environment)
 
 
 def print_status(message: str, dynamic: str | None = None):
