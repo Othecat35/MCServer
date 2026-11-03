@@ -12,7 +12,7 @@ Supported platforms:
 - JRE (depends on Minecraft version)
 
 ## How to install
-- Using pip: Run `pip install mcserver-cli`
+- Using pip: Just run `pip install mcserver-cli`
 
 - System-wide (Requires root): 
 1. Download the `mcserver` script file from GitHub releases
@@ -39,13 +39,13 @@ Supported platforms:
 - Remove whitelisted players: `mcserver whitelist remove <players>`
 
 ### Examples
-- Create and start a Fabric 1.20.1 server on current directory
+- Create and start a Fabric 1.20.1 server in the current directory
 ```bash
 mcserver init --game-version=1.20.1 --loader=fabric
 mcserver start
 ```
 
-- Search top 50 Fabric mods for Minecraft 1.20.1 in modrinth
+- Search top 50 Fabric mods for Minecraft 1.20.1 on modrinth
 ```bash
 mcserver search --loader=fabric --game-version=1.20.1 --limit=50
 ```
@@ -56,7 +56,12 @@ mcserver op list
 mcserver whitelist list
 ```
 
-- Stop a server on current directory with sigterm
+- Remove me from the whitelist
+```bash
+mcserver whitelist remove Othecat35
+```
+
+- Stop a running server on current directory with sigterm
 ```bash
 mcserver stop
 ```
