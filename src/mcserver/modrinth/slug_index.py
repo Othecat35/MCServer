@@ -1,13 +1,14 @@
 # Modules
 # Standard
 import json
-import logging as log
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import TypedDict
 
 # MCServer
 from ..paths import mcserver_cache_dir
 
+logger = logging.getLogger(__name__)
 
 # TypedDict
 class SlugIndex(TypedDict):
@@ -26,11 +27,11 @@ slug_index_file = mcserver_cache_dir / "slug_index.json"
 def _load_slug_index() -> None:
     global _slug_index
     if _slug_index is not None:
-        log.debug("Not loading _slug_index; _slug_index is not 'None'")
+        logger.debug("Not loading _slug_index; _slug_index is not 'None'")
         return
 
     if not slug_index_file.exists():
-        log.debug(
+        logger.debug(
             f"{slug_index_file} does not exist, setting _slug_index to empty dictionary"
         )
         _slug_index = {}
@@ -41,12 +42,12 @@ def _load_slug_index() -> None:
     try:
         _slug_index = json.loads(slug_index_json)
         if not isinstance(_slug_index, dict):
-            log.warning(
+            logger.warning(
                 f"{slug_index_file} should be an object! Rebuilding it from scratch"
             )  # that's all I can say.
             _slug_index = {}
     except json.JSONDecodeError:
-        log.warning(
+        logger.warning(
             f"{slug_index_file} is corrupted! Rebuilding it from scratch"
         )  # that's all I can say.
         _slug_index = {}
@@ -56,14 +57,14 @@ def is_index_outdated(project_slug: str) -> bool:
     _load_slug_index()
 
     if _slug_index is None:
-        log.debug(
+        logger.debug(
             "Slug index is 'None'"
         )  # well, idk how can this get triggered even though _load_slug_index at least set it to {}
         return True
 
     slug_index = _slug_index.get(project_slug)
     if slug_index is None:
-        log.debug(f"Project slug ({project_slug}) is not known yet")
+        logger.debug(f"Project slug ({project_slug}) is not known yet")
         return True
 
     last_updated_time = slug_index.get("last_updated_time")
@@ -73,7 +74,7 @@ def is_index_outdated(project_slug: str) -> bool:
     try:
         last_updated = datetime.fromisoformat(last_updated_time)
     except ValueError:
-        log.debug("Invalid ISO formatted time, do not mess with it pls")
+        logger.debug("Invalid ISO formatted time, do not mess with it pls")
         return True
 
     time_now = datetime.now(tz=UTC)
