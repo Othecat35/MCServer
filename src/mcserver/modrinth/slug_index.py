@@ -91,16 +91,8 @@ def slug_to_id(project_slug: str) -> str:
     if _slug_index is None:
         _slug_index = {}
 
-    slug_index = _slug_index.get(project_slug)
-    if slug_index is None:
-        return project_slug
-
-    project_id = slug_index.get("project_id")
-    if (
-        project_id is None
-    ):  # even though pyright thinks this code is unreachable, we can't trust the user
-        return project_slug
-
+    slug_index = _slug_index.get(project_slug, {})
+    project_id = slug_index.get("project_id", project_id)
     return project_id
 
 
