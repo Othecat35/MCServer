@@ -224,6 +224,18 @@ def main() -> int:
 
     op_list_command.set_defaults(command_name="op_list")
 
+    # 'op revoke'
+    op_revoke_command = op_subcommands.add_parser(
+        "revoke",
+        help="Revoke operator players permission",
+        description="Revoke operator players permission.",
+    )
+
+    op_revoke_command.set_defaults(command_name="op_revoke")
+    op_revoke_command.add_argument(
+        "players", nargs="+", type=str, help="List of player names or UUIDs"
+    )
+
     # 'search' command
     search_command = commands.add_parser(
         "search",
@@ -336,11 +348,13 @@ def main() -> int:
     whitelist_remove_command = whitelist_subcommands.add_parser(
         "remove",
         help="Remove players from the whitelist",
-        description="List all whitelisted players.",
+        description="Remove players from the whitelist.",
     )
 
     whitelist_remove_command.set_defaults(command_name="whitelist_remove")
-    whitelist_remove_command.add_argument("players", nargs="+", type=str, help="List of player names or UUIDs")
+    whitelist_remove_command.add_argument(
+        "players", nargs="+", type=str, help="List of player names or UUIDs"
+    )
 
     args = parser.parse_args()
     return args.func(args)

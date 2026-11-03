@@ -1,32 +1,35 @@
+import logging
 from argparse import Namespace
+
+from ..server_files import ops
+from ..shared import pluralize
+
+logger = logging.getLogger(__name__)
 
 
 def run(args: Namespace) -> int:
-    import logging as log
-
-    from ..server_files import ops
-    from ..shared import pluralize
-
-    if not ops.ops_file.exists():
-        log.error(f"File '{ops.ops_file}' not found.")
+    ops_file = ops.ops_file_path
+    if not ops_file.exists():
+        logger.error(f"Operator file '{ops.ops_file_path}' not found.")
         return 1
 
     operator_players = ops.list_players()
 
-    players: list[str] = []
+    player_count = len(operator_players)
+    if player_count == 0:
+        logger.info("There's no operator player.")
+        return 0
+
+    player_list: list[str] = []
     for player in operator_players:
-        players.append(
+        player_list.append(
             f"{player['player_name']} ({player['player_uuid']}) Level: {player['permission_level']}"
         )
 
-    players.sort()
-    sorted_players = "\n".join(players)
+    logger.info(
+        f"There {pluralize('is', player_count)} {player_count} {pluralize('operator', player_count)}:"
+    )
 
-    player_count = len(operator_players)
-    if player_count == 0:
-        log.info("There's no operator player.")
-        return 0
-
-    log.info(f"All {player_count} operator {pluralize('player', player_count)}:")
-    print(sorted_players)
+    player_list.sort()
+    print("\n".join(player_list))
     return 0

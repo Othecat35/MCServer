@@ -1,20 +1,22 @@
-import argparse
 import logging
+from argparse import Namespace
+from uuid import UUID
 
 from ..server_files import whitelist
 from ..shared import pluralize
 
 logger = logging.getLogger(__name__)
 
-def run(args: argparse.Namespace) -> int:
+
+def run(args: Namespace) -> int:
     player_identifiers: list[str] = args.players
 
-    player_uuids: list[str] = []
+    player_uuids: list[UUID] = []
     player_names: list[str] = []
     for player in player_identifiers:
         if len(player) > 16:
             logger.debug(f"{player} is probably an UUID")
-            player_uuids.append(player)
+            player_uuids.append(UUID(player))
         else:
             logger.debug(f"{player} is probably a name")
             player_names.append(player)
