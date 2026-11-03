@@ -1,14 +1,13 @@
 import json
 import logging
 
-from mcserver.modrinth.typings.search_projects import DisclosureType
-
 from ... import networking
 from ...constants import modrinth_api_url
 from .. import shared
 from ..shared import SearchSortIndex
 from ..typings import (
     AllProjectType,
+    DisclosureType
     Environment,
     EnvironmentSide,
     ProjectType,
