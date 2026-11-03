@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `op remove` to remove players based on UUIDs or names
+- `op revoke` to revoke operator players permission  based on UUIDs or names
 - Player count to `whitelist list`
 
 ### Fixes

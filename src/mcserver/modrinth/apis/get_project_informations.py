@@ -163,7 +163,7 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
                 and requested_project_status not in shared.REQUESTED_PROJECT_STATUS
             ):
                 logger.warning(
-                    f"Unknown requested_project_status status: {monetization_status}"
+                    f"Unknown requested_project_status: {requested_project_status}"
                 )
 
             project_information["requested_project_status"] = requested_project_status
