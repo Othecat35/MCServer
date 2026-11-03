@@ -391,4 +391,6 @@ and yea
 
 
 Ah yes... rcon, and also swrver management protocol.
-Don't forget to add a warning fof whitelist remove if the server is running to run whitelist remove
+Don't forget to add a warning fof whitelist remove if the server is running to run whitelist remover
+
+about whitelist add or op grant, remember to make the internal function does remove and add together, then call it upsert according to deepseek
