@@ -12,8 +12,7 @@ Supported platforms:
 - JRE (depends on Minecraft version)
 
 ## How to install
-- Using pip:
-1. Run `pip install mcserver-cli`
+- Using pip: Run `pip install mcserver-cli`
 
 - System-wide (Requires root): 
 1. Download the `mcserver` script file from GitHub releases
@@ -31,16 +30,24 @@ Supported platforms:
 ## Usage
 - Initialize a server: `mcserver init [options]`
 - List operator players: `mcserver op list`
+- Revoke operator players: `mcserver op revoke <players>`
+- Search projects: `mcserver search [query] [options]`
 - Show information about projects: `mcserver show <projects>`
 - Start the server: `mcserver start`
-- Stop the server: `mcserver stop [--force-stop]`
+- Stop the server: `mcserver stop`
 - List whitelisted players: `mcserver whitelist list`
+- Remove whitelisted players: `mcserver whitelist remove <players>`
 
-### Example
+### Examples
 - Create and start a Fabric 1.20.1 server on current directory
 ```bash
 mcserver init --game-version=1.20.1 --loader=fabric
 mcserver start
+```
+
+- Search top 50 Fabric mods for Minecraft 1.20.1 in modrinth
+```bash
+mcserver search --loader=fabric --game-version=1.20.1 --limit=50
 ```
 
 - List all operator and whitelisted players on current directory
@@ -49,10 +56,10 @@ mcserver op list
 mcserver whitelist list
 ```
 
-- Stop (sigterm) a server on current directory
+- Stop a server on current directory with sigterm
 ```bash
 mcserver stop
 ```
 
 ## Note
-This is a **Personal Project**, things may be unstable.
+This is a **Personal Project** by Othecat35, so don't expect much from me :>
