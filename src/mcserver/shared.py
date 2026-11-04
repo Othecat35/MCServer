@@ -232,7 +232,7 @@ def wrap_ansi(string: str, ansi_name: str):
 #     return f"{environment: <{padding}}"
 
 
-def project_environment_name(project_environment):
+def project_environment_name(project_environment: str) -> str:
     project_environments = {
         "client_only": "Client-side only",
         "server_only": "Server-side only",

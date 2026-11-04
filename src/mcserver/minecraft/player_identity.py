@@ -1,21 +1,27 @@
 # Modules
-from typing import NotRequired, TypedDict
+import hashlib
+from typing import TypedDict
 from uuid import UUID
-
-# Type Aliases
-type PlayerUUID = UUID | str
 
 
 # TypedDicts
-class PlayerID(TypedDict):
-    # Used for providing either player UUID and/or name
-    player_uuid: NotRequired[PlayerUUID]
-    player_name: NotRequired[str]
+class PlayerIdentity(TypedDict):
+    player_uuid: UUID
+    player_name: str
 
 
-# Functions
-def normalize_player_uuid(player_uuid: PlayerUUID) -> UUID:
-    if isinstance(player_uuid, str):
-        player_uuid = UUID(player_uuid)
+def get_offline_player_identities(
+    player_names: list[str] | str,
+) -> list[PlayerIdentity]:
+    player_identities: list[PlayerIdentity] = []
+    for player_name in player_names:
+        offline_player = f"OfflinePlayer:{player_name}".encode()
+        player_uuid: UUID = UUID(hashlib.md5(offline_player).hexdigest())
+        player_identity: PlayerIdentity = {
+            "player_uuid": player_uuid,
+            "player_name": player_name,
+        }
 
-    return player_uuid
+        player_identities.append(player_identity)
+
+    return player_identities

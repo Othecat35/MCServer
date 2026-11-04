@@ -7,7 +7,7 @@ from .. import shared
 from ..shared import SearchSortIndex
 from ..typings import (
     AllProjectType,
-    DisclosureType
+    DisclosureType,
     Environment,
     EnvironmentSide,
     ProjectType,

@@ -1,10 +1,8 @@
 import json
 import logging
-from collections.abc import Sequence
 from typing import TypedDict
 from uuid import UUID
 
-from ..minecraft.player_identity import normalize_player_uuid
 from .paths import ops_file_path
 
 logger = logging.getLogger(__name__)
@@ -24,8 +22,30 @@ class OperatorFilePlayer(TypedDict):
     bypassesPlayerLimit: bool
 
 
+def list_players() -> list[OperatorPlayer]:
+    """List all operator players
+
+    Returns:
+        List of operator players"""
+    logger.debug(f"Reading {ops_file_path}")
+    ops_json: list[OperatorFilePlayer] = json.loads(ops_file_path.read_text())
+
+    operator_players: list[OperatorPlayer] = []
+    for player in ops_json:
+        operator_player: OperatorPlayer = {
+            "player_uuid": UUID(player["uuid"]),
+            "player_name": player["name"],
+            "permission_level": player["level"],
+            "bypasses_player_limit": player["bypassesPlayerLimit"],
+        }
+
+        operator_players.append(operator_player)
+
+    return operator_players
+
+
 def remove_players(
-    player_uuids: Sequence[UUID | str] | UUID | str | None = None,
+    player_uuids: list[UUID] | UUID | None = None,
     player_names: list[str] | str | None = None,
 ) -> list[OperatorPlayer]:
     """Remove operator players that matches either by UUIDs or names
@@ -41,7 +61,7 @@ def remove_players(
         List of operator players that are removed"""
     if player_uuids is None:
         player_uuids = []
-    elif isinstance(player_uuids, (UUID, str)):
+    elif isinstance(player_uuids, UUID):
         player_uuids = [player_uuids]
 
     if player_names is None:
@@ -52,11 +72,8 @@ def remove_players(
     if not player_uuids and not player_names:
         raise ValueError("Must provide at least a player UUID or player name")
 
+    uuids: set[UUID] = set(player_uuids)
     names: set[str] = set(player_names)
-
-    uuids: set[UUID] = set()
-    for player_uuid in player_uuids:
-        uuids.add(normalize_player_uuid(player_uuid))
 
     removed_players: list[OperatorPlayer] = []
     with open(ops_file_path, mode="r+") as ops_file:
@@ -90,25 +107,3 @@ def remove_players(
         ops_file.truncate()
 
     return removed_players
-
-
-def list_players() -> list[OperatorPlayer]:
-    """List all operator players
-
-    Returns:
-        List of operator players"""
-    logger.debug(f"Reading {ops_file_path}")
-    ops_json: list[OperatorFilePlayer] = json.loads(ops_file_path.read_text())
-
-    operator_players: list[OperatorPlayer] = []
-    for player in ops_json:
-        operator_player: OperatorPlayer = {
-            "player_uuid": UUID(player["uuid"]),
-            "player_name": player["name"],
-            "permission_level": player["level"],
-            "bypasses_player_limit": player["bypassesPlayerLimit"],
-        }
-
-        operator_players.append(operator_player)
-
-    return operator_players

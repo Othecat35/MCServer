@@ -334,7 +334,18 @@ def main() -> int:
     whitelist_command.set_defaults(parser=whitelist_command)
     whitelist_subcommands = whitelist_command.add_subparsers(title="Subcommands")
 
-    # whitelist_add and whitelist_remove is not going to be implemented in this version
+    # 'whitelist add'
+    whitelist_add_command = whitelist_subcommands.add_parser(
+        "add",
+        help="Add players to the whitelist",
+        description="Add players to the whitelist.",
+    )
+
+    whitelist_add_command.set_defaults(command_name="whitelist_add")
+    whitelist_add_command.add_argument(
+        "players", nargs="+", type=str, help="List of player names or UUIDs"
+    )
+
     # 'whitelist list'
     whitelist_list_command = whitelist_subcommands.add_parser(
         "list",

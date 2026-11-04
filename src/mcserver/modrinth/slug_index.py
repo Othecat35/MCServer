@@ -10,6 +10,7 @@ from ..paths import mcserver_cache_dir
 
 logger = logging.getLogger(__name__)
 
+
 # TypedDict
 class SlugIndex(TypedDict):
     project_id: str

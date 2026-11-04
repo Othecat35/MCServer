@@ -7,6 +7,7 @@ from mcserver import paths
 from .. import config
 from ..modrinth import apis as modrinth_apis
 from ..modrinth.shared import SearchSortIndex
+from ..modrinth.typings import Environment
 from ..shared import (
     default_configs,
     format_number,
@@ -98,7 +99,10 @@ def run(args: Namespace) -> int:
         logger.error("Vanilla does not support mods or plugin.")
         return 1
 
-    project_label, _ = get_loader_context(loader_name)
+    if loader_name is not None:
+        project_label, _ = get_loader_context(loader_name)
+    else:
+        project_label = "project"
 
     search_offset = search_limit * (page_number - 1)
     search_facets = [
@@ -158,12 +162,12 @@ def run(args: Namespace) -> int:
         project_author = f"by {hit['author_username']}"
 
         environments: list[Environment] = hit["environments"]
-        if len(environments) == 0:
-            environments.append("No environment")
-
         readable_environments: list[str] = []
         for environment in environments:
             readable_environments.append(project_environment_name(environment))
+
+        if len(readable_environments) == 0:
+            readable_environments.append("No environment")
 
         print(f"{hit['project_name']} ({slug_or_id}) {project_author}")
         print(
