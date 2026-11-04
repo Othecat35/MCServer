@@ -29,12 +29,14 @@ Supported platforms:
 
 ## Usage
 - Initialize a server: `mcserver init [options]`
+- Grant players operator: `mcserver op grant <player> [options]`
 - List operator players: `mcserver op list`
 - Revoke operator players: `mcserver op revoke <players>`
 - Search projects: `mcserver search [query] [options]`
 - Show information about projects: `mcserver show <projects>`
 - Start the server: `mcserver start`
 - Stop the server: `mcserver stop`
+- Add players to whitelist: `mcserver whitelist add <players> [options]`
 - List whitelisted players: `mcserver whitelist list`
 - Remove whitelisted players: `mcserver whitelist remove <players>`
 
@@ -61,9 +63,10 @@ mcserver whitelist list
 mcserver whitelist add Notch
 ```
 
-- Granting Notch operator level 4 and can bypass player limit
+- Granting Notch operator level 4 and can bypass player limit and list all operators
 ```bash
 mcserver op grant Notch --permission-level=4 --bypasses-player-limit
+mcserver op list
 ```
 
 - Remove me from the whitelist
