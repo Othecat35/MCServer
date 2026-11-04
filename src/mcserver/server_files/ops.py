@@ -73,7 +73,9 @@ def remove_players(
         raise ValueError("Must provide at least a player UUID or player name")
 
     uuids: set[UUID] = set(player_uuids)
-    names: set[str] = set(player_names)
+    names: set[str] = set()
+    for player_name in player_names:
+        names.add(player_name.lower())
 
     removed_players: list[OperatorPlayer] = []
     with open(ops_file_path, mode="r+") as ops_file:
@@ -83,7 +85,7 @@ def remove_players(
         for operator_file_player in ops_data:
             if (
                 UUID(operator_file_player["uuid"]) in uuids
-                or operator_file_player["name"] in names
+                or operator_file_player["name"].lower() in names
             ):
                 logger.debug(
                     f"Operator player {operator_file_player['name']} ({operator_file_player['uuid']}) is removed"

@@ -1,7 +1,7 @@
 import logging
 from argparse import Namespace
-from uuid import UUID
 
+from ..minecraft.player_identity import separate_uuids_and_names
 from ..server_files import ops
 from ..shared import pluralize
 
@@ -9,18 +9,9 @@ logger = logging.getLogger(__name__)
 
 
 def run(args: Namespace) -> int:
-    player_identifiers: list[str] = args.players
+    player_ids: list[str] = args.players
 
-    player_uuids: list[UUID] = []
-    player_names: list[str] = []
-    for player in player_identifiers:
-        if len(player) > 16:
-            logger.debug(f"{player} is probably an UUID")
-            player_uuids.append(UUID(player))
-        else:
-            logger.debug(f"{player} is probably a name")
-            player_names.append(player)
-
+    player_uuids, player_names = separate_uuids_and_names(player_ids)
     removed_players = ops.remove_players(player_uuids, player_names)
 
     player_count: int = len(removed_players)

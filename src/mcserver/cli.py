@@ -346,6 +346,14 @@ def main() -> int:
         "players", nargs="+", type=str, help="List of player names or UUIDs"
     )
 
+    whitelist_add_command.add_argument(
+        "--online-mode",
+        type=str,
+        choices=["true","false"],
+        metavar="Boolean",
+        help="The server's online mode (true/false)",
+    )
+
     # 'whitelist list'
     whitelist_list_command = whitelist_subcommands.add_parser(
         "list",

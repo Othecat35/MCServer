@@ -65,8 +65,8 @@ def get_players_from_names(player_names: list[str] | str) -> list[PlayerProfile]
         raise GetPlayerError("Response does not have JSON")
 
     response_json = response["json"]
-    if not isinstance(response_json, dict):
-        raise TypeError("Response JSON is not a dictionary")
+    if not isinstance(response_json, list):
+        raise TypeError("Response JSON is not a list")
 
     player_identities: list[PlayerProfile] = []
     for player in response_json:

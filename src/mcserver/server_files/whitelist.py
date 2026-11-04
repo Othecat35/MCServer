@@ -65,7 +65,9 @@ def remove_players(
         raise ValueError("Must provide at least a player UUID or player name")
 
     uuids: set[UUID] = set(player_uuids)
-    names: set[str] = set(player_names)
+    names: set[str] = set()
+    for player_name in player_names:
+        names.add(player_name.lower())
 
     removed_players: list[WhitelistedPlayer] = []
     with open(whitelist_file_path, mode="r+") as whitelist_file:
@@ -75,7 +77,7 @@ def remove_players(
         for whitelisted_file_player in whitelist_data:
             if (
                 UUID(whitelisted_file_player["uuid"]) in uuids
-                or whitelisted_file_player["name"] in names
+                or whitelisted_file_player["name"].lower() in names
             ):
                 logger.debug(
                     f"Whitelisted player {whitelisted_file_player['name']} ({whitelisted_file_player['uuid']}) is removed"
