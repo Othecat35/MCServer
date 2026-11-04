@@ -216,7 +216,40 @@ def main() -> int:
     op_command.set_defaults(parser=op_command)
     op_subcommands = op_command.add_subparsers(title="Subcommands")
 
-    # op_grant and op_revoke is not going to be implemented in this version
+    # 'op grant'
+    op_grant_command = op_subcommands.add_parser(
+        "grant",
+        help="Grant player operator permission",
+        description="Add players to the whitelist.",
+    )
+
+    op_grant_command.set_defaults(command_name="op_grant")
+    op_grant_command.add_argument(
+        "players", nargs="+", type=str, help="List of player names or UUIDs"
+    )
+
+    op_grant_command.add_argument(
+        "--bypasses-player-limit",
+        action="store_true",
+        help="Player can bypass player limit",
+    )
+
+    op_grant_command.add_argument(
+        "--online-mode",
+        type=str,
+        choices=["true","false"],
+        metavar="Boolean",
+        help="The server's online mode (true/false)",
+    )
+
+    op_grant_command.add_argument(
+        "--permission-level",
+        type=int,
+        choices=[1, 2, 3, 4],
+        metavar="Level",
+        help="The perator permission level",
+    )
+
     # 'op list'
     op_list_command = op_subcommands.add_parser(
         "list", help="List operator players", description="List all operator players."

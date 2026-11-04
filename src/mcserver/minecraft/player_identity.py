@@ -1,8 +1,10 @@
 # Modules
 import hashlib
+import logging
 from typing import TypedDict
 from uuid import UUID
 
+logger = logging.getLogger(__name__)
 
 # TypedDicts
 class PlayerIdentity(TypedDict):
@@ -28,6 +30,7 @@ def get_offline_player_identities(
     for player_name in player_names:
         offline_player = f"OfflinePlayer:{player_name}".encode()
         player_uuid: UUID = UUID(hashlib.md5(offline_player).hexdigest())
+        logger.debug(f"Offline UUID for '{player_name}' is '{player_uuid}'")
         player_identity: PlayerIdentity = {
             "player_uuid": player_uuid,
             "player_name": player_name,
