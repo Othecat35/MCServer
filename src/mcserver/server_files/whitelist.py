@@ -113,7 +113,7 @@ def upsert_players(
     player_names: set[str] = set()
     for whitelisted_player in whitelisted_players:
         player_uuids.add(whitelisted_player["player_uuid"])
-        player_names.add(whitelisted_player["player_name"])
+        player_names.add(whitelisted_player["player_name"].lower())
 
     with open(whitelist_file_path, mode="r+") as whitelist_file:
         old_whitelisted_file_data: list[WhitelistedFilePlayer] = json.load(
@@ -124,7 +124,7 @@ def upsert_players(
         for whitelisted_file_player in old_whitelisted_file_data:
             if (
                 UUID(whitelisted_file_player["uuid"]) in player_uuids
-                or whitelisted_file_player["name"] in player_names
+                or whitelisted_file_player["name"].lower() in player_names
             ):
                 logger.debug(
                     f"Whitelisted player {whitelisted_file_player['name']} ({whitelisted_file_player['uuid']}) is removed"
