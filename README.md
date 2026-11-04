@@ -56,6 +56,16 @@ mcserver op list
 mcserver whitelist list
 ```
 
+- Adding a player to the whitelist
+```bash
+mcserver whitelist add Notch
+```
+
+- Granting Notch operator level 4 and can bypass player limit
+```bash
+mcserver op grant Notch --permission-level=4 --bypasses-player-limit
+```
+
 - Remove me from the whitelist
 ```bash
 mcserver whitelist remove Othecat35
