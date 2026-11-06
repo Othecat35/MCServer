@@ -6,6 +6,7 @@ from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
+
 # TypedDicts
 class PlayerIdentity(TypedDict):
     player_uuid: UUID
@@ -22,6 +23,7 @@ def separate_uuids_and_names(player_ids: list[str]) -> tuple[list[UUID], list[st
             player_names.append(player_id)
 
     return (player_uuids, player_names)
+
 
 def get_offline_player_identities(
     player_names: list[str] | str,

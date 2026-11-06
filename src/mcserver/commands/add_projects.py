@@ -5,11 +5,16 @@ from .. import config, paths, resolver, shared
 from ..modrinth import apis as modrinth_api
 from ..modrinth.typings import Dependency, DependencyType, ProjectVersion
 
-logger  = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
-class GetDependendenciesError(Exception): pass
-class ResolverTranslationError(Exception): pass
+class GetDependendenciesError(Exception):
+    pass
+
+
+class ResolverTranslationError(Exception):
+    pass
+
 
 dependency_types: dict[DependencyType, int] = {
     "embedded": 0,
@@ -17,6 +22,7 @@ dependency_types: dict[DependencyType, int] = {
     "required": 2,
     "incompatible": 3,
 }
+
 
 def human_to_resolver(dependencies: list[Dependency]) -> dict[str, int]:
     resolver_dependencies: dict[str, int] = {}
@@ -44,22 +50,32 @@ def run(args: Namespace) -> int:
 
     server_config_file_path = paths.configs_dir / "server.json"
     if not server_config_file_path.exists():
-        logger.error(f"Configuration file '{server_config_file_path}' does not exist, is MCServer initialized yet?")
+        logger.error(
+            f"Configuration file '{server_config_file_path}' does not exist, is MCServer initialized yet?"
+        )
         return 1
 
-    server_config = config.read_config("server", shared.default_configs["server"]["format_version"])
+    server_config = config.read_config(
+        "server", shared.default_configs["server"]["format_version"]
+    )
     game_version: str = server_config["game_version"]
     loader_name: str = server_config["loader"]["name"]
 
     def get_version_dependencies(project_id: str) -> list[Dependency]:
-        versions = modrinth_api.get_project_versions(project_id, loader_name, game_version, include_changelog=False)
+        versions = modrinth_api.get_project_versions(
+            project_id, loader_name, game_version, include_changelog=False
+        )
         if len(versions) == 0:
-            raise GetDependendenciesError(f"Project has no version for '{loader_name.capitalize()}' '{game_version}'")
+            raise GetDependendenciesError(
+                f"Project has no version for '{loader_name.capitalize()}' '{game_version}'"
+            )
 
         version = versions[0]
         version_dependencies = version.get("dependencies")
         if version_dependencies is None:
-            logger.debug("Version for '{project_id}' did not have 'dependencies', returning an empty list")
+            logger.debug(
+                "Version for '{project_id}' did not have 'dependencies', returning an empty list"
+            )
             version_dependencies = []
 
         return version_dependencies
@@ -67,9 +83,13 @@ def run(args: Namespace) -> int:
     project_ids: list[str] = []
     project_versions: dict[str, ProjectVersion] = {}
     for project in projects:
-        versions = modrinth_api.get_project_versions(project, loader_name, game_version, include_changelog=False)
+        versions = modrinth_api.get_project_versions(
+            project, loader_name, game_version, include_changelog=False
+        )
         if len(versions) == 0:
-            raise GetDependendenciesError(f"Project has no version for '{loader_name.capitalize()}' '{game_version}'")
+            raise GetDependendenciesError(
+                f"Project has no version for '{loader_name.capitalize()}' '{game_version}'"
+            )
 
         version = versions[0]
         project_id: str = version["project_id"]
@@ -90,44 +110,11 @@ def run(args: Namespace) -> int:
 
         return human_to_resolver(dependencies)
 
-    resolved_dependencies = resolver.resolve_dependencies(project_ids, get_dependencies, resolver.required_only)
+    resolved_dependencies = resolver.resolve_dependencies(
+        project_ids, get_dependencies, resolver.required_only
+    )
     print(resolved_dependencies)
     return 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # import logging

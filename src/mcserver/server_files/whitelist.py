@@ -5,6 +5,7 @@ from uuid import UUID
 
 from ..minecraft.player_identity import PlayerIdentity
 from .paths import whitelist_file_path
+from .shared import update_file
 
 logger = logging.getLogger(__name__)
 
@@ -41,28 +42,38 @@ def remove_players(
     player_names: list[str] | str | None = None,
 ) -> list[WhitelistedPlayer]:
     """Remove players from the whitelist that matches either by UUIDs or names
+    Skip writing if nothing chnaged
 
     Args:
         player_uuids: List of player UUIDs to be removed
         player_names: List of player names to be removed
 
     Raises:
-        ValueError: Must provide at least a player UUID or player name
+        FileNotFoundError: whitelist_file_path does not exist
+        TypeError: whitelist_file_path's JSON root is not an array
+        ValueError: Must provide at least a player UUID or a player name
 
     Returns:
         List of whitelisted players that are removed"""
+    if not whitelist_file_path.exists():
+        raise FileNotFoundError(f"File '{whitelist_file_path}' does not exist")
+
+    whitelist_file_data = json.loads(whitelist_file_path.read_text())
+    if not isinstance(whitelist_file_data, list):
+        raise TypeError(f"JSON root of file '{whitelist_file_path}' is not an array")
+
     if player_uuids is None:
         player_uuids = []
-    elif isinstance(player_uuids, UUID):
+    elif not isinstance(player_uuids, list):
         player_uuids = [player_uuids]
 
     if player_names is None:
         player_names = []
-    elif isinstance(player_names, str):
+    elif not isinstance(player_names, list):
         player_names = [player_names]
 
-    if not player_uuids and not player_names:
-        raise ValueError("Must provide at least a player UUID or player name")
+    if player_uuids == [] and player_names == []:
+        raise ValueError("Must provide at least a player UUID or a player name")
 
     uuids: set[UUID] = set(player_uuids)
     names: set[str] = set()
@@ -70,31 +81,31 @@ def remove_players(
         names.add(player_name.lower())
 
     removed_players: list[WhitelistedPlayer] = []
-    with open(whitelist_file_path, mode="r+") as whitelist_file:
-        whitelist_data: list[WhitelistedFilePlayer] = json.load(whitelist_file)
+    new_whitelist_data: list[WhitelistedFilePlayer] = []
+    for whitelisted_file_player in whitelist_file_data:
+        if (
+            UUID(whitelisted_file_player["uuid"]) in uuids
+            or whitelisted_file_player["name"].lower() in names
+        ):
+            logger.debug(
+                f"Whitelisted player {whitelisted_file_player['name']} ({whitelisted_file_player['uuid']}) is removed"
+            )
+            whitelisted_player: WhitelistedPlayer = {
+                "player_uuid": UUID(whitelisted_file_player["uuid"]),
+                "player_name": whitelisted_file_player["name"],
+            }
 
-        new_whitelist_data: list[WhitelistedFilePlayer] = []
-        for whitelisted_file_player in whitelist_data:
-            if (
-                UUID(whitelisted_file_player["uuid"]) in uuids
-                or whitelisted_file_player["name"].lower() in names
-            ):
-                logger.debug(
-                    f"Whitelisted player {whitelisted_file_player['name']} ({whitelisted_file_player['uuid']}) is removed"
-                )
-                whitelisted_player: WhitelistedPlayer = {
-                    "player_uuid": UUID(whitelisted_file_player["uuid"]),
-                    "player_name": whitelisted_file_player["name"],
-                }
+            removed_players.append(whitelisted_player)
+            continue
 
-                removed_players.append(whitelisted_player)
-                continue
+        new_whitelist_data.append(whitelisted_file_player)
 
-            new_whitelist_data.append(whitelisted_file_player)
-
-        whitelist_file.seek(0)
-        json.dump(new_whitelist_data, whitelist_file, indent=2)
-        whitelist_file.truncate()
+    if len(removed_players) == 0:
+        logger.debug("No player is removed, skipping updating the file")
+    else:
+        update_file(
+            whitelist_file_path, json.dumps(new_whitelist_data, indent=2).encode()
+        )
 
     return removed_players
 
@@ -105,7 +116,18 @@ def upsert_players(
     """Remove players and add them again (it sounds weird but its fine)
 
     Args:
-        whitelisted_players: List of players to be whitelisted"""
+        whitelisted_players: List of players to be whitelisted
+
+    Raises:
+        FileNotFoundError: whitelist_file_path does not exist
+        TypeError: whitelist_file_path's JSON root is not an array"""
+    if not whitelist_file_path.exists():
+        raise FileNotFoundError(f"File '{whitelist_file_path}' does not exist")
+
+    whitelist_file_data = json.loads(whitelist_file_path.read_text())
+    if not isinstance(whitelist_file_data, list):
+        raise TypeError(f"JSON root of file '{whitelist_file_path}' is not an array")
+
     if not isinstance(whitelisted_players, list):
         whitelisted_players = [whitelisted_players]
 
@@ -115,36 +137,31 @@ def upsert_players(
         player_uuids.add(whitelisted_player["player_uuid"])
         player_names.add(whitelisted_player["player_name"].lower())
 
-    with open(whitelist_file_path, mode="r+") as whitelist_file:
-        old_whitelisted_file_data: list[WhitelistedFilePlayer] = json.load(
-            whitelist_file
-        )
-        whitelist_file_data: list[WhitelistedFilePlayer] = []
-
-        for whitelisted_file_player in old_whitelisted_file_data:
-            if (
-                UUID(whitelisted_file_player["uuid"]) in player_uuids
-                or whitelisted_file_player["name"].lower() in player_names
-            ):
-                logger.debug(
-                    f"Whitelisted player {whitelisted_file_player['name']} ({whitelisted_file_player['uuid']}) is removed"
-                )
-
-                continue
-
-            whitelist_file_data.append(whitelisted_file_player)
-
-        for whitelisted_player in whitelisted_players:
-            whitelisted_file_player: WhitelistedFilePlayer = {
-                "uuid": str(whitelisted_player["player_uuid"]),
-                "name": whitelisted_player["player_name"],
-            }
-
+    new_whitelist_file_data: list[WhitelistedFilePlayer] = []
+    for whitelisted_file_player in whitelist_file_data:
+        if (
+            UUID(whitelisted_file_player["uuid"]) in player_uuids
+            or whitelisted_file_player["name"].lower() in player_names
+        ):
             logger.debug(
-                f"Adding player {whitelisted_player['player_name']} ({whitelisted_player['player_uuid']}) to the whitelist"
+                f"Whitelisted player {whitelisted_file_player['name']} ({whitelisted_file_player['uuid']}) is removed"
             )
-            whitelist_file_data.append(whitelisted_file_player)
 
-        whitelist_file.seek(0)
-        json.dump(whitelist_file_data, whitelist_file, indent=2)
-        whitelist_file.truncate()
+            continue
+
+        new_whitelist_file_data.append(whitelisted_file_player)
+
+    for whitelisted_player in whitelisted_players:
+        whitelisted_file_player: WhitelistedFilePlayer = {
+            "uuid": str(whitelisted_player["player_uuid"]),
+            "name": whitelisted_player["player_name"],
+        }
+
+        logger.debug(
+            f"Adding player {whitelisted_player['player_name']} ({whitelisted_player['player_uuid']}) to the whitelist"
+        )
+        new_whitelist_file_data.append(whitelisted_file_player)
+
+    update_file(
+        whitelist_file_path, json.dumps(new_whitelist_file_data, indent=2).encode()
+    )

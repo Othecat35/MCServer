@@ -25,24 +25,27 @@ def run(args: Namespace) -> int:
     is_online_mode: bool = True
     if online_mode is None:
         from ..server_files import server_properties
+
         is_online_mode = server_properties.get_online_mode()
     else:
         is_online_mode = online_mode != "false"
-    
+
     if permission_level is None:
         from ..server_files import server_properties
+
         permission_level = server_properties.get_operator_permission_level()
 
     operator_players: list[OperatorPlayer] = []
     if is_online_mode:
         from ..minecraft import api as minecraft_api
+
         for player_uuid in player_uuids:
             player_profile = minecraft_api.get_player_from_uuid(player_uuid)
             operator_player: OperatorPlayer = {
                 "player_uuid": player_profile["player_uuid"],
                 "player_name": player_profile["player_name"],
                 "permission_level": permission_level,
-                "bypasses_player_limit": bypasses_player_limit
+                "bypasses_player_limit": bypasses_player_limit,
             }
 
             operator_players.append(operator_player)
@@ -56,31 +59,36 @@ def run(args: Namespace) -> int:
                 "player_uuid": player_profile["player_uuid"],
                 "player_name": player_profile["player_name"],
                 "permission_level": permission_level,
-                "bypasses_player_limit": bypasses_player_limit
+                "bypasses_player_limit": bypasses_player_limit,
             }
 
             operator_players.append(operator_player)
     else:
         for player_uuid in uuids:
-            logger.error(f"Cannot add by UUID in offline mode: {player_uuid}, use name instead.")
+            logger.error(
+                f"Cannot add by UUID in offline mode: {player_uuid}, use name instead."
+            )
             return 1
 
         from ..minecraft.player_identity import get_offline_player_identities
+
         player_profiles = get_offline_player_identities(player_names)
         for player_profile in player_profiles:
             operator_player: OperatorPlayer = {
                 "player_uuid": player_profile["player_uuid"],
                 "player_name": player_profile["player_name"],
                 "permission_level": permission_level,
-                "bypasses_player_limit": bypasses_player_limit
+                "bypasses_player_limit": bypasses_player_limit,
             }
 
             operator_players.append(operator_player)
 
     from ..server_files import ops
+
     ops.upsert_players(operator_players)
-    
+
     from ..shared import pluralize
+
     player_count: int = len(operator_players)
     if player_count == 0:
         logger.info("There are no player to be granted operator.")

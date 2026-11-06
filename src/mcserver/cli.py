@@ -147,9 +147,7 @@ def main() -> int:
     )
 
     add_command.set_defaults(command_name="add")
-    add_command.add_argument(
-        "projects", nargs="+", type=str, help="Project names"
-    )
+    add_command.add_argument("projects", nargs="+", type=str, help="Project names")
 
     # 'init' command
     init_command = commands.add_parser(
@@ -249,7 +247,7 @@ def main() -> int:
     op_grant_command.add_argument(
         "--online-mode",
         type=str,
-        choices=["true","false"],
+        choices=["true", "false"],
         metavar="Boolean",
         help="The server's online mode (true/false)",
     )
@@ -394,7 +392,7 @@ def main() -> int:
     whitelist_add_command.add_argument(
         "--online-mode",
         type=str,
-        choices=["true","false"],
+        choices=["true", "false"],
         metavar="Boolean",
         help="The server's online mode (true/false)",
     )

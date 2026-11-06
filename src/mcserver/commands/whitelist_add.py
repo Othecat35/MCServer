@@ -23,6 +23,7 @@ def run(args: Namespace) -> int:
     is_online_mode: bool = True
     if online_mode is None:
         from ..server_files import server_properties
+
         is_online_mode = server_properties.get_online_mode()
     else:
         is_online_mode = online_mode != "false"
@@ -30,11 +31,12 @@ def run(args: Namespace) -> int:
     whitelisted_players: list[WhitelistedPlayer] = []
     if is_online_mode:
         from ..minecraft import api as minecraft_api
+
         for player_uuid in player_uuids:
             player_profile = minecraft_api.get_player_from_uuid(player_uuid)
             whitelisted_player: WhitelistedPlayer = {
                 "player_uuid": player_profile["player_uuid"],
-                "player_name": player_profile["player_name"]
+                "player_name": player_profile["player_name"],
             }
 
             whitelisted_players.append(whitelisted_player)
@@ -46,22 +48,27 @@ def run(args: Namespace) -> int:
         for player_profile in player_profiles:
             whitelisted_player: WhitelistedPlayer = {
                 "player_uuid": player_profile["player_uuid"],
-                "player_name": player_profile["player_name"]
+                "player_name": player_profile["player_name"],
             }
 
             whitelisted_players.append(whitelisted_player)
     else:
         for player_uuid in uuids:
-            logger.error(f"Cannot add by UUID in offline mode: {player_uuid}, use name instead.")
+            logger.error(
+                f"Cannot add by UUID in offline mode: {player_uuid}, use name instead."
+            )
             return 1
 
         from ..minecraft.player_identity import get_offline_player_identities
+
         whitelisted_players = get_offline_player_identities(player_names)
 
     from ..server_files import whitelist
+
     whitelist.upsert_players(whitelisted_players)
-    
+
     from ..shared import pluralize
+
     player_count: int = len(whitelisted_players)
     if player_count == 0:
         logger.info("There are no whitelisted player.")

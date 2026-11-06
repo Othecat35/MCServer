@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- 'Re'-added the `add` command
+
+### Changed
+
+- `whitelist add/remove` and `op grant/revoke` is now atomic in writing the file.
+
 ## [4.5.0] - 2026-11-04
 
 ### Added

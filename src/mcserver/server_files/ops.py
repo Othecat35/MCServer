@@ -4,6 +4,7 @@ from typing import TypedDict
 from uuid import UUID
 
 from .paths import ops_file_path
+from .shared import update_file
 
 logger = logging.getLogger(__name__)
 
@@ -55,22 +56,31 @@ def remove_players(
         player_names: List of player names to be removed
 
     Raises:
+        FileNotFoundError: ops_file_path does not exist
+        TypeError: ops_file_path's JSON root is not an array
         ValueError: Must provide at least a player UUID or player name
 
     Returns:
         List of operator players that are removed"""
+    if not ops_file_path.exists():
+        raise FileNotFoundError(f"File '{ops_file_path}' does not exist")
+
+    ops_file_data = json.loads(ops_file_path.read_text())
+    if not isinstance(ops_file_data, list):
+        raise TypeError(f"JSON root of file '{ops_file_path}' is not an array")
+
     if player_uuids is None:
         player_uuids = []
-    elif isinstance(player_uuids, UUID):
+    elif not isinstance(player_uuids, list):
         player_uuids = [player_uuids]
 
     if player_names is None:
         player_names = []
-    elif isinstance(player_names, str):
+    elif not isinstance(player_names, list):
         player_names = [player_names]
 
-    if not player_uuids and not player_names:
-        raise ValueError("Must provide at least a player UUID or player name")
+    if player_uuids == [] and player_names == []:
+        raise ValueError("Must provide at least a player UUID or a player name")
 
     uuids: set[UUID] = set(player_uuids)
     names: set[str] = set()
@@ -78,35 +88,31 @@ def remove_players(
         names.add(player_name.lower())
 
     removed_players: list[OperatorPlayer] = []
-    with open(ops_file_path, mode="r+") as ops_file:
-        ops_data: list[OperatorFilePlayer] = json.load(ops_file)
+    new_ops_data: list[OperatorFilePlayer] = []
+    for operator_file_player in ops_file_data:
+        if (
+            UUID(operator_file_player["uuid"]) in uuids
+            or operator_file_player["name"].lower() in names
+        ):
+            logger.debug(
+                f"Operator player {operator_file_player['name']} ({operator_file_player['uuid']}) is removed"
+            )
+            operator_player: OperatorPlayer = {
+                "player_uuid": UUID(operator_file_player["uuid"]),
+                "player_name": operator_file_player["name"],
+                "permission_level": operator_file_player["level"],
+                "bypasses_player_limit": operator_file_player["bypassesPlayerLimit"],
+            }
 
-        new_ops_data: list[OperatorFilePlayer] = []
-        for operator_file_player in ops_data:
-            if (
-                UUID(operator_file_player["uuid"]) in uuids
-                or operator_file_player["name"].lower() in names
-            ):
-                logger.debug(
-                    f"Operator player {operator_file_player['name']} ({operator_file_player['uuid']}) is removed"
-                )
-                operator_player: OperatorPlayer = {
-                    "player_uuid": UUID(operator_file_player["uuid"]),
-                    "player_name": operator_file_player["name"],
-                    "permission_level": operator_file_player["level"],
-                    "bypasses_player_limit": operator_file_player[
-                        "bypassesPlayerLimit"
-                    ],
-                }
+            removed_players.append(operator_player)
+            continue
 
-                removed_players.append(operator_player)
-                continue
+        new_ops_data.append(operator_file_player)
 
-            new_ops_data.append(operator_file_player)
-
-        ops_file.seek(0)
-        json.dump(new_ops_data, ops_file, indent=2)
-        ops_file.truncate()
+    if len(removed_players) == 0:
+        logger.debug("No player is removed, skipping updating the file")
+    else:
+        update_file(ops_file_path, json.dumps(new_ops_data, indent=2).encode())
 
     return removed_players
 
@@ -117,7 +123,18 @@ def upsert_players(
     """Remove players and add them again (it sounds weird but its fine)
 
     Args:
-        operator_players: List of players to be granted operator permission"""
+        operator_players: List of players to be granted operator permission
+
+    Raises:
+        FileNotFoundError: whitelist_file_path does not exist
+        TypeError: whitelist_file_path's JSON root is not an array"""
+    if not ops_file_path.exists():
+        raise FileNotFoundError(f"File '{ops_file_path}' does not exist")
+
+    ops_file_data = json.loads(ops_file_path.read_text())
+    if not isinstance(ops_file_data, list):
+        raise TypeError(f"JSON root of file '{ops_file_path}' is not an array")
+
     if not isinstance(operator_players, list):
         operator_players = [operator_players]
 
@@ -127,44 +144,36 @@ def upsert_players(
         player_uuids.add(operator_player["player_uuid"])
         player_names.add(operator_player["player_name"].lower())
 
-    with open(ops_file_path, mode="r+") as ops_file:
-        old_ops_file_data: list[OperatorFilePlayer] = json.load(
-            ops_file
-        )
-
-        ops_file_data: list[OperatorFilePlayer] = []
-        for operator_file_player in old_ops_file_data:
-            if (
-                UUID(operator_file_player["uuid"]) in player_uuids
-                or operator_file_player["name"].lower() in player_names
-            ):
-
-                info_message = f"Operator player {operator_file_player['name']} ({operator_file_player['uuid']}) with level {operator_file_player['level']}"
-                if operator_file_player["bypassesPlayerLimit"]:
-                    info_message += " and can bypass player limit"
-
-                info_message += " is revoked"
-                logger.debug(info_message)
-
-                continue
-
-            ops_file_data.append(operator_file_player)
-
-        for operator_player in operator_players:
-            operator_file_player: OperatorFilePlayer = {
-                "uuid": str(operator_player["player_uuid"]),
-                "name": operator_player["player_name"],
-                "level": operator_player["permission_level"],
-                "bypassesPlayerLimit": operator_player["bypasses_player_limit"]
-            }
-
-            info_message = f"Adding player {operator_player['player_name']} ({operator_player['player_uuid']}) to operator with level {operator_player['permission_level']}"
-            if operator_player["bypasses_player_limit"]:
+    new_ops_file_data: list[OperatorFilePlayer] = []
+    for operator_file_player in ops_file_data:
+        if (
+            UUID(operator_file_player["uuid"]) in player_uuids
+            or operator_file_player["name"].lower() in player_names
+        ):
+            info_message = f"Operator player {operator_file_player['name']} ({operator_file_player['uuid']}) with level {operator_file_player['level']}"
+            if operator_file_player["bypassesPlayerLimit"]:
                 info_message += " and can bypass player limit"
 
+            info_message += " is revoked"
             logger.debug(info_message)
-            ops_file_data.append(operator_file_player)
 
-        ops_file.seek(0)
-        json.dump(ops_file_data, ops_file, indent=2)
-        ops_file.truncate()
+            continue
+
+        new_ops_file_data.append(operator_file_player)
+
+    for operator_player in operator_players:
+        operator_file_player: OperatorFilePlayer = {
+            "uuid": str(operator_player["player_uuid"]),
+            "name": operator_player["player_name"],
+            "level": operator_player["permission_level"],
+            "bypassesPlayerLimit": operator_player["bypasses_player_limit"],
+        }
+
+        info_message = f"Adding player {operator_player['player_name']} ({operator_player['player_uuid']}) to operator with level {operator_player['permission_level']}"
+        if operator_player["bypasses_player_limit"]:
+            info_message += " and can bypass player limit"
+
+        logger.debug(info_message)
+        new_ops_file_data.append(operator_file_player)
+
+    update_file(ops_file_path, json.dumps(new_ops_file_data, indent=2).encode())
