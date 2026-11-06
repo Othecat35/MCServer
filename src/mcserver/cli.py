@@ -139,6 +139,18 @@ def main() -> int:
 
     commands = parser.add_subparsers(title="Commands")
 
+    # 'add' command
+    add_command = commands.add_parser(
+        "add",
+        help="Add mods or plugins",
+        description="Add Modrinth mods or plugins (projects).",
+    )
+
+    add_command.set_defaults(command_name="add")
+    add_command.add_argument(
+        "projects", nargs="+", type=str, help="Project names"
+    )
+
     # 'init' command
     init_command = commands.add_parser(
         "init",
