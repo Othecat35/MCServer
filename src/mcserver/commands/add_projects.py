@@ -1,11 +1,11 @@
 import logging
 from argparse import Namespace
-
-from mcserver import networking
+from typing import NotRequired, TypedDict
 
 from .. import config, paths, resolver, shared
 from ..modrinth import apis as modrinth_api
-from ..modrinth.typings import Dependency, DependencyType, ProjectVersion
+from ..modrinth.typings import DependencyType, ProjectVersion
+from ..resolver import Project
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,25 @@ class GetDependenciesError(Exception):
 
 class ResolverTranslationError(Exception):
     pass
+
+
+class Dependency(TypedDict):
+    version_id: NotRequired[str | None]
+    """The ID of the version that this version depends on"""
+    project_id: NotRequired[str | None]
+    """The ID of the project that this version depends on"""
+    file_name: NotRequired[str | None]
+    """The file name of the dependency, mostly used for showing external dependencies on modpacks"""
+    dependency_type: DependencyType
+    """The type of dependency that this version has"""
+
+class ProjectData(TypedDict):
+    project_id: str
+    is_manual: bool
+    highest_type: DependencyType | None
+    """Not present if the project is manual and has not dependents"""
+    dependencies: list[Dependency]
+    dependents: list[Dependency]
 
 
 dependency_types: dict[DependencyType, int] = {
@@ -45,6 +64,43 @@ def human_to_resolver(dependencies: list[Dependency]) -> dict[str, int]:
         ]
 
     return resolver_dependencies
+
+
+def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]:
+    projects: list[ProjectData] = []
+    for project_id, project in dependency_graph.items():
+        dependencies: list[Dependency] = []
+        for dependency_id, dependency_type in project["dependencies"].items():
+            dependency: Dependency = {
+                "project_id": dependency_id,
+                "dependency_type": resolver.dependency_types2[dependency_type],
+            }
+
+            dependencies.append(dependency)
+
+        dependents: list[Dependency] = []
+        for dependency_id, dependency_type in project["dependents"].items():
+            dependent: Dependency = {
+                "project_id": dependency_id,
+                "dependency_type": resolver.dependency_types2[dependency_type],
+            }
+
+            dependents.append(dependent)
+
+        project_data: ProjectData = {
+            "project_id": project_id,
+            "is_manual": project["is_manual"],
+            "highest_type": None,
+            "dependencies": dependencies,
+            "dependents": dependents,
+        }
+
+        if project["highest_type"] is not None:
+            project_data["highest_type"] = resolver.dependency_types2[project["highest_type"]]
+
+        projects.append(project_data)
+
+    return projects
 
 
 def run(args: Namespace) -> int:
@@ -123,11 +179,10 @@ def run(args: Namespace) -> int:
 
         return human_to_resolver(dependencies)
 
-    resolved_dependencies = resolver.resolver_to_human(resolver.resolve_dependencies(
-        project_ids, get_dependencies, resolver.required_only
-    ))
-    print(resolved_dependencies)
+    resolved_projects = resolver_to_human(resolver.resolve_dependencies(project_ids, get_dependencies, resolver.required_only))
+    print(resolved_projects)
 
+    all_project_ids: set[str] = set()
     required_dependencies: set[str] = set()
     incompatible_dependencies: set[str] = set()
 
@@ -135,15 +190,20 @@ def run(args: Namespace) -> int:
     required_projects: set[str] = set()
     incompatible_projects: set[str] = set()
 
-    for project in resolved_dependencies:
-        for dependencies in project["dependencies"]:
-            match dependencies["dependency_type"]:
-                case "required":
-                    required_dependencies.add(dependencies["project_id"])
-                case "incompatible":
-                    incompatible_dependencies.add(dependencies["project_id"])
-
+    for project in resolved_projects:
         project_id = project["project_id"]
+        all_project_ids.add(project_id)
+        for dependency in project["dependencies"]:
+            if "project_id" not in dependency or dependency["project_id"] is None:
+                logger.debug("A dependency lacks project ID or it is None")
+                continue
+
+            match dependency["dependency_type"]:
+                case "required":
+                    required_dependencies.add(dependency["project_id"])
+                case "incompatible":
+                    incompatible_dependencies.add(dependency["project_id"])
+
         if project["is_manual"]:
             logger.debug(f"{project_id} is a manual mod, add it to the required bucket")
             required_projects.add(project_id)
@@ -172,25 +232,98 @@ incompatible_projects: {incompatible_projects}""")
     if conflicting_projects:
         logger.error(f"Found conflicting dependencies: {', '.join(conflicting_projects)}")
 
-    downloaded_projects: list[str] = list(required_projects)
+    project_information: dict = {}
+    for project in modrinth_api.get_project_informations(list(all_project_ids)):
+        project_id = str(project.pop("project_id"))
+        project_information[project_id] = project
 
+    print(project_information)
 
-    for project in downloaded_projects:
-        project_version = project_versions[project]
-        version_files = project_version["files"]
+    required_projects_count = len(required_projects)
+    logger.info(f"{shared.pluralize(project_label, required_projects_count).capitalize()} that {shared.pluralize('is', required_projects_count)} going to be downloaded:")
+    required_project_display: list[str] = []
+    for project_id in list(required_projects):
+        required_project_display.append(f"{project_information[project_id]['project_name']} ({project_id})")
 
-        primary_file = None
-        for file in version_files:
-            if file["is_primary"]:
-                primary_file = file
-                break
+    required_project_display.sort()
+    print(", ".join(required_project_display))
+
+    optional_projects_count = len(optional_projects)
+    if optional_projects_count:
+        logger.info(f"{shared.pluralize(project_label, optional_projects_count).capitalize()} that {shared.pluralize('is', optional_projects_count)} optional:")
+        optional_project_display: list[str] = []
+        for project_id in list(optional_projects):
+            optional_project_display.append(f"{project_information[project_id]['project_name']} ({project_id})")
+
+        optional_project_display.sort()
+        print(", ".join(optional_project_display))
+
+    incompatible_projects_count = len(optional_projects)
+    if incompatible_projects_count:
+        logger.info(f"{shared.pluralize(project_label, incompatible_projects_count).capitalize()} that {shared.pluralize('is', incompatible_projects_count)} incompatible:")
+        incompatible_project_display: list[str] = []
+        for project_id in list(incompatible_projects):
+            incompatible_project_display.append(f"{project_information[project_id]['project_name']} ({project_id})")
+
+        incompatible_project_display.sort()
+        print(", ".join(incompatible_project_display))
+
+    confirmation_answer = shared.confirmation_prompt("Do you want to continue?", default_option=True)
+
+    if not confirmation_answer:
+        print("Cancelled")
+        return 1
+
+    # for project_id in required_project_list:
+    #     project_version = project_versions[project_id]
+    #     version_files = project_version["files"]
+
+    #     primary_file = None
+    #     for file in version_files:
+    #         if file["is_primary"]:
+    #             primary_file = file
+    #             break
         
-        if primary_file is None:
-            primary_file = version_files[0]
+    #     if primary_file is None:
+    #         primary_file = version_files[0]
 
-        logger.info(f"Downloading {project_version['project_id']}?")
-        project_directory.mkdir(exist_ok=True, parents=True)
-        networking.download(primary_file['download_url'], project_directory / primary_file["file_name"])
+    #     logger.info(f"Downloading {project_version['project_id']}?")
+    #     project_directory.mkdir(exist_ok=True, parents=True)
+    #     networking.download(primary_file['download_url'], project_directory / primary_file["file_name"])
+
+        # record_payload: ProjectRecordPayload = {
+        #     "is_manual": 
+        # }
+
+    # for project in resolved_projects:
+    #     project_id = project["project_id"]
+    #     project_information = project_info[project_id]
+    #     project_version = project_versions[project_id]
+    #     version_files = project_version["files"]
+
+    #     primary_file = None
+    #     for file in version_files:
+    #         if file["is_primary"]:
+    #             primary_file = file
+    #             break
+        
+    #     if primary_file is None:
+    #         primary_file = version_files[0]
+
+    #     record_payload: ProjectRecordPayload = {
+    #         "project_name": project_information["project_name"],
+    #         "project_slug": project_information["project_slug"],
+    #         "version_id": project_version["version_id"],
+    #         "version_environment": project_version["environment"],
+    #         "added_time": datetime.now(tz=UTC).isoformat(),
+    #         "file": primary_file,
+    #         "is_manual": project["is_manual"],
+    #         "highest_type": project["highest_type"],
+    #         "dependencies": project["dependencies"],
+    #         "dependents": project["dependents"],
+    #     }
+
+    #     project_records.write_record(project["project_id"], record_payload)
 
     return 0
 
@@ -267,10 +400,10 @@ incompatible_projects: {incompatible_projects}""")
 
 #         return human_to_resolver(dependencies)
 
-#     resolved_dependencies = resolve_dependencies(
+#     resolved_projects = resolve_dependencies(
 #         projects, get_dependencies, required_only
 #     )
-#     print(resolved_dependencies)
+#     print(resolved_projects)
 #     return 0
 
 #     # # from ..modrinth.apis import get_project_versions

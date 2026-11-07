@@ -1,7 +1,7 @@
 import logging
 from collections import deque
 from collections.abc import Callable
-from typing import Literal, NotRequired, TypedDict
+from typing import Literal, TypedDict
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +28,8 @@ class Dependency(TypedDict):
 
 class Project(TypedDict):
     is_manual: bool
-    highest_type: NotRequired[int]
-    """Not present if the project is manual and has not dependents"""
+    highest_type: int | None
+    """If this is None, it is a manual project with no friend"""
     dependencies: dict[str, int]
     dependents: dict[str, int]
 
@@ -37,8 +37,8 @@ class Project(TypedDict):
 class ProjectData(TypedDict):
     project_id: str
     is_manual: bool
-    highest_type: NotRequired[DependencyType]
-    """Not present if the project is manual and has not dependents"""
+    highest_type: DependencyType | None
+    """If this is None, it is a manual project with no friend"""
     dependencies: list[Dependency]
     dependents: list[Dependency]
 
@@ -78,11 +78,12 @@ def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]
         project_data: ProjectData = {
             "project_id": project_id,
             "is_manual": project["is_manual"],
+            "highest_type": None,
             "dependencies": dependencies,
             "dependents": dependents,
         }
 
-        if "highest_type" in project:
+        if project["highest_type"] is not None:
             project_data["highest_type"] = dependency_types2[project["highest_type"]]
 
         projects.append(project_data)
@@ -90,7 +91,7 @@ def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]
     return projects
 
 
-# required then incompatible is caller's to handle. not resolver
+# required then incompatible is caller's to handle. not resolver. bro just use a set and intersection (&)
 # - Othecat35
 
 
@@ -99,46 +100,48 @@ def resolve_dependencies(
     get_dependencies: Callable[[str], dict[str, int]],
     process_filter: Callable[[int], bool],
 ) -> dict[str, Project]:
-    """Resolve dependency tree using BFS
+    """Resolve dependency tree using 'simple' BFS
+    'manual' project always get processed
 
     Args:
         project_ids: Projects to start with
         get_dependencies: Callback that returns a dictionary
-        process_filter: Callback that returns a bool
-    """
+        process_filter: Callback that returns a bool"""
     if isinstance(project_ids, str):
         project_ids = [project_ids]
 
     queued_projects: deque[str] = deque()
-    visited_projects: set[str] = set()
     dependency_graph: dict[str, Project] = {}
+    visited_projects: set[str] = set()
 
     for project_id in project_ids:
-        logger.debug(f"Adding project '{project_id}' to the queue")
-        queued_projects.append(project_id)
         project: Project = {
             "is_manual": True,
+            "highest_type": None,
             "dependencies": {},
             "dependents": {},
         }
+
+        logger.debug(f"Adding project '{project_id}' to the queue")
         dependency_graph[project_id] = project
+        queued_projects.append(project_id)
 
     while queued_projects:
         project_id = queued_projects.popleft()
-        project = dependency_graph[project_id]
+        if project_id in visited_projects:
+            logger.debug(f"Project '{project_id}' has already been visited")
+            continue
 
+        project = dependency_graph[project_id]
+        highest_type = project["highest_type"]
         if (
             not project["is_manual"]
-            and "highest_type" in project
-            and not process_filter(project["highest_type"])
+            and highest_type is not None
+            and not process_filter(highest_type)
         ):
             logger.debug(
                 f"Project '{project_id}' is skipped because highest_type did not pass process_filter: {project['highest_type']}"
             )
-            continue
-
-        if project_id in visited_projects:
-            logger.debug(f"Project '{project_id}' has already been visited")
             continue
 
         dependencies = get_dependencies(project_id)
@@ -148,12 +151,12 @@ def resolve_dependencies(
             if dependency_id in dependency_graph:
                 dependency_project = dependency_graph[dependency_id]
 
-                if "highest_type" in dependency_project:
-                    dependency_project["highest_type"] = max(
-                        dependency_type, dependency_project["highest_type"]
-                    )
-                else:
+                if dependency_project["highest_type"] is None:
                     dependency_project["highest_type"] = dependency_type
+                else:
+                    dependency_project["highest_type"] = max(
+                        dependency_project["highest_type"], dependency_type
+                    )
 
                 dependency_project["dependents"][project_id] = dependency_type
             else:

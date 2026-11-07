@@ -10,6 +10,7 @@ class ClearLineHandler(logging.StreamHandler):
         self.stream.flush()
         super().emit(record)
 
+
 def main():
     import sys
 

@@ -15,6 +15,7 @@ from .shared import current_dir, format_number, mcserver_dir, print_status
 
 logger = logging.getLogger(__name__)
 
+
 # TypedDict
 class ResponseObject(TypedDict):
     text: str
@@ -29,7 +30,9 @@ class DownloadURLError(Exception):
 
 
 # Variables
-user_agent = f"MCServer/{__version__} (Othecat35; +https://github.com/Othecat35/MCServer)"
+user_agent = (
+    f"MCServer/{__version__} (Othecat35; +https://github.com/Othecat35/MCServer)"
+)
 read_chunk_size: int = 1024 * 64  # 64KiB
 
 # Paths
@@ -71,7 +74,7 @@ def request(
         response_object["headers"] = response_headers
         response_object["status_code"] = response.status
 
-        if response_headers.get("content-type", "").startswith("application/json"):
+        if True: #response_headers.get("content-type", "").startswith("application/json"):
             response_object["json"] = json.loads(response_object["text"])
 
     return response_object

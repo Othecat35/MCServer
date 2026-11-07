@@ -161,6 +161,7 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
 def support_mod(loader_name) -> bool:
     return loader_name in mod_loaders or loader_name in plugin_loaders
 
+
 def get_loader_context(loader_name: str) -> tuple[str, Path | None]:
     if loader_name in mod_loaders:
         return ("mod", mods_dir)
