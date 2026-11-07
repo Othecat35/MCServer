@@ -1,6 +1,8 @@
 import json
 from typing import NotRequired, TypedDict
 
+from mcserver.shared import update_file
+
 from .paths import modrinth_dir
 from .typings import DependencyType, Environment, FileHashes
 
@@ -20,6 +22,10 @@ class ProjectRecordFile(TypedDict):
 
 
 class ProjectRecordPayload(TypedDict):
+    # Project (following the project_information typings)
+    project_name: str
+    project_slug: NotRequired[str]
+
     # Version (Following the project_version typings)
     version_id: str
     version_name: NotRequired[str]
@@ -70,7 +76,7 @@ def write_record(project_id: str, record_payload: ProjectRecordPayload) -> None:
         "format_version": current_format_version,
     }
     record_json = json.dumps(record_data)
-    project_record_file.write_text(record_json)
+    update_file(project_record_file, record_json.encode())
 
 
 def read_record(project_id: str) -> ProjectRecordData:

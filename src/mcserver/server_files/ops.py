@@ -3,8 +3,8 @@ import logging
 from typing import TypedDict
 from uuid import UUID
 
+from ..shared import update_file
 from .paths import ops_file_path
-from .shared import update_file
 
 logger = logging.getLogger(__name__)
 

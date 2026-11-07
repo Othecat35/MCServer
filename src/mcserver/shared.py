@@ -1,6 +1,6 @@
 # Modules
 # Standard
-import logging as log
+import logging
 import shutil
 import sys
 import textwrap
@@ -8,6 +8,8 @@ from pathlib import Path
 
 # MCServer
 from .constants import iec_prefixes, si_prefixes
+
+logger = logging.getLogger(__name__)
 
 # Variables
 mod_loaders = ["fabric"]  # , "quilt"]
@@ -156,6 +158,9 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
             return False
 
 
+def support_mod(loader_name) -> bool:
+    return loader_name in mod_loaders or loader_name in plugin_loaders
+
 def get_loader_context(loader_name: str) -> tuple[str, Path | None]:
     if loader_name in mod_loaders:
         return ("mod", mods_dir)
@@ -167,7 +172,7 @@ def get_loader_context(loader_name: str) -> tuple[str, Path | None]:
 
 def set_loader_context(loader_name: str) -> None:
     global loader_context
-    log.debug("set_loader_context was called!")
+    logger.debug("set_loader_context was called!")
 
     if loader_name in mod_loaders:
         loader_context = {"project_directory": mods_dir, "project_label": "mod"}
@@ -260,3 +265,11 @@ def print_status(message: str, dynamic: str | None = None):
             print(message, flush=True)
 
     last_status_message = message
+
+
+def update_file(file_path: Path, file_data: bytes):
+    temporary_file = Path(str(file_path) + ".tmp")
+    logger.debug(f"Writing into '{temporary_file}'")
+    temporary_file.write_bytes(file_data)
+    logger.debug(f"Replacing '{temporary_file}' with '{file_path}'")
+    temporary_file.replace(file_path)

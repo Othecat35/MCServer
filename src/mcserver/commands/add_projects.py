@@ -1,6 +1,8 @@
 import logging
 from argparse import Namespace
 
+from mcserver import networking
+
 from .. import config, paths, resolver, shared
 from ..modrinth import apis as modrinth_api
 from ..modrinth.typings import Dependency, DependencyType, ProjectVersion
@@ -8,7 +10,7 @@ from ..modrinth.typings import Dependency, DependencyType, ProjectVersion
 logger = logging.getLogger(__name__)
 
 
-class GetDependendenciesError(Exception):
+class GetDependenciesError(Exception):
     pass
 
 
@@ -61,24 +63,14 @@ def run(args: Namespace) -> int:
     game_version: str = server_config["game_version"]
     loader_name: str = server_config["loader"]["name"]
 
-    def get_version_dependencies(project_id: str) -> list[Dependency]:
-        versions = modrinth_api.get_project_versions(
-            project_id, loader_name, game_version, include_changelog=False
-        )
-        if len(versions) == 0:
-            raise GetDependendenciesError(
-                f"Project has no version for '{loader_name.capitalize()}' '{game_version}'"
-            )
+    if not shared.support_mod(loader_name):
+        logger.error(f"{loader_name.capitalize()} does not support mods")
+        return 1
 
-        version = versions[0]
-        version_dependencies = version.get("dependencies")
-        if version_dependencies is None:
-            logger.debug(
-                "Version for '{project_id}' did not have 'dependencies', returning an empty list"
-            )
-            version_dependencies = []
-
-        return version_dependencies
+    project_label, project_directory = shared.get_loader_context(loader_name)
+    if project_directory is None:
+        logger.error("Wait 'project_directory' it can't be None! it just to satisfy pyright")
+        return 1
 
     project_ids: list[str] = []
     project_versions: dict[str, ProjectVersion] = {}
@@ -87,7 +79,7 @@ def run(args: Namespace) -> int:
             project, loader_name, game_version, include_changelog=False
         )
         if len(versions) == 0:
-            raise GetDependendenciesError(
+            raise GetDependenciesError(
                 f"Project has no version for '{loader_name.capitalize()}' '{game_version}'"
             )
 
@@ -95,6 +87,27 @@ def run(args: Namespace) -> int:
         project_id: str = version["project_id"]
         project_versions[project_id] = version
         project_ids.append(project_id)
+
+
+    def get_version_dependencies(project_id: str) -> list[Dependency]:
+        versions = modrinth_api.get_project_versions(
+            project_id, loader_name, game_version, include_changelog=False
+        )
+        if len(versions) == 0:
+            raise GetDependenciesError(
+                f"Project has no version for '{loader_name.capitalize()}' '{game_version}'"
+            )
+
+        version = versions[0]
+        project_versions[project_id] = version
+        version_dependencies = version.get("dependencies")
+        if version_dependencies is None:
+            logger.debug(
+                "Version for '{project_id}' did not have 'dependencies', returning an empty list"
+            )
+            version_dependencies = []
+
+        return version_dependencies
 
     def get_dependencies(project_id: str) -> dict[str, int]:
         dependencies: list[Dependency] | None = None
@@ -106,14 +119,79 @@ def run(args: Namespace) -> int:
             dependencies = get_version_dependencies(project_id)
 
         if dependencies is None:
-            raise GetDependendenciesError("No dependency provider available")
+            raise GetDependenciesError("No dependency provider available")
 
         return human_to_resolver(dependencies)
 
-    resolved_dependencies = resolver.resolve_dependencies(
+    resolved_dependencies = resolver.resolver_to_human(resolver.resolve_dependencies(
         project_ids, get_dependencies, resolver.required_only
-    )
+    ))
     print(resolved_dependencies)
+
+    required_dependencies: set[str] = set()
+    incompatible_dependencies: set[str] = set()
+
+    optional_projects: set[str] = set()
+    required_projects: set[str] = set()
+    incompatible_projects: set[str] = set()
+
+    for project in resolved_dependencies:
+        for dependencies in project["dependencies"]:
+            match dependencies["dependency_type"]:
+                case "required":
+                    required_dependencies.add(dependencies["project_id"])
+                case "incompatible":
+                    incompatible_dependencies.add(dependencies["project_id"])
+
+        project_id = project["project_id"]
+        if project["is_manual"]:
+            logger.debug(f"{project_id} is a manual mod, add it to the required bucket")
+            required_projects.add(project_id)
+            continue
+
+        if "highest_type" not in project:
+            logger.debug(f"{project_id} has no 'highest_type', this should be already handled by 'is_manual' but somehow it passed it")
+            continue
+
+        match project["highest_type"]:
+            case "optional":
+                optional_projects.add(project_id)
+            case "required":
+                required_projects.add(project_id)
+            case "incompatible":
+                incompatible_projects.add(project_id)
+
+    print(f"""required_dependencies: {required_dependencies}
+incompatible_dependencies: {incompatible_dependencies}
+
+optional_projects: {optional_projects}
+required_projects: {required_projects}
+incompatible_projects: {incompatible_projects}""")
+
+    conflicting_projects = required_dependencies & incompatible_dependencies
+    if conflicting_projects:
+        logger.error(f"Found conflicting dependencies: {', '.join(conflicting_projects)}")
+
+    downloaded_projects: list[str] = list(required_projects)
+
+
+    for project in downloaded_projects:
+        project_version = project_versions[project]
+        version_files = project_version["files"]
+
+        primary_file = None
+        for file in version_files:
+            if file["is_primary"]:
+                primary_file = file
+                break
+        
+        if primary_file is None:
+            primary_file = version_files[0]
+
+        logger.info(f"Downloading {project_version['project_id']}?")
+        project_directory.mkdir(exist_ok=True, parents=True)
+        networking.download(primary_file['download_url'], project_directory / primary_file["file_name"])
+
     return 0
 
 

@@ -4,8 +4,8 @@ from typing import TypedDict
 from uuid import UUID
 
 from ..minecraft.player_identity import PlayerIdentity
+from ..shared import update_file
 from .paths import whitelist_file_path
-from .shared import update_file
 
 logger = logging.getLogger(__name__)
 

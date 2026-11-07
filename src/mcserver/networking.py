@@ -2,7 +2,7 @@
 # Standard
 import hashlib
 import json
-import logging as log
+import logging
 import shutil
 import urllib.parse
 import urllib.request
@@ -13,6 +13,7 @@ from typing import NotRequired, TypedDict
 from . import __version__
 from .shared import current_dir, format_number, mcserver_dir, print_status
 
+logger = logging.getLogger(__name__)
 
 # TypedDict
 class ResponseObject(TypedDict):
@@ -28,7 +29,7 @@ class DownloadURLError(Exception):
 
 
 # Variables
-user_agent = f"Othecat35/MCServer/{__version__} (https://github.com/Othecat35/MCServer)"
+user_agent = f"MCServer/{__version__} (Othecat35; +https://github.com/Othecat35/MCServer)"
 read_chunk_size: int = 1024 * 64  # 64KiB
 
 # Paths
@@ -58,9 +59,9 @@ def request(
 
     response_object: ResponseObject = {}  # type: ignore[typeddict-items]
 
-    log.debug(f"Requesting URL: {method} {request.full_url}")
+    logger.debug(f"Requesting URL: {method} {request.full_url}")
     with urllib.request.urlopen(request, timeout=timeout) as response:
-        log.debug(f"Responded with status: {response.status} {response.reason}")
+        logger.debug(f"Responded with status: {response.status} {response.reason}")
 
         response_headers = {}
         for key, value in response.getheaders():
@@ -95,8 +96,8 @@ def download(
 
     request_url = urllib.request.Request(url, headers=headers, method="GET")
 
-    log.debug(f"Downloading URL: {request_url.full_url}")
-    log.debug(f"Temporary file: {tempfile}")
+    logger.debug(f"Downloading URL: {request_url.full_url}")
+    logger.debug(f"Temporary file: {tempfile}")
 
     hash_algorithm = None
     hash_name = None
@@ -118,8 +119,8 @@ def download(
 
     if hash_name:
         expected_hash = hashes[hash_name]
-        log.debug(f"Calculating hash {hash_name} while downloading...")
-        log.debug(f"Expected {hash_name}: {expected_hash}")
+        logger.debug(f"Calculating hash {hash_name} while downloading...")
+        logger.debug(f"Expected {hash_name}: {expected_hash}")
 
     with urllib.request.urlopen(request_url, timeout=timeout) as response:
         content_length = int(response.getheader("Content-Length", default=0))
@@ -153,7 +154,7 @@ def download(
         if hash_algorithm:
             calculated_hash = hash_algorithm.hexdigest()
 
-            log.debug(f"Got hash: {calculated_hash}")
+            logger.debug(f"Got hash: {calculated_hash}")
             if calculated_hash != expected_hash:
                 raise DownloadURLError(
                     f"Downloaded file '{tempfile.relative_to(current_dir)}' hash does not match with the expected {hash_name} hash"
