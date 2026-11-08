@@ -1,10 +1,22 @@
+import copy
+import datetime
+import json
 import logging
 from argparse import Namespace
-from typing import NotRequired, TypedDict
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import TypedDict
 
-from .. import config, paths, resolver, shared
+from .. import config, networking, paths, resolver, shared
 from ..modrinth import apis as modrinth_api
-from ..modrinth.typings import DependencyType, ProjectVersion
+from ..modrinth import project_records, slug_index
+from ..modrinth.project_records import ProjectRecordPayload
+from ..modrinth.typings import (
+    Dependency,
+    DependencyType,
+    ProjectInformation,
+    ProjectVersion,
+)
 from ..resolver import Project
 
 logger = logging.getLogger(__name__)
@@ -17,16 +29,6 @@ class GetDependenciesError(Exception):
 class ResolverTranslationError(Exception):
     pass
 
-
-class Dependency(TypedDict):
-    version_id: NotRequired[str | None]
-    """The ID of the version that this version depends on"""
-    project_id: NotRequired[str | None]
-    """The ID of the project that this version depends on"""
-    file_name: NotRequired[str | None]
-    """The file name of the dependency, mostly used for showing external dependencies on modpacks"""
-    dependency_type: DependencyType
-    """The type of dependency that this version has"""
 
 class ProjectData(TypedDict):
     project_id: str
@@ -104,8 +106,10 @@ def resolver_to_human(dependency_graph: dict[str, Project]) -> list[ProjectData]
 
 
 def run(args: Namespace) -> int:
+    # argparse's args
     projects: list[str] = args.projects
 
+    # server config
     server_config_file_path = paths.configs_dir / "server.json"
     if not server_config_file_path.exists():
         logger.error(
@@ -119,32 +123,50 @@ def run(args: Namespace) -> int:
     game_version: str = server_config["game_version"]
     loader_name: str = server_config["loader"]["name"]
 
+    # mod compatibility test
     if not shared.support_mod(loader_name):
         logger.error(f"{loader_name.capitalize()} does not support mods")
         return 1
 
+    # mod vs project labeling
     project_label, project_directory = shared.get_loader_context(loader_name)
     if project_directory is None:
         logger.error("Wait 'project_directory' it can't be None! it just to satisfy pyright")
         return 1
 
+    # initial project normalizer (slug -> id) + cache
     project_ids: list[str] = []
     project_versions: dict[str, ProjectVersion] = {}
     for project in projects:
+        project_id = slug_index.slug_to_id(project)
+        if project_records.record_exists(project_id):
+            project_ids.append(project_id)
+            logger.debug(f"Skipping fecthing for {project_id}, record already exist")
+            continue
+
         versions = modrinth_api.get_project_versions(
             project, loader_name, game_version, include_changelog=False
         )
+
         if len(versions) == 0:
             raise GetDependenciesError(
                 f"Project has no version for '{loader_name.capitalize()}' '{game_version}'"
             )
 
         version = versions[0]
+        project_id = version["project_id"]
+        if project != project_id:
+            logger.debug("project and project_id is diffrent, adding it to the slug index")
+            slug_index.update_slug_index(project, project_id)
+
         project_id: str = version["project_id"]
         project_versions[project_id] = version
         project_ids.append(project_id)
 
+    # save the slug index
+    slug_index.save_slug_index()
 
+    # get dependencies from Modrinth version
     def get_version_dependencies(project_id: str) -> list[Dependency]:
         versions = modrinth_api.get_project_versions(
             project_id, loader_name, game_version, include_changelog=False
@@ -165,8 +187,15 @@ def run(args: Namespace) -> int:
 
         return version_dependencies
 
+    # Dependency provider
+    loaded_project_records: dict[str, ProjectRecordPayload] = {}
     def get_dependencies(project_id: str) -> dict[str, int]:
         dependencies: list[Dependency] | None = None
+        if project_records.record_exists(project_id):
+            project_record = project_records.read_record(project_id)
+            loaded_project_records[project_id] = project_record
+            return project_record["dependencies"]
+
         if project_id in project_versions:
             project_version = project_versions[project_id]
             if "dependencies" in project_version:
@@ -175,13 +204,19 @@ def run(args: Namespace) -> int:
             dependencies = get_version_dependencies(project_id)
 
         if dependencies is None:
-            raise GetDependenciesError("No dependency provider available")
+            raise GetDependenciesError(f"No dependency provider available for {project_id}")
 
         return human_to_resolver(dependencies)
 
+    # resolve dependencies
     resolved_projects = resolver_to_human(resolver.resolve_dependencies(project_ids, get_dependencies, resolver.required_only))
-    print(resolved_projects)
+    resolved_data: dict = {}
+    for project in resolved_projects:
+        project = copy.deepcopy(project)
+        project_id = str(project.pop("project_id"))
+        resolved_data[project_id] = project
 
+    # project buckets
     all_project_ids: set[str] = set()
     required_dependencies: set[str] = set()
     incompatible_dependencies: set[str] = set()
@@ -221,94 +256,256 @@ def run(args: Namespace) -> int:
             case "incompatible":
                 incompatible_projects.add(project_id)
 
-    print(f"""required_dependencies: {required_dependencies}
+    # debugging
+    print(f"""all_project_ids: {all_project_ids}
+required_dependencies: {required_dependencies}
 incompatible_dependencies: {incompatible_dependencies}
 
 optional_projects: {optional_projects}
 required_projects: {required_projects}
 incompatible_projects: {incompatible_projects}""")
 
+    # conflict detection
     conflicting_projects = required_dependencies & incompatible_dependencies
     if conflicting_projects:
         logger.error(f"Found conflicting dependencies: {', '.join(conflicting_projects)}")
 
-    project_information: dict = {}
+    # fetch additional info
+    project_informations: dict[str, ProjectInformation] = {}
+    #for project in json.loads(Path("a.json").read_text()): 
     for project in modrinth_api.get_project_informations(list(all_project_ids)):
-        project_id = str(project.pop("project_id"))
-        project_information[project_id] = project
+        project_id = project["project_id"]
+        project_informations[project_id] = project
 
-    print(project_information)
+    for project_information in project_informations.values():
+        project_slug = project_information.get("project_slug")
+        if project_slug is None:
+            continue
 
+        slug_index.update_slug_index(project_slug, project_information["project_id"])
+
+    slug_index.save_slug_index()
+
+    #info display
     required_projects_count = len(required_projects)
     logger.info(f"{shared.pluralize(project_label, required_projects_count).capitalize()} that {shared.pluralize('is', required_projects_count)} going to be downloaded:")
     required_project_display: list[str] = []
     for project_id in list(required_projects):
-        required_project_display.append(f"{project_information[project_id]['project_name']} ({project_id})")
+        required_project_display.append(f"{project_informations[project_id]['project_name']} ({project_id})")
 
     required_project_display.sort()
     print(", ".join(required_project_display))
 
     optional_projects_count = len(optional_projects)
-    if optional_projects_count:
+    if optional_projects:
         logger.info(f"{shared.pluralize(project_label, optional_projects_count).capitalize()} that {shared.pluralize('is', optional_projects_count)} optional:")
         optional_project_display: list[str] = []
         for project_id in list(optional_projects):
-            optional_project_display.append(f"{project_information[project_id]['project_name']} ({project_id})")
+            optional_project_display.append(f"{project_informations[project_id]['project_name']} ({project_id})")
 
         optional_project_display.sort()
         print(", ".join(optional_project_display))
 
     incompatible_projects_count = len(optional_projects)
-    if incompatible_projects_count:
+    if incompatible_projects:
         logger.info(f"{shared.pluralize(project_label, incompatible_projects_count).capitalize()} that {shared.pluralize('is', incompatible_projects_count)} incompatible:")
         incompatible_project_display: list[str] = []
         for project_id in list(incompatible_projects):
-            incompatible_project_display.append(f"{project_information[project_id]['project_name']} ({project_id})")
+            incompatible_project_display.append(f"{project_informations[project_id]['project_name']} ({project_id})")
 
         incompatible_project_display.sort()
         print(", ".join(incompatible_project_display))
 
+    # confirmation prompt
     confirmation_answer = shared.confirmation_prompt("Do you want to continue?", default_option=True)
 
     if not confirmation_answer:
         print("Cancelled")
         return 1
 
-    # for project_id in required_project_list:
-    #     project_version = project_versions[project_id]
-    #     version_files = project_version["files"]
 
-    #     primary_file = None
-    #     for file in version_files:
-    #         if file["is_primary"]:
-    #             primary_file = file
-    #             break
-        
-    #     if primary_file is None:
-    #         primary_file = version_files[0]
 
-    #     logger.info(f"Downloading {project_version['project_id']}?")
-    #     project_directory.mkdir(exist_ok=True, parents=True)
-    #     networking.download(primary_file['download_url'], project_directory / primary_file["file_name"])
+    for project_id in required_projects:
+        project_data = resolved_data[project_id]
+        project_information = project_informations[project_id]
+        project_version = project_versions.get(project_id)
+        project_record = loaded_project_records.get(project_id)
 
-        # record_payload: ProjectRecordPayload = {
-        #     "is_manual": 
-        # }
+        if project_version is not None:
+            version_files = project_version["files"]
+
+            primary_file = None
+            for file in version_files:
+                if file["is_primary"]:
+                    primary_file = file
+                    break
+
+            if primary_file is None:
+                primary_file = version_files[0]
+
+
+            record_payload: ProjectRecordPayload = {
+                "project_name": project_information["project_name"],
+                "project_slug": project_information.get("project_slug"),
+                "version_id": project_version["version_id"],
+                "version_environment": project_version["environment"],
+                "file": primary_file,
+                "added_time": datetime.now(tz=UTC).isoformat(),
+                "discovered_time": datetime.now(tz=UTC).isoformat(),
+                "updated_time": None,
+                "is_manual": project_data["is_manual"],
+                "highest_type": project_data["highest_type"],
+                "dependencies": human_to_resolver(project_data["dependencies"]),
+                "dependents": human_to_resolver(project_data["dependents"])
+            }
+
+            # logger.info(f"Downloading {project_information['project_name']}...")
+            # project_directory.mkdir(exist_ok=True, parents=True)
+            # networking.download(primary_file['download_url'], project_directory / primary_file["file_name"])
+            # project_records.write_record(project_id, record_payload)
+        elif project_record is not None:
+            record_payload = copy.deepcopy(project_record)
+            record_payload["dependencies"].update(project_data["dependencies"])
+            record_payload["dependents"].update(project_data["dependents"])
+            record_payload.update({
+                "updated_time": datetime.now(tz=UTC).isoformat(),
+                "is_manual": project_record["is_manual"] or project_data["is_manual"],
+            })
+
+            primary_file = record_payload["file"]
+
+            logger.info(f"Downloading {project_information['project_name']}...")
+            if primary_file is None:
+                logger.error("Screw you")
+                continue
+
+            # networking.download(primary_file["download_url"], project_directory / primary_file["file_name"])
+            project_records.write_record(project_id, record_payload)
+
+
+
+
+
+
+
+
+
+
+    # # download required mods
+    # for project_id in required_projects:
+    #     project_version = project_versions.get(project_id)
+    #     project_information = project_informations[project_id]
+    #     project_data = resolved_data[project_id]
+    #     project_record = loaded_project_records.get(project_id)
+
+    #     if project_record is not None:
+    #         record_payload = copy.deepcopy(project_record)
+    #         record_payload["dependencies"].update(project_data["dependencies"])
+    #         record_payload["dependents"].update(project_data["dependents"])
+    #         record_payload.update({
+    #             "updated_time": datetime.now(tz=UTC).isoformat(),
+    #             "is_manual": project_record["is_manual"] or project_data["is_manual"],
+    #         })
+    #     elif project_version:
+    #     project_records.write_record(project_id, record_payload)
+
+    # for project_id in all_project_ids:
+    #     if 
+    #     project_records.write_record(project_id, record_payload)
+
+    #     project_data = resolved_data[project_id]
+    #     project_information = project_informations[project_id]
+    #     project_record = loaded_project_records.get(project_id)
+    #     project_version = project_versions.get(project_id)
+
+    #     record_payload: ProjectRecordPayload = {
+    #         "project_name": project_information["project_name"],
+    #         "project_slug": project_information.get("project_slug"),
+    #         "version_id": None,
+    #         "version_environment": None,
+    #         "file": None,
+    #         "added_time": None,
+    #         "discovered_time": datetime.now(tz=UTC).isoformat(),
+    #         "updated_time": None,
+    #         "is_manual": project_data["is_manual"],
+    #         "highest_type": project_data["highest_type"],
+    #         "dependencies": human_to_resolver(project_data["dependencies"]),
+    #         "dependents": human_to_resolver(project_data["dependents"]),
+    #     }
+
+    #     if project_id in required_projects:
+    #         record_payload["added_time"] = datetime.now(tz=UTC).isoformat()
+
+    #     if project_version is not None:
+    #         version_files = project_version["files"]
+
+    #         primary_file = None
+    #         for file in version_files:
+    #             if file["is_primary"]:
+    #                 primary_file = file
+    #                 break
+            
+    #         if primary_file is None:
+    #             primary_file = version_files[0]
+
+    #         record_payload.update({
+    #             "version_id": project_version["version_id"],
+    #             "version_environment": project_version["environment"],
+    #             "file": primary_file
+    #         })
+
+    #     if project_record is not None:
+    #         record_payload["dependencies"].update(project_record["dependencies"])
+    #         record_payload["dependents"].update(project_record["dependents"])
+    #         record_payload.update({
+    #             "added_time": project_record["added_time"],
+    #             "updated_time": datetime.now(tz=UTC).isoformat()
+    #         })
+
+    #     project_records.write_record(project_id, record_payload)
+
+    #     record_payload: ProjectRecordPayload = {
+    #         "project_name": project_info["project_name"],
+    #         "project_slug": project_info["project_slug"],
+    #         "version_id": project_version["version_id"],
+    #         "version_environment": project_version["environment"],
+    #         "added_time": datetime.now(tz=UTC).isoformat(),
+    #         "updated_time": None,
+    #         "file": primary_file,
+    #         "is_manual": project_data["is_manual"],
+    #         "highest_type": project_data["highest_type"],
+    #         "dependencies": project_data["dependencies"],
+    #         "dependents": project_data["dependents"]
+    #     }
+
+    #     loaded_project_record = loaded_project_records.get(project_id, {})
+    #     project_records.write_record(project_id, record_payload)
+
+    # for project_id in optional_projects:
+    #     project_data = resolved_data[project_id]
+    #     project_info = project_information[project_id]
+    #     loaded_project_record = loaded_project_records.get(project_id)
+    #     record_payload: ProjectRecordPayload = {
+    #         "project_name": project_info["project_name"],
+    #         "project_slug": project_info["project_slug"],
+    #         "added_time": None,
+    #         "updated_time": None,
+    #         "is_manual": project_data["is_manual"],
+    #         "highest_type": project_data["highest_type"],
+    #         "dependencies": project_data["dependencies"],
+    #         "dependents": project_data["dependents"]
+    #     }
+
+    #     if loaded_project_record is not None:
+    #         if updated_time
+
+    #     project_records.write_record(project_id, record_payload)
+
 
     # for project in resolved_projects:
     #     project_id = project["project_id"]
     #     project_information = project_info[project_id]
     #     project_version = project_versions[project_id]
-    #     version_files = project_version["files"]
-
-    #     primary_file = None
-    #     for file in version_files:
-    #         if file["is_primary"]:
-    #             primary_file = file
-    #             break
-        
-    #     if primary_file is None:
-    #         primary_file = version_files[0]
 
     #     record_payload: ProjectRecordPayload = {
     #         "project_name": project_information["project_name"],

@@ -1,8 +1,15 @@
+import copy
+import logging
 from argparse import Namespace
 
+from .. import __version__, config, shared, state
+from ..metadata import metadata_file, set_metadata
+from ..modrinth.paths import modrinth_dir, project_records_dir
+from ..modrinth.shared import SearchSortIndex
+
+logger = logging.getLogger(__name__)
 
 def run(args: Namespace) -> int:
-    from ..modrinth.shared import SearchSortIndex
 
     # CLI Arguments
     game_version: str = args.game_version
@@ -16,22 +23,15 @@ def run(args: Namespace) -> int:
     search_limit: int = args.search_limit
     sort_index: SearchSortIndex = args.sort_index
 
-    # Imports
-    import copy
-    import logging as log
-
-    from .. import __version__, config, shared, state
-    from ..metadata import metadata_file, set_metadata
-
     if min_ram > max_ram:
-        log.error("Minimum RAM cannot be larger than maximum RAM")
+        logger.error("Minimum RAM cannot be larger than maximum RAM")
         return 1
 
     # Is first initializing
     is_first_initialize = not metadata_file.exists()
 
     if not is_first_initialize:
-        log.info("Server is already initialized, exiting...")
+        logger.info("Server is already initialized, exiting...")
         return 1
 
     shared.set_loader_context(loader_name)
@@ -46,20 +46,20 @@ def run(args: Namespace) -> int:
 
         match game_version:
             case "latest" | "latest-release":
-                log.info("Fetching the latest release version for Minecraft...")
+                logger.info("Fetching the latest release version for Minecraft...")
                 game_version = mojang_manifest.get_latest_release_version()
-                log.info(f"Latest Minecraft release version is: {game_version}")
+                logger.info(f"Latest Minecraft release version is: {game_version}")
             case "latest-snapshot":
-                log.info("Fetching the latest snapshot version for Minecraft...")
+                logger.info("Fetching the latest snapshot version for Minecraft...")
                 game_version = mojang_manifest.get_latest_snapshot_version()
-                log.info(f"Latest Minecraft snapshot version is: {game_version}")
+                logger.info(f"Latest Minecraft snapshot version is: {game_version}")
 
     # Special latest loader_version
     if loader_version == "latest":
         match loader_name:
             # Mod Loaders
             case "fabric":
-                log.info("Fetching the latest version for Fabric Loader...")
+                logger.info("Fetching the latest version for Fabric Loader...")
                 from ..fabricmc import meta as fabricmc_meta
 
                 loader_versions = fabricmc_meta.get_loader_versions()
@@ -68,43 +68,43 @@ def run(args: Namespace) -> int:
                         loader_version = version["loader_version"]
                         break
 
-                log.info(f"Latest Fabric loader version is: {loader_version}")
+                logger.info(f"Latest Fabric loader version is: {loader_version}")
             # case "legacy_fabric":
             #     pass
             case "quilt":
-                log.info("Fetching the latest version for Quilt Loader...")
+                logger.info("Fetching the latest version for Quilt Loader...")
                 from ..quiltmc import meta as quiltmc_meta
 
                 loader_versions = quiltmc_meta.get_loader_versions()
                 latest_quilt_version = loader_versions[0]
                 loader_version = str(latest_quilt_version["loader_version"])
-                log.info(f"Latest Quilt loader version is: {loader_version}")
+                logger.info(f"Latest Quilt loader version is: {loader_version}")
             # Plugin Loader
             case "paper":
-                log.info("Fetching the latest version for Paper...")
+                logger.info("Fetching the latest version for Paper...")
                 from ..papermc import api as papermc_api
 
                 latest_paper_version = papermc_api.get_latest_project_build(
                     "paper", game_version
                 )
                 loader_version = str(latest_paper_version["build_id"])
-                log.info(f"Latest Paper build version is: {loader_version}")
+                logger.info(f"Latest Paper build version is: {loader_version}")
             case "purpur":
-                log.info("Fetching the latest version for Purpur...")
+                logger.info("Fetching the latest version for Purpur...")
                 from ..purpurmc import api as purpurmc_api
 
                 latest_purpur_version = purpurmc_api.get_latest_project_build(
                     "purpur", game_version
                 )
                 loader_version = str(latest_purpur_version["build_id"])
-                log.info(f"Latest Purpur build version is: {loader_version}")
+                logger.info(f"Latest Purpur build version is: {loader_version}")
 
             case _:
-                log.error(f"Unknown loader: {loader_name}")
+                logger.error(f"Unknown loader: {loader_name}")
                 return 1
 
         if loader_version == "latest":
-            log.error("No stable version found")
+            logger.error("No stable version found")
             return 1
 
     shared.mcserver_dir.mkdir(exist_ok=True)
@@ -112,6 +112,10 @@ def run(args: Namespace) -> int:
 
     config.configs_dir.mkdir(exist_ok=True)
     shared.tempfiles_dir.mkdir(exist_ok=True)
+
+    modrinth_dir.mkdir(exist_ok=True)
+    project_records_dir.mkdir(exist_ok=True)
+
     if shared.loader_context["project_directory"] is not None:
         shared.loader_context["project_directory"].mkdir(exist_ok=True)
 
@@ -144,13 +148,13 @@ def run(args: Namespace) -> int:
             )
         except FileExistsError:
             if is_first_initialize:
-                log.debug(f"Configuration file {config_name} already exists")
+                logger.debug(f"Configuration file {config_name} already exists")
             else:
-                log.info(
+                logger.info(
                     f"Configuration for '{config_name}' already exist, skipping..."
                 )
 
     set_metadata(__version__)
-    log.info("Initialized server configurations.")
+    logger.info("Initialized server configurations.")
 
     return 0

@@ -3,7 +3,7 @@ from typing import NotRequired, TypedDict
 
 from ..shared import update_file
 from .paths import modrinth_dir
-from .typings import Dependency, DependencyType, Environment, FileHashes
+from .typings import DependencyType, Environment, File
 
 project_records_dir = modrinth_dir / "project_records"
 current_format_version = 1
@@ -13,29 +13,26 @@ class ProjectRecordFormatVersionError(Exception):
     pass
 
 
-class ProjectRecordFile(TypedDict):
-    file_hashes: FileHashes
-    file_name: str
-
-
 class ProjectRecordPayload(TypedDict):
     # Project
-    project_name: NotRequired[str]
-    project_slug: NotRequired[str]
+    project_name: str
+    project_slug: str | None
 
     # Version
-    version_id: NotRequired[str]
-    version_environment: Environment
+    version_id: str | None
+    version_environment: Environment | None
+    file: File | None
 
     # Metadata
-    added_time: NotRequired[str]  # probably ISO-8601
-    file: NotRequired[ProjectRecordFile | None]
+    added_time: str | None # probably ISO-8601
+    discovered_time: str # probably ISO-8601
+    updated_time: str | None # probably ISO-8601
 
     # Relationships
     is_manual: bool
     highest_type: DependencyType | None
-    dependencies: list[Dependency]
-    dependents: list[Dependency]
+    dependencies: dict[str, int]
+    dependents: dict[str, int]
 
 
 class ProjectRecordData(ProjectRecordPayload):
@@ -72,7 +69,7 @@ def write_record(project_id: str, record_payload: ProjectRecordPayload) -> None:
         "format_version": current_format_version,
     }
 
-    record_json = json.dumps(record_data)
+    record_json = json.dumps(record_data, indent=2)
     update_file(project_record_file, record_json.encode())
 
 
