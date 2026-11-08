@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.5.1] - 2026-11-04
+
 ### Changed
 
 - `whitelist add/remove` and `op grant/revoke` is now atomic in writing the file.
@@ -262,8 +264,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.5.0...HEAD
-[4.4.0]: https://github.com/Othecat35/MCServer/compare/v4.4.0...v4.5.0
+[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.5.1...HEAD
+[4.5.1]: https://github.com/Othecat35/MCServer/compare/v4.5.0...v4.5.1
+[4.5.0]: https://github.com/Othecat35/MCServer/compare/v4.4.0...v4.5.0
 [4.4.0]: https://github.com/Othecat35/MCServer/compare/v4.3.0...v4.4.0
 [4.3.0]: https://github.com/Othecat35/MCServer/compare/v4.2.0...v4.3.0
 [4.2.0]: https://github.com/Othecat35/MCServer/compare/v4.1.0...v4.2.0

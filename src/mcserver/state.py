@@ -1,7 +1,7 @@
 # Modules
 # Standard
 import json
-import logging as log
+import logging
 import os
 from pathlib import Path
 from typing import NotRequired, TypedDict
@@ -9,6 +9,7 @@ from typing import NotRequired, TypedDict
 # MCServer
 from .shared import mcserver_dir
 
+logger = logging.getLogger(__name__)
 
 # TypedDict
 class State(TypedDict):
@@ -35,7 +36,7 @@ def get_start_time(process_id: int | str) -> int:
 
     proc_pid = proc_dir / process_id
     if not proc_pid.exists():
-        log.debug(f"Process ID ({process_id}) does not exist")
+        logger.debug(f"Process ID ({process_id}) does not exist")
         return 0
 
     pid_stat = proc_pid / "stat"
@@ -60,7 +61,7 @@ def get_state() -> CurrentState:
     current_state: CurrentState = {"is_active": False}
 
     if not state_file.exists():
-        log.debug("State file does not exist")
+        logger.debug("State file does not exist")
         return current_state
 
     state_data: str = state_file.read_text()
