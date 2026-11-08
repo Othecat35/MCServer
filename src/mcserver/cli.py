@@ -229,8 +229,8 @@ def main() -> int:
     # 'op grant'
     op_grant_command = op_subcommands.add_parser(
         "grant",
-        help="Grant player operator permission",
-        description="Add players to the whitelist.",
+        help="Grant players operator permission.",
+        description="Grant players operator permission.",
     )
 
     op_grant_command.set_defaults(command_name="op_grant")
@@ -257,7 +257,7 @@ def main() -> int:
         type=int,
         choices=[1, 2, 3, 4],
         metavar="Level",
-        help="The perator permission level",
+        help="The operator permission level",
     )
 
     # 'op list'
