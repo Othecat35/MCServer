@@ -1,14 +1,15 @@
+import logging
 from argparse import Namespace
 
+logger = logging.getLogger(__name__)
 
 def run(args: Namespace) -> int:
-    import logging as log
 
     from .. import state
 
     # Check MCServer status
     if not state.state_file.parent.exists():
-        log.error("State file not exist, is MCServer initialized?")
+        logger.error("State file not exist, is MCServer initialized?")
         return 1
 
     current_state = state.get_state()
@@ -22,7 +23,7 @@ def run(args: Namespace) -> int:
             error_message += f" with process ID: {current_state['process_id']}"
         error_message += "."
 
-        log.error(error_message)
+        logger.error(error_message)
         return 1
 
     # Set state
@@ -60,7 +61,7 @@ def run(args: Namespace) -> int:
         loader_version = server_loader["version"]
 
         if loader_name != "vanilla" and loader_version is None:
-            log.error("Loader version cannot be null")
+            logger.error("Loader version cannot be null")
             return 1
 
         match loader_name:
@@ -68,7 +69,7 @@ def run(args: Namespace) -> int:
             case "fabric":
                 from ..fabricmc import meta as fabricmc_meta
 
-                log.info(
+                logger.info(
                     f"Downloading Fabric loader {loader_version} for Minecraft version {game_version}..."
                 )
                 networking.download(
@@ -88,7 +89,7 @@ def run(args: Namespace) -> int:
             case "paper":
                 from ..papermc import api as papermc_api
 
-                log.info(
+                logger.info(
                     f"Downloading Paper build {loader_version} for Minecraft version {game_version}..."
                 )
 
@@ -103,7 +104,7 @@ def run(args: Namespace) -> int:
             case "purpur":
                 from ..purpurmc import api as purpurmc_api
 
-                log.info(
+                logger.info(
                     f"Downloading Purpur build {loader_version} for Minecraft version {game_version}..."
                 )
                 project_build = purpurmc_api.get_project_build(
@@ -119,7 +120,7 @@ def run(args: Namespace) -> int:
             case "vanilla":
                 from ..mojang import manifest as mojang_manifest
 
-                log.info(f"Downloading vanilla Minecraft version {game_version}...")
+                logger.info(f"Downloading vanilla Minecraft version {game_version}...")
 
                 version_manifest = mojang_manifest.get_version_manifest()[
                     "game_versions"
@@ -131,7 +132,7 @@ def run(args: Namespace) -> int:
                         break
 
                 if package_url is None:
-                    log.error(f"Minecraft version not found: {game_version}")
+                    logger.error(f"Minecraft version not found: {game_version}")
                     return 1
 
                 package_data = networking.request(package_url)["text"]
@@ -144,18 +145,18 @@ def run(args: Namespace) -> int:
                     hashes={"sha1": version_download["sha1"]},
                 )
             case _:
-                log.error(
+                logger.error(
                     f"Loader is not supported ({loader_name}), you may have to edit '.mcserver/configs/server.json' to fix it."
                 )
                 return 1
 
     # Check stuff
     if not shutil.which("java"):
-        log.error("'java' not found")
+        logger.error("'java' not found")
         return 1
 
     if memory_config["min"] > memory_config["max"]:
-        log.error("Minimum RAM is bigger than maximum RAM")
+        logger.error("Minimum RAM is bigger than maximum RAM")
         return 1
 
     # Run the server
@@ -171,5 +172,5 @@ def run(args: Namespace) -> int:
         java_command_argv.append("nogui")
 
     # Execute java
-    log.debug(f"Executing command: {' '.join(java_command_argv)}")
+    logger.debug(f"Executing command: {' '.join(java_command_argv)}")
     os.execvp(java_command_argv[0], java_command_argv)
