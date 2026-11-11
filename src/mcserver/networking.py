@@ -48,7 +48,7 @@ def request(
     headers: dict | None = None,
     method: str = "GET",
     timeout: int = 10,
-    always_json: bool = True
+    always_json: bool = False
 ) -> ResponseObject:
     method = method.upper()
     if query is None:
@@ -74,7 +74,7 @@ def request(
             response_object: ResponseObject = {
                 "status_code": response.code,
                 "headers": response_headers,
-                "text": "",
+                "text": response.read().decode("utf-8"),
                 "json": None
             }
 
