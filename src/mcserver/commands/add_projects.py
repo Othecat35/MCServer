@@ -199,6 +199,6 @@ def run(args: Namespace) -> int:
         return 1
 
     for project_id in required_projects:
-        
+        pass
 
     return 0

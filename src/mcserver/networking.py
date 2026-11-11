@@ -4,10 +4,11 @@ import hashlib
 import json
 import logging
 import shutil
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 # MCServer
 from . import __version__
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 # TypedDict
 class ResponseObject(TypedDict):
     text: str
-    json: NotRequired[dict | list]
+    json: dict | list | None
     headers: dict
     status_code: int
 
@@ -47,6 +48,7 @@ def request(
     headers: dict | None = None,
     method: str = "GET",
     timeout: int = 10,
+    always_json: bool = True
 ) -> ResponseObject:
     method = method.upper()
     if query is None:
@@ -60,24 +62,40 @@ def request(
         f"{url}{query_string}", data=data, headers=headers, method=method
     )
 
-    response_object: ResponseObject = {}  # type: ignore[typeddict-items]
-
     logger.debug(f"Requesting URL: {method} {request.full_url}")
-    with urllib.request.urlopen(request, timeout=timeout) as response:
-        logger.debug(f"Responded with status: {response.status} {response.reason}")
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            logger.debug(f"Responded with status: {response.status} {response.reason}")
 
+            response_headers = {}
+            for key, value in response.getheaders():
+                response_headers[key.lower()] = value
+
+            response_object: ResponseObject = {
+                "status_code": response.code,
+                "headers": response_headers,
+                "text": "",
+                "json": None
+            }
+
+            if always_json or response_headers.get("content-type", "").startswith("application/json"):
+                response_object["json"] = json.loads(response_object["text"])
+
+            return response_object
+
+    except urllib.error.HTTPError as response:
         response_headers = {}
         for key, value in response.getheaders():
             response_headers[key.lower()] = value
 
-        response_object["text"] = response.read().decode("utf-8")
-        response_object["headers"] = response_headers
-        response_object["status_code"] = response.status
+        response_object: ResponseObject = {
+            "status_code": response.code,
+            "headers": response_headers,
+            "text": response.reason,
+            "json": None
+        }
 
-        if True: #response_headers.get("content-type", "").startswith("application/json"):
-            response_object["json"] = json.loads(response_object["text"])
-
-    return response_object
+        return response_object
 
 
 def download(
