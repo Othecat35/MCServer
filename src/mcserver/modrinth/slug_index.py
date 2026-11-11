@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TypedDict
 
 # MCServer
+from .. import shared
 from ..paths import mcserver_cache_dir
 
 logger = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ slug_index_file = mcserver_cache_dir / "slug_index.json"
 def _load_slug_index() -> None:
     global _slug_index
     if _slug_index is not None:
-        logger.debug("Not loading _slug_index; _slug_index is not 'None'")
+        logger.debug("Slug index is already set, not reloading")
         return
 
     if not slug_index_file.exists():
@@ -52,6 +53,8 @@ def _load_slug_index() -> None:
             f"{slug_index_file} is corrupted! Rebuilding it from scratch"
         )  # that's all I can say.
         _slug_index = {}
+    
+    logger.debug("Loaded slug index from file")
 
 
 def is_index_outdated(project_slug: str) -> bool:
@@ -90,10 +93,13 @@ def slug_to_id(project_slug: str) -> str:
     global _slug_index
     project_id: str = ""
     if _slug_index is None:
+        logger.debug("Idk how _slug_index can be None")
         _slug_index = {}
 
     slug_index = _slug_index.get(project_slug, {})
     project_id = slug_index.get("project_id", project_id)
+
+    logger.debug(f"Project slug {project_slug} is project ID {project_id}")
     return project_id
 
 
@@ -110,13 +116,15 @@ def update_slug_index(project_slug: str, project_id: str):
     }
 
     _slug_index[project_slug] = slug_index
+    logger.debug(f"Updated slug index for project slug {project_slug} to project ID {project_id}")
 
 
 def save_slug_index() -> None:
-    global _slug_index
     if _slug_index is None:
-        _slug_index = {}
+        logger.debug("Slug index is not set")
+        return
 
-    _slug_index_json = json.dumps(_slug_index)
     mcserver_cache_dir.mkdir(parents=True, exist_ok=True)
-    slug_index_file.write_text(_slug_index_json)
+
+    logger.debug("Saving slug index to file")
+    shared.update_file(slug_index_file, json.dumps(_slug_index).encode())

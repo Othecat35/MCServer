@@ -2,8 +2,9 @@ import json
 import logging
 from argparse import Namespace
 
-from .. import config, paths, resolver, shared
+from .. import config, networking, paths, resolver, shared
 from ..modrinth import apis as modrinth_api
+from ..modrinth import slug_index
 from ..modrinth.typings import (
     Dependency,
     DependencyType,
@@ -58,12 +59,23 @@ def run(args: Namespace) -> int:
     game_version: str = server_config["game_version"]
     loader_name: str = server_config["loader"]["name"]
 
+    # mod compatibility test
+    if not shared.support_mod(loader_name):
+        logger.error(f"{loader_name.capitalize()} does not support mods")
+        return 1
+
     project_label, project_directory = shared.get_loader_context(loader_name)
+
+    # mod vs project labeling
+    project_label, project_directory = shared.get_loader_context(loader_name)
+    if project_directory is None:
+        logger.error("Wait 'project_directory' it can't be None! it just to satisfy pyright")
+        return 1
 
     project_ids: list[str] = []
     project_versions: dict[str, ProjectVersion] = {}
     for project in projects:
-        versions = modrinth_api.get_project_versions(project, loader_name, game_version, include_changelog=True)
+        versions = modrinth_api.get_project_versions(project, loader_name, game_version, include_changelog=False)
         if len(versions) == 0:
             raise GetVersionError(f"{project} has no version for {loader_name.capitalize()} {game_version}")
 
@@ -199,6 +211,31 @@ def run(args: Namespace) -> int:
         return 1
 
     for project_id in required_projects:
-        pass
+        project_information = project_informations[project_id]
+        project_version = project_versions[project_id]
+        version_files = project_version["files"]
 
+        primary_file = None
+        for file in version_files:
+            if file["is_primary"]:
+                primary_file = file
+                break
+
+        if primary_file is None:
+            primary_file = version_files[0]
+
+        logger.info(f"Downloading {project_information['project_name']}...")
+        project_directory.mkdir(exist_ok=True, parents=True)
+        networking.download(primary_file['download_url'], project_directory / primary_file["file_name"])
+
+    for project_information in project_informations.values():
+        project_slug = project_information.get("project_slug")
+        if project_slug is None:
+            continue
+
+        slug_index.update_slug_index(project_slug, project_information["project_id"])
+
+    slug_index.save_slug_index()
+
+    logger.info("Complete!")
     return 0
