@@ -398,3 +398,4 @@ about whitelist add or op grant, remember to make the internal function does rem
 add global flag such as --directory or something, actually, just in some commands, especially non-read only operations
 add java path, because yes
 
+wait, a command that can be sent to the rcon server could be nice. like mcserver rcon "stop", I think.
