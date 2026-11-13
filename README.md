@@ -28,6 +28,7 @@ Supported platforms:
    - Run `fish_add_path ~/bin` if you're using FISH
 
 ## Usage
+- Add mods or plugins: `mcserver add <projects>`
 - Initialize a server: `mcserver init [options]`
 - Grant players operator: `mcserver op grant <player> [options]`
 - List operator players: `mcserver op list`
@@ -41,13 +42,14 @@ Supported platforms:
 - Remove whitelisted players: `mcserver whitelist remove <players>`
 
 ### Examples
-- Create and start a Fabric 1.20.1 server in the current directory
+- Create a Fabric 1.20.1 server, add Thdilos' Fox Origin, and start the server
 ```bash
 mcserver init --game-version=1.20.1 --loader=fabric
+mcserver add thdilos-foc-origin
 mcserver start
 ```
 
-- Search top 50 Fabric mods for Minecraft 1.20.1 on modrinth
+- Search 50 Fabric mods for Minecraft 1.20.1 from Modrinth
 ```bash
 mcserver search --loader=fabric --game-version=1.20.1 --limit=50
 ```
