@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `whitelist add` and `op revoke` command (limited to 10 players at once for online mode for name)
+- `whitelist add` and `op grant` command (limited to 10 players at once for online mode for name)
 
 ### Changed
 
@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `op revoke` to revoke operator players permission  based on UUIDs or names
 - Player count to `whitelist list`
 
-### Fixes
+### Fixed
 
 - Wrong description for `whitelist remove`
 - Fixing the wrong singular text in whitelist when no whitelisted player

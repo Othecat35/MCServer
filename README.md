@@ -45,7 +45,7 @@ Supported platforms:
 - Create a Fabric 1.20.1 server, add Thdilos' Fox Origin, and start the server
 ```bash
 mcserver init --game-version=1.20.1 --loader=fabric
-mcserver add thdilos-foc-origin
+mcserver add thdilos-fox-origin
 mcserver start
 ```
 
