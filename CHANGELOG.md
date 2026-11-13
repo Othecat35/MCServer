@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-
 ## [4.6.0] - 2026-11-13
 
 ### Added
@@ -277,7 +276,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.5.2...HEAD
+[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.6.0...HEAD
+[4.6.0]: https://github.com/Othecat35/MCServer/compare/v4.5.2...v4.6.0
 [4.5.2]: https://github.com/Othecat35/MCServer/compare/v4.5.1...v4.5.2
 [4.5.1]: https://github.com/Othecat35/MCServer/compare/v4.5.0...v4.5.1
 [4.5.0]: https://github.com/Othecat35/MCServer/compare/v4.4.0...v4.5.0
