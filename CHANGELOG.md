@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.7.0] - 2026-11-13
+
+### Changed
+
+- `whitelist add` and `op grant` create the respective file if not exust
+- added '[optional]' in help for `whitelist add` and `op grant` `--online-mode`
+- Error message for whitelist and op for file not found
+
 ## [4.6.0] - 2026-11-13
 
 ### Added
@@ -23,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `whitelist add/remove` and `op grant/revoke` is now atomic in writing the file.
+- `whitelist add/remove` and `op grant/revoke` are now atomic in writing the file.
 
 ## [4.5.0] - 2026-11-04
 
@@ -39,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `op revoke` to revoke operator players permission  based on UUIDs or names
+- `op revoke` to revoke operator players permission based on UUIDs or names
 - Player count to `whitelist list`
 
 ### Fixed
@@ -64,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `search` now say "No environment"
-- `search` correctly use the appropiate project type for the homepage
+- `search` correctly use the appropriate project type for the homepage
 
 ## [4.0.0] - 2026-10-31
 
@@ -82,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better `search` info message
 - slug_index.json is now a global cache
 
-### Fixes
+### Fixed
 
 - Typo in the `add` command help
 
@@ -127,7 +135,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - The slug_to_id function to use existing format
-- The Mdorinth API base to use https instead of http
+- The Modrinth API base to use https instead of http
 
 ### Removed
 
@@ -155,7 +163,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Code structure to be modula with zipapp
+- Code structure to be modular with zipapp
 - Rename project index directory to `project_indexes`
 
 ### Fixed
@@ -191,7 +199,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Code type hinting
-- `fetch_project_versions` is more close to Mdorinth docs
+- `fetch_project_versions` is more close to Modrinth docs
 
 ### Fixed
 
@@ -276,7 +284,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.6.0...HEAD
+[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.7.0...HEAD
+[4.7.0]: https://github.com/Othecat35/MCServer/compare/v4.6.0...v4.7.0
 [4.6.0]: https://github.com/Othecat35/MCServer/compare/v4.5.2...v4.6.0
 [4.5.2]: https://github.com/Othecat35/MCServer/compare/v4.5.1...v4.5.2
 [4.5.1]: https://github.com/Othecat35/MCServer/compare/v4.5.0...v4.5.1

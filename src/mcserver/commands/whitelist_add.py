@@ -3,12 +3,18 @@ from argparse import Namespace
 from uuid import UUID
 
 from ..minecraft.player_identity import separate_uuids_and_names
+from ..paths import current_dir
+from ..server_files.paths import whitelist_file_path
 from ..server_files.whitelist import WhitelistedPlayer
 
 logger = logging.getLogger(__name__)
 
 
 def run(args: Namespace) -> int:
+    if not whitelist_file_path.exists():
+        logger.info(f"Whitelist file '{whitelist_file_path.relative_to(current_dir)}' does not exist, creating new one")
+        whitelist_file_path.write_text("[]")
+
     player_ids: list[str] = args.players
     online_mode: str | None = args.online_mode
 
@@ -26,7 +32,7 @@ def run(args: Namespace) -> int:
 
         is_online_mode = server_properties.get_online_mode()
     else:
-        is_online_mode = online_mode != "false"
+        is_online_mode = online_mode.lower() != "false"
 
     whitelisted_players: list[WhitelistedPlayer] = []
     if is_online_mode:
@@ -71,8 +77,8 @@ def run(args: Namespace) -> int:
 
     player_count: int = len(whitelisted_players)
     if player_count == 0:
-        logger.info("There are no whitelisted player.")
-        return 0
+        logger.info("There are no player to be whitelisted.")
+        return 1
 
     player_list: list[str] = []
     for player in whitelisted_players:
@@ -84,5 +90,4 @@ def run(args: Namespace) -> int:
 
     player_list.sort()
     print("\n".join(player_list))
-
     return 0
