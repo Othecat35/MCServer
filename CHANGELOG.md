@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [4.6.0] - 2026-11-13
+
+### Added
+
+- Added the `add` command
+
 ## [4.5.2] - 2026-11-08
 
 ### Changed
@@ -23,11 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `whitelist add` and `op add` command (limited to 10 players at once for online mode for name)
+- `whitelist add` and `op revoke` command (limited to 10 players at once for online mode for name)
 
 ### Changed
 
-- `op remove` and `whitelist remove` to name is now case insensitive
+- `op revoke` and `whitelist remove` to name is now case insensitive
 
 ## [4.4.0] - 2026-11-03
 
