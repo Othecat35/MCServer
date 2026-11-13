@@ -3,12 +3,18 @@ from argparse import Namespace
 from uuid import UUID
 
 from ..minecraft.player_identity import separate_uuids_and_names
+from ..paths import current_dir
 from ..server_files.ops import OperatorPlayer
+from ..server_files.paths import ops_file_path
 
 logger = logging.getLogger(__name__)
 
 
 def run(args: Namespace) -> int:
+    if not ops_file_path.exists():
+        logger.info(f"Operator file '{ops_file_path.relative_to(current_dir)}' does not exist, creating new one")
+        ops_file_path.write_text("[]")
+
     player_ids: list[str] = args.players
     online_mode: str | None = args.online_mode
     permission_level: int | None = args.permission_level

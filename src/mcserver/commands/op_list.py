@@ -1,16 +1,17 @@
 import logging
 from argparse import Namespace
 
+from ..paths import current_dir
 from ..server_files import ops
+from ..server_files.paths import ops_file_path
 from ..shared import pluralize
 
 logger = logging.getLogger(__name__)
 
 
 def run(args: Namespace) -> int:
-    ops_file = ops.ops_file_path
-    if not ops_file.exists():
-        logger.error(f"Operator file '{ops.ops_file_path}' not found.")
+    if not ops_file_path.exists():
+        logger.error(f"Operator file '{ops_file_path.relative_to(current_dir)}' does not exist")
         return 1
 
     operator_players = ops.list_players()
@@ -18,7 +19,7 @@ def run(args: Namespace) -> int:
     player_count = len(operator_players)
     if player_count == 0:
         logger.info("There's no operator player.")
-        return 0
+        return 1
 
     player_list: list[str] = []
     for player in operator_players:
