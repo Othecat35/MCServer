@@ -249,7 +249,7 @@ def main() -> int:
         type=str,
         choices=["true", "false"],
         metavar="Boolean",
-        help="The server's online mode (true/false)",
+        help="The server's online mode (true/false) [optional]",
     )
 
     op_grant_command.add_argument(
@@ -394,7 +394,7 @@ def main() -> int:
         type=str,
         choices=["true", "false"],
         metavar="Boolean",
-        help="The server's online mode (true/false)",
+        help="The server's online mode (true/false) [optional]",
     )
 
     # 'whitelist list'

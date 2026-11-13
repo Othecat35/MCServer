@@ -2,13 +2,18 @@ import logging
 from argparse import Namespace
 
 from ..minecraft.player_identity import separate_uuids_and_names
+from ..paths import current_dir
 from ..server_files import ops
+from ..server_files.paths import ops_file_path
 from ..shared import pluralize
 
 logger = logging.getLogger(__name__)
 
 
 def run(args: Namespace) -> int:
+    if not ops_file_path.exists():
+        logger.error(f"Operator file '{ops_file_path.relative_to(current_dir)}' does not exist")
+        return 1
     player_ids: list[str] = args.players
 
     player_uuids, player_names = separate_uuids_and_names(player_ids)
