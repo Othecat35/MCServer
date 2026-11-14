@@ -1,6 +1,12 @@
 $CACHE means $XDG_CACHE_HOME or $HOME/.cache
+[] means every values
 {} means keys
 {}. means values
+
+.mcserver/metadata.json
+[1] - ?
+- Added 'mcserver' with type object
+- Added 'mcserver.version' with type string
 
 .mcserver/configs/launcher.json:
 [1] - ?
@@ -11,7 +17,7 @@ $CACHE means $XDG_CACHE_HOME or $HOME/.cache
 - Added 'jarfile' with value "Server.jar"
 - Added 'is_nogui': with value true
 
-.mcserver/configs/server.json:
+.mcserver/configs/modrinth.json:
 [1] - ?
 - Added 'search_limit' with value 20
 - Added 'sort_index' with value "relevance"
@@ -42,13 +48,15 @@ $CACHE means $XDG_CACHE_HOME or $HOME/.cache
 - Added 'is_manual with type boolean
 - Added 'highest_type with type string
 - Added 'dependencies with type list
-- Added 'dependencies[]' with type object (key is string and value is number)
+- Added 'dependencies with type list
+- Added 'dependencies[].{}' with type string
+- Added 'dependencies[].{}.' with type number
 - Added 'dependents with type list
 - Added 'dependents[].{}' with type string
 - Added 'dependents[].{}.' with type number
 
 $CACHE/mcserver/slug_index.json
-[1] - ?
+[1] - 2026-11-14
 - Added '{}' with type string
 - Added '{}.project_id' with type string
-- Added ''{}.updated_time' with type string
+- Added '{}.updated_time' with type string
