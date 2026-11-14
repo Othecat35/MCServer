@@ -94,8 +94,9 @@ def pluralize(singular: str, count: int = 0, plural: str = ""):
     return singular
 
 
-def format_number(number: str | float, unit_type: str = "si"):
-    number = float(number)
+def format_number(number: float, unit_type: str = "si"):
+    is_negative = number < 0
+    number = abs(number)
     unit_multiples = 0
     prefixes = []
 
@@ -116,7 +117,7 @@ def format_number(number: str | float, unit_type: str = "si"):
         number /= unit_multiples
         iteration += 1
 
-    return f"{round(number, 2):g}{prefixes[iteration]}"
+    return f"{'-' if is_negative else ''}{round(number, 2):g}{prefixes[iteration]}"
 
 
 def merge_dict(base: dict, update: dict) -> dict:
