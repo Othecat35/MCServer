@@ -5,6 +5,7 @@ import shutil
 import sys
 import textwrap
 from pathlib import Path
+from typing import Literal
 
 # MCServer
 from .constants import iec_prefixes, si_prefixes
@@ -20,8 +21,7 @@ loader_context = {"project_directory": None, "project_label": "project"}
 
 special_plural = {"is": "are", "this": "these"}
 
-
-color_output_mode = "auto"  # 'never', 'auto', 'always'
+color_output_mode: Literal["always", "never", "auto"] = "auto"
 ansi_codes = {
     "gray": "\033[90m",
     "green": "\033[92m",
@@ -32,13 +32,13 @@ ansi_codes = {
 
     "clear_line": "\x1b[K",
     "cursor_down": "\x1b[B",
-    "cursor_up": "\033[A",
+    "cursor_up": "\x1b[A",
     "first_column": "\x1b[G",
-    "start_line": "\033[G",
 }
 
-isatty = sys.stdout.isatty() and sys.stderr.isatty()
-last_status: str | None = ""
+stdout_istty = sys.stdout.isatty()
+isatty = stdout_istty and sys.stderr.isatty()
+last_status: str | None = None
 
 default_configs = {
     "launcher": {
@@ -200,17 +200,15 @@ def wrap_string(
 
 
 # ANSI
-def ansi(name: str):
+def ansi(name: str, output_to: Literal["stdout", "strderr"] = "stdout"):
     match color_output_mode:
         case "always":
             return ansi_codes.get(name, "")
         case "never":
             return ""
         case "auto":
-            if isatty:
+            if output_to == "stdout" and sys.stdout.isatty() or output_to == "strderr" and sys.stderr.isatty():
                 return ansi_codes.get(name, "")
-
-            return ""
         case _:
             raise ValueError(
                 f"Invalid string '{color_output_mode}' of variable color_output_mode"
@@ -248,21 +246,6 @@ def project_environment_name(project_environment: str) -> str:
 
     return project_environments.get(project_environment, project_environment)
 
-
-# def print_status(message: str, dynamic: str | None = None):
-#     if dynamic is None:
-#         dynamic = ""
-#     global last_status_message
-
-#     if dynamic and isatty:
-#         print(f"{ansi('clear_line')} {dynamic}", end=ansi("start_line"), flush=True)
-#     else:
-#         if message != last_status_message:
-#             print(message, flush=True)
-
-#     last_status_message = message
-
-
 def update_file(file_path: Path, file_data: bytes):
     temporary_file = Path(str(file_path) + ".tmp")
     logger.debug(f"Writing into '{temporary_file}'")
@@ -272,12 +255,13 @@ def update_file(file_path: Path, file_data: bytes):
 
 def print_status(status: str, updating_status: str | None = None) -> None:
     global last_status
-    if updating_status is not None:
-        print(f"{ansi('first_column')}{ansi('clear')}{updating_status}", end="", flush=True)
+    if updating_status is not None and stdout_istty:
+        print(f"{ansi('first_column')}{ansi('clear_line')}{updating_status}", end="", flush=True)
     else:
-        print(status)
+        if status != last_status:
+            print(status, end="", flush=True)
 
     last_status = status
 
 def print_string(string: str) -> None:
-    print(f"{ansi('first_column')}{ansi('clear')}{string}")
+    print(f"{ansi('first_column')}{ansi('clear_line')}{string}")

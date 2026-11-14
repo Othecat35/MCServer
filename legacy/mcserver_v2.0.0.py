@@ -970,7 +970,7 @@ def start_server(args):
 # Log handler
 class ClearLineHandler(log.StreamHandler):
     def emit(self, record):
-        self.stream.write(ansi("clear_line") + ansi("start_line"))
+        self.stream.write(ansi("clear_line_line") + ansi("start_line"))
         self.stream.flush()
         super().emit(record)
 

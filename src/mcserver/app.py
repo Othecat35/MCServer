@@ -6,7 +6,7 @@ from .shared import ansi
 # Log handler
 class ClearLineHandler(logging.StreamHandler):
     def emit(self, record):
-        self.stream.write(ansi("first_column") + ansi("clear"))
+        self.stream.write(ansi("first_column") + ansi("clear_line"))
         self.stream.flush()
         super().emit(record)
 
