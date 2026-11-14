@@ -1,7 +1,7 @@
 $CACHE means $XDG_CACHE_HOME or $HOME/.cache
 [] means every values
 {} means keys
-{}. means values
+{.} means values
 
 .mcserver/metadata.json
 [1] - ?
@@ -31,29 +31,28 @@ $CACHE means $XDG_CACHE_HOME or $HOME/.cache
 
 .mcserver/modrinth/project_records/*.json
 [1] - ?
-- Added 'project_name with type string
-- Added 'project_slug with type string
-- Added 'version_id with type string
-- Added 'version_environment with type string
-- Added 'file with type object
+- Added 'project_name' with type string
+- Added 'project_slug' with type string
+- Added 'version_id' with type string
+- Added 'version_environment' with type string
+- Added 'file with' type object
 - Added 'file.file_hashes' with type object
 - Added 'file.download_url' with type string
 - Added 'file.file_name' with type string
 - Added 'file.is_primary' with type boolean
 - Added 'file.file_size' with type number
 - Added 'file.file_type' with type string
-- Added 'added_time with type string
-- Added 'discovered_time with type string
-- Added 'updated_time with type string
-- Added 'is_manual with type boolean
-- Added 'highest_type with type string
-- Added 'dependencies with type list
-- Added 'dependencies with type list
+- Added 'added_time' with type string
+- Added 'discovered_time' with type string
+- Added 'updated_time' with type string
+- Added 'is_manual' with type boolean
+- Added 'highest_type' with type string
+- Added 'dependencies' with type list
 - Added 'dependencies[].{}' with type string
-- Added 'dependencies[].{}.' with type number
-- Added 'dependents with type list
+- Added 'dependencies[].{.}' with type number
+- Added 'dependents' with type list
 - Added 'dependents[].{}' with type string
-- Added 'dependents[].{}.' with type number
+- Added 'dependents[].{.}' with type number
 
 $CACHE/mcserver/slug_index.json
 [1] - 2026-11-14
