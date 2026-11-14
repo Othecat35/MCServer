@@ -162,12 +162,12 @@ def download(
                 if content_length == 0:
                     print_status(
                         f"Downloading {basename}... (unknown final size)",
-                        dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}",
+                        updating_status=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}",
                     )
                 else:
                     print_status(
                         f"Downloading {basename}... File size: {format_number(content_length, 'iec')}",
-                        dynamic=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}/{format_number(content_length, 'iec')} ({round(downloaded_length / content_length * 100)}%)",
+                        updating_status=f"Downloading {basename}... {format_number(downloaded_length, 'iec')}/{format_number(content_length, 'iec')} ({round(downloaded_length / content_length * 100)}%)",
                     )
 
                 file.write(data)

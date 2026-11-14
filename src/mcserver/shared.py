@@ -20,6 +20,7 @@ loader_context = {"project_directory": None, "project_label": "project"}
 
 special_plural = {"is": "are", "this": "these"}
 
+
 color_output_mode = "auto"  # 'never', 'auto', 'always'
 ansi_codes = {
     "gray": "\033[90m",
@@ -28,13 +29,16 @@ ansi_codes = {
     "yellow": "\033[93m",
     "bold": "\033[1m",
     "reset": "\033[0m",
-    "clear_line": "\033[K",
+
+    "clear_line": "\x1b[K",
+    "cursor_down": "\x1b[B",
     "cursor_up": "\033[A",
+    "first_column": "\x1b[G",
     "start_line": "\033[G",
 }
 
 isatty = sys.stdout.isatty() and sys.stderr.isatty()
-last_status_message = ""
+last_status: str | None = ""
 
 default_configs = {
     "launcher": {
@@ -245,18 +249,18 @@ def project_environment_name(project_environment: str) -> str:
     return project_environments.get(project_environment, project_environment)
 
 
-def print_status(message: str, dynamic: str | None = None):
-    if dynamic is None:
-        dynamic = ""
-    global last_status_message
+# def print_status(message: str, dynamic: str | None = None):
+#     if dynamic is None:
+#         dynamic = ""
+#     global last_status_message
 
-    if dynamic and isatty:
-        print(f"{ansi('clear_line')} {dynamic}", end=ansi("start_line"), flush=True)
-    else:
-        if message != last_status_message:
-            print(message, flush=True)
+#     if dynamic and isatty:
+#         print(f"{ansi('clear_line')} {dynamic}", end=ansi("start_line"), flush=True)
+#     else:
+#         if message != last_status_message:
+#             print(message, flush=True)
 
-    last_status_message = message
+#     last_status_message = message
 
 
 def update_file(file_path: Path, file_data: bytes):
@@ -265,3 +269,15 @@ def update_file(file_path: Path, file_data: bytes):
     temporary_file.write_bytes(file_data)
     logger.debug(f"Replacing '{temporary_file}' with '{file_path}'")
     temporary_file.replace(file_path)
+
+def print_status(status: str, updating_status: str | None = None) -> None:
+    global last_status
+    if updating_status is not None:
+        print(f"{ansi('first_column')}{ansi('clear')}{updating_status}", end="", flush=True)
+    else:
+        print(status)
+
+    last_status = status
+
+def print_string(string: str) -> None:
+    print(f"{ansi('first_column')}{ansi('clear')}{string}")
