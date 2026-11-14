@@ -1,7 +1,7 @@
 $CACHE means $XDG_CACHE_HOME or $HOME/.cache
-[] means every values
-{} means keys
-{.} means values
+[] means values (array)
+{} means keys (object)
+{.} means values (objects)
 
 .mcserver/metadata.json
 [1] - ?
@@ -35,7 +35,7 @@ $CACHE means $XDG_CACHE_HOME or $HOME/.cache
 - Added 'project_slug' with type string
 - Added 'version_id' with type string
 - Added 'version_environment' with type string
-- Added 'file with' type object
+- Added 'file' with type object
 - Added 'file.file_hashes' with type object
 - Added 'file.download_url' with type string
 - Added 'file.file_name' with type string
