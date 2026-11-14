@@ -1,0 +1,54 @@
+$CACHE means $XDG_CACHE_HOME or $HOME/.cache
+{} means keys
+{}. means values
+
+.mcserver/configs/launcher.json:
+[1] - ?
+- Added 'ram' with type object
+- Added 'ram._comment' with value "Memory size in MebiByte (MiB)"
+- Added 'ram.min' with value 512
+- Added 'ram.max' with value 2048
+- Added 'jarfile' with value "Server.jar"
+- Added 'is_nogui': with value true
+
+.mcserver/configs/server.json:
+[1] - ?
+- Added 'search_limit' with value 20
+- Added 'sort_index' with value "relevance"
+
+.mcserver/configs/server.json:
+[1] - ?
+- Added 'game_version' with value ""
+- Added 'loader' with type object
+- Added 'loader.name' with value "vanilla"
+- Added 'loader.version' with value null
+
+.mcserver/modrinth/project_records/*.json
+[1] - ?
+- Added 'project_name with type string
+- Added 'project_slug with type string
+- Added 'version_id with type string
+- Added 'version_environment with type string
+- Added 'file with type object
+- Added 'file.file_hashes' with type object
+- Added 'file.download_url' with type string
+- Added 'file.file_name' with type string
+- Added 'file.is_primary' with type boolean
+- Added 'file.file_size' with type number
+- Added 'file.file_type' with type string
+- Added 'added_time with type string
+- Added 'discovered_time with type string
+- Added 'updated_time with type string
+- Added 'is_manual with type boolean
+- Added 'highest_type with type string
+- Added 'dependencies with type list
+- Added 'dependencies[]' with type object (key is string and value is number)
+- Added 'dependents with type list
+- Added 'dependents[].{}' with type string
+- Added 'dependents[].{}.' with type number
+
+$CACHE/mcserver/slug_index.json
+[1] - ?
+- Added '{}' with type string
+- Added '{}.project_id' with type string
+- Added ''{}.updated_time' with type string

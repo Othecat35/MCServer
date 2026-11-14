@@ -1,6 +1,7 @@
 import copy
 import logging
 from argparse import Namespace
+from pathlib import Path
 
 from .. import __version__, config, shared, state
 from ..metadata import metadata_file, set_metadata
@@ -10,9 +11,9 @@ from ..modrinth.shared import SearchSortIndex
 logger = logging.getLogger(__name__)
 
 def run(args: Namespace) -> int:
-
-    # CLI Arguments
+    # CLI arguments
     game_version: str = args.game_version
+    java_path: Path = args.java
 
     loader_name: str = args.loader_name
     loader_version: str | None = args.loader_version
@@ -23,6 +24,7 @@ def run(args: Namespace) -> int:
     search_limit: int = args.search_limit
     sort_index: SearchSortIndex = args.sort_index
 
+    # Validation
     if min_ram > max_ram:
         logger.error("Minimum RAM cannot be larger than maximum RAM")
         return 1
