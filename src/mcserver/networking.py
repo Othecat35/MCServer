@@ -142,7 +142,7 @@ def download(
         hash_algorithm = hashlib.sha1()
         hash_name = "sha1"
     elif hashes.get("md5"):
-        hash_algorithm = hashlib.md5()
+        hash_algorithm = hashlib.md5(usedforsecurity=False)
         hash_name = "md5"
 
     expected_hash = None
