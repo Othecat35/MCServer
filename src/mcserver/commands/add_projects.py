@@ -121,8 +121,6 @@ def run(args: Namespace) -> int:
 
     resolved_projects: list[ProjectData] = resolver.resolver_to_human(resolver.resolve_dependencies(project_ids, get_dependencies, resolver.required_only))
 
-    print(json.dumps(resolved_projects, indent=2))
-
     all_project_ids: set[str] = set()
     incompatible_dependencies: set[str] = set()
     required_dependencies: set[str] = set()
@@ -181,7 +179,7 @@ def run(args: Namespace) -> int:
         required_project_display.append(f"{project_informations[project_id]['project_name']} ({project_id})")
 
     required_project_display.sort()
-    print(", ".join(required_project_display))
+    print(f"  {', '.join(required_project_display)}\n")
 
     optional_projects_count = len(optional_projects)
     if optional_projects:
@@ -191,7 +189,8 @@ def run(args: Namespace) -> int:
             optional_project_display.append(f"{project_informations[project_id]['project_name']} ({project_id})")
 
         optional_project_display.sort()
-        print(", ".join(optional_project_display))
+        print(f"  {', '.join(optional_project_display)}\n")
+
 
     incompatible_projects_count = len(incompatible_projects)
     if incompatible_projects:
@@ -201,7 +200,7 @@ def run(args: Namespace) -> int:
             incompatible_project_display.append(f"{project_informations[project_id]['project_name']} ({project_id})")
 
         incompatible_project_display.sort()
-        print(", ".join(incompatible_project_display))
+        print(f"  {', '.join(incompatible_project_display)}\n")
 
     # Confirmation prompt
     confirmation_answer = shared.confirmation_prompt("Do you want to continue?", default_option=True)
