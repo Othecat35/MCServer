@@ -399,3 +399,8 @@ add global flag such as --directory or something, actually, just in some command
 add java path, because yes
 
 wait, a command that can be sent to the rcon server could be nice. like mcserver rcon "stop", I think.
+
+aye fix your zip extract beforenit turned into a 0 day or something
+target = (dest_dir / member.filename).resolve()
+if not str(target).startswith(str(dest_dir.resolve()) + os.sep):
+    raise ...
