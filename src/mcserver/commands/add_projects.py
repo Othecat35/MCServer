@@ -225,7 +225,7 @@ def run(args: Namespace) -> int:
 
         logger.info(f"Downloading {project_information['project_name']}...")
         project_directory.mkdir(exist_ok=True, parents=True)
-        networking.download(primary_file['download_url'], project_directory / primary_file["file_name"])
+        networking.download(primary_file['download_url'], project_directory / primary_file["file_name"], hashes=primary_file["file_hashes"])
 
     for project_information in project_informations.values():
         project_slug = project_information.get("project_slug")
