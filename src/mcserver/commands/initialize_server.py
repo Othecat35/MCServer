@@ -17,7 +17,7 @@ def run(args: Namespace) -> int:
     loader_name: str = args.loader_name
     loader_version: str | None = args.loader_version
 
-    java_path: Path = args.java_executable
+    # java_path: Path = args.java_executable
     min_ram: int = args.min_ram
     max_ram: int = args.max_ram
 

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.7.1] - 2026-11-16
+
+### Changed
+
+- Say goodbye to your slug indexes
+- Better download progress bar
+
 ## [4.7.0] - 2026-11-13
 
 ### Changed
@@ -284,7 +291,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.7.0...HEAD
+[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.7.1...HEAD
+[4.7.1]: https://github.com/Othecat35/MCServer/compare/v4.7.0...v4.7.1
 [4.7.0]: https://github.com/Othecat35/MCServer/compare/v4.6.0...v4.7.0
 [4.6.0]: https://github.com/Othecat35/MCServer/compare/v4.5.2...v4.6.0
 [4.5.2]: https://github.com/Othecat35/MCServer/compare/v4.5.1...v4.5.2

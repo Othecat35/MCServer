@@ -184,14 +184,14 @@ def main() -> int:
         metavar="Version",
     )
 
-    init_command.add_argument(
-        "--java-executable",
-        default="/usr/bin/java",
-        type=Path,
-        help="The java executable binary to launch the server with",
-        metavar="Index",
-        dest="java_executable",
-    )
+    # init_command.add_argument(
+    #     "--java-executable",
+    #     default="/usr/bin/java",
+    #     type=Path,
+    #     help="The java executable binary to launch the server with",
+    #     metavar="Index",
+    #     dest="java_executable",
+    # )
 
     init_command.add_argument(
         "--min-ram",
