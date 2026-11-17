@@ -404,3 +404,6 @@ aye fix your zip extract beforenit turned into a 0 day or something
 target = (dest_dir / member.filename).resolve()
 if not str(target).startswith(str(dest_dir.resolve()) + os.sep):
     raise ...
+
+
+I likely not gonna use AI as much because I finally found a reason not to
