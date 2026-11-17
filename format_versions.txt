@@ -59,3 +59,6 @@ $CACHE/mcserver/slug_index.json
 - Added '{}' with type string
 - Added '{}.project_id' with type string
 - Added '{}.last_updated' with type string
+
+[2] - 2026-11-17
+- Renamed '{}.last_updated' to '{}.updated_time'

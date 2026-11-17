@@ -3,7 +3,7 @@
 import json
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import TypedDict
+from typing import Any, TypedDict
 
 # MCServer
 from .. import shared
@@ -15,16 +15,36 @@ logger = logging.getLogger(__name__)
 # TypedDict
 class SlugIndex(TypedDict):
     project_id: str
-    last_updated: str  # ISO-8601
+    updated_date: str  # ISO-8601
 
 class SlugIndexData(TypedDict):
     format_version: int
     data: dict[str, SlugIndex]
 
 
+def format_migrator(data: Any) -> Any:
+    print(data)
+    format_changes = [{
+        "renamed": {"last_updated": "updated_time"}
+    }]
+
+    logger.debug("Testing this very dangerous experimental feature")
+    new_data = {}
+    for key, value in data.items():
+        renamed = format_changes[0]["renamed"]
+        for renamed_from, renamed_to in renamed.items():
+            logger.debug(f"Renamed key from '{renamed_from}' to '{renamed_to}'")
+            new_data[key] = {
+                renamed_to: value.pop(renamed_from)
+            }
+        
+        new_data[key].update(value)
+
+    return new_data
+
 # Variables
 _slug_index: dict[str, SlugIndex] | None = None
-format_version = 1
+format_version = 2
 
 # Paths
 slug_index_file = mcserver_cache_dir / "slug_index.json"
@@ -48,6 +68,7 @@ def _load_slug_index() -> None:
 
     try:
         slug_index_data = json.loads(slug_index_json)
+        slug_index = format_migrator(slug_index_data["data"])
         if not isinstance(slug_index_data, dict):
             logger.warning(
                 f"{slug_index_file} should be an object! Rebuilding it from scratch"
@@ -60,7 +81,7 @@ def _load_slug_index() -> None:
             _slug_index = {}
             return
 
-        _slug_index = slug_index_data["data"]
+        _slug_index = slug_index
     except json.JSONDecodeError:
         logger.warning(
             f"{slug_index_file} is corrupted! Rebuilding it from scratch"
@@ -84,12 +105,12 @@ def is_index_outdated(project_slug: str) -> bool:
         logger.debug(f"Project slug ({project_slug}) is not known yet")
         return True
 
-    last_updated_time = slug_index.get("last_updated")
-    if last_updated_time is None:
+    updated_time = slug_index.get("updated_time")
+    if updated_time is None:
         return True
 
     try:
-        last_updated = datetime.fromisoformat(last_updated_time)
+        last_updated = datetime.fromisoformat(updated_time)
     except ValueError:
         logger.debug("Invalid ISO formatted time, do not mess with it pls")
         return True
@@ -129,7 +150,7 @@ def update_slug_index(project_slug: str, project_id: str):
 
     slug_index: SlugIndex = {
         "project_id": project_id,
-        "last_updated": datetime.now(tz=UTC).isoformat(),
+        "updated_date": datetime.now(tz=UTC).isoformat(),
     }
 
     _slug_index[project_slug] = slug_index
