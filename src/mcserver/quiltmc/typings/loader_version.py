@@ -1,13 +1,7 @@
 from typing import TypedDict
 
+from .shared import Hashes
 
-class Hashes(TypedDict):
-    sha1: str
-    """The SHA-1 hash"""
-    sha256: str
-    """The SHA-256 hash"""
-    sha512: str
-    """The SHA-512 hash"""
 
 class LoaderVersion(TypedDict):
     maven_coordinate: str

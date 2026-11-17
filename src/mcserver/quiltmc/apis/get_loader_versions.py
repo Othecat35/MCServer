@@ -1,12 +1,12 @@
 from ... import networking
 from ..typings import Hashes, LoaderVersion
-from ..urls import purpurmc_api_url
+from ..urls import quiltmc_api_url
 
 
 class GetLoaderVersionsError(Exception): pass
 
 def get_loader_versions() -> list[LoaderVersion]:
-    response = networking.request(f"{purpurmc_api_url}/v3/versions/loader", always_json=True)
+    response = networking.request(f"{quiltmc_api_url}/v3/versions/loader")
     response_json = response["json"]
     if response_json is None:
         raise GetLoaderVersionsError("Response is not a JSON")
@@ -28,7 +28,7 @@ def get_loader_versions() -> list[LoaderVersion]:
             "build_number": version["build"],
             "version_separator": version["separator"],
             "file_size": version["file_size"],
-            "hashes": hashes
+            "hashes": hashes,
         }
 
         loader_versions.append(loader_version)
