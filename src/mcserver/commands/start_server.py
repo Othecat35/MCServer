@@ -1,12 +1,13 @@
+import json
 import logging
 from argparse import Namespace
+
+from .. import state
+from ..paths import current_dir
 
 logger = logging.getLogger(__name__)
 
 def run(args: Namespace) -> int:
-
-    from .. import state
-
     # Check MCServer status
     if not state.state_file.parent.exists():
         logger.error("State file not exist, is MCServer initialized?")
@@ -27,7 +28,7 @@ def run(args: Namespace) -> int:
         return 1
 
     # Set state
-    state.set_state("running_server")
+    state.set_state("server_running")
 
     import os
     import shutil
@@ -40,16 +41,12 @@ def run(args: Namespace) -> int:
         "launcher", shared.default_configs["launcher"]["format_version"]
     )
 
-    jarfile = Path(launcher_config["jarfile"])
+    jarfile = current_dir / Path(launcher_config["jarfile"]).name
     memory_config = launcher_config["ram"]
 
     # Download jarfile
     if not jarfile.exists():
-        import json
-
         from .. import networking
-
-        state.set_state("downloading_server")
 
         server_config = config.read_config(
             "server", shared.default_configs["server"]["format_version"]
@@ -74,7 +71,7 @@ def run(args: Namespace) -> int:
                 )
                 networking.download(
                     fabricmc_meta.download_url(game_version, loader_version, "1.1.2"),
-                    jarfile,
+                    jarfile.name,
                 )
 
             # case "quilt":
@@ -98,7 +95,7 @@ def run(args: Namespace) -> int:
                 )["download_props"]["server:default"]
                 networking.download(
                     download_prop["download_url"],
-                    jarfile,
+                    jarfile.name,
                     hashes={"sha256": download_prop["file_hashes"]["sha256"]},
                 )
             case "purpur":
@@ -112,7 +109,7 @@ def run(args: Namespace) -> int:
                 )
                 networking.download(
                     purpurmc_api.download_url("purpur", game_version, loader_version),
-                    jarfile,
+                    jarfile.name,
                     hashes={"md5": project_build["artifact_md5"]},
                 )
 
@@ -152,7 +149,7 @@ def run(args: Namespace) -> int:
 
     # Check stuff
     if not shutil.which("java"):
-        logger.error("'java' not found")
+        logger.error("'java' not found, is Java installed?")
         return 1
 
     if memory_config["min"] > memory_config["max"]:
@@ -165,7 +162,7 @@ def run(args: Namespace) -> int:
         f"-Xmx{memory_config['max']}M",
         f"-Xms{memory_config['min']}M",
         "-jar",
-        str(jarfile),
+        jarfile,
     ]
 
     if launcher_config["is_nogui"]:

@@ -8,7 +8,12 @@ from .. import networking
 from ..constants import purpurmc_api_url
 
 
+class GetProjectsError(Exception): pass
+
 # TypedDicts
+class ProjectList(TypedDict):
+    projects: list[str]
+
 class BuildCommit(TypedDict):
     author_name: str  # original: author
     author_email: str  # original: email
@@ -63,6 +68,22 @@ def get_project_build(
     }
 
     return project_build
+
+
+def get_projects() -> ProjectList:
+    response = networking.request(f"{purpurmc_api_url}/v2")
+    response_json = response["json"]
+    if response_json is None:
+        raise GetProjectsError("Response does not contains 'json'")
+
+    if not isinstance(response_json, dict):
+        raise GetProjectsError("Response is not an object")
+
+    project_list: ProjectList = {
+        "projects": response_json["projects"]
+    }
+
+    return project_list
 
 
 def get_latest_project_build(project_name: str, game_version: str) -> ProjectBuild:

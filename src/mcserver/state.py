@@ -4,18 +4,20 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import NotRequired, TypedDict
+from typing import Literal, NotRequired, TypedDict
 
 # MCServer
 from .shared import mcserver_dir
 
 logger = logging.getLogger(__name__)
 
+type MCServerActions = Literal["server_running"]
+
 # TypedDict
 class State(TypedDict):
     process_id: int
     start_time: int
-    action: str
+    action: MCServerActions
 
 
 class CurrentState(TypedDict):
@@ -46,7 +48,7 @@ def get_start_time(process_id: int | str) -> int:
     return start_time
 
 
-def set_state(action: str) -> None:
+def set_state(action: MCServerActions) -> None:
     current_state: State = {
         "process_id": os.getpid(),
         "start_time": get_start_time("self"),

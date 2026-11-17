@@ -1,0 +1,1 @@
+purpurmc_api_url: str = "https://api.purpurmc.org"
