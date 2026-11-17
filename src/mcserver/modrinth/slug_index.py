@@ -33,6 +33,10 @@ def format_migrator(data: Any) -> Any:
     for key, value in data.items():
         renamed = format_changes[0]["renamed"]
         for renamed_from, renamed_to in renamed.items():
+            if renamed_from not in value:
+                logger.debug("there's no key named {}")
+                continue
+
             logger.debug(f"Renamed key from '{renamed_from}' to '{renamed_to}'")
             new_data[key] = {
                 renamed_to: value.pop(renamed_from)
@@ -44,7 +48,7 @@ def format_migrator(data: Any) -> Any:
 
 # Variables
 _slug_index: dict[str, SlugIndex] | None = None
-format_version = 2
+current_format_version = 2
 
 # Paths
 slug_index_file = mcserver_cache_dir / "slug_index.json"
@@ -68,7 +72,6 @@ def _load_slug_index() -> None:
 
     try:
         slug_index_data = json.loads(slug_index_json)
-        slug_index = format_migrator(slug_index_data["data"])
         if not isinstance(slug_index_data, dict):
             logger.warning(
                 f"{slug_index_file} should be an object! Rebuilding it from scratch"
@@ -76,10 +79,16 @@ def _load_slug_index() -> None:
             _slug_index = {}
             return
 
-        if slug_index_data.get("format_version") is None:
-            logger.debug("Let's throw this slug_index that doesn't have format_version")
+        format_version: int | None = slug_index_data.get("format_version")
+        if format_version is None:
+            logger.debug("Unknown format_version, rebuilding from scratch")
             _slug_index = {}
             return
+
+        if format_version < current_format_version:
+            slug_index = format_migrator(slug_index_data["data"])
+        else:
+            slug_index = slug_index_data["data"]
 
         _slug_index = slug_index
     except json.JSONDecodeError:
@@ -166,7 +175,7 @@ def save_slug_index() -> None:
 
     logger.debug("Saving slug index to file")
     slug_index_data: SlugIndexData = {
-        "format_version": 1,
+        "format_version": current_format_version,
         "data": _slug_index
     }
 
