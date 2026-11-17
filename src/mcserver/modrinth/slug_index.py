@@ -37,12 +37,12 @@ def format_migrator(data: Any) -> Any:
                 logger.debug("there's no key named {}")
                 continue
 
-            logger.debug(f"Renamed key from '{renamed_from}' to '{renamed_to}'")
+            logger.debug(f"Renamed key from '{renamed_from}' to '{renamed_to}' for {key}")
             new_data[key] = {
                 renamed_to: value.pop(renamed_from)
             }
         
-        new_data[key].update(value)
+        new_data.update(value)
 
     return new_data
 
