@@ -56,7 +56,7 @@ def request(
     headers: dict | None = None,
     method: str = "GET",
     timeout: int = 10,
-    always_json: bool = False
+    expect_json: bool = False,
 ) -> ResponseObject:
     method = method.upper()
     if query is None:
@@ -83,11 +83,16 @@ def request(
                 "status_code": response.code,
                 "headers": response_headers,
                 "text": response.read().decode("utf-8"),
-                "json": None
+                "json": None,
             }
 
-            if always_json or response_headers.get("content-type", "").startswith("application/json"):
-                response_object["json"] = json.loads(response_object["text"])
+            if expect_json or response_headers.get("content-type", "").startswith(
+                "application/json"
+            ):
+                try:
+                    response_object["json"] = json.loads(response_object["text"])
+                except json.JSONDecodeError:
+                    logger.debug("Failed to parse JSON")
 
             return response_object
 
@@ -100,7 +105,7 @@ def request(
             "status_code": response.code,
             "headers": response_headers,
             "text": response.reason,
-            "json": None
+            "json": None,
         }
 
         return response_object
@@ -178,16 +183,18 @@ def download(
                     time_elapsed = time_now - last_updated_time
                     downloaded_bytes = downloaded_length - last_updated_length
 
-                    download_rate = downloaded_bytes / time_elapsed if time_elapsed > 0 else 0
+                    download_rate = (
+                        downloaded_bytes / time_elapsed if time_elapsed > 0 else 0
+                    )
                     if content_length != 0:
                         print_status(
                             f"Downloading '{basename}' ({format_number(content_length, 'iec')})...",
-                            updating_status=f"Downloading '{basename}' ({format_number(downloaded_length, 'iec')}/{format_number(content_length, 'iec')} {format_number(download_rate, "iec")}/s)... ({round(downloaded_length / content_length * 100)}%)",
+                            updating_status=f"Downloading '{basename}' ({format_number(downloaded_length, 'iec')}/{format_number(content_length, 'iec')} {format_number(download_rate, 'iec')}/s)... ({round(downloaded_length / content_length * 100)}%)",
                         )
                     else:
                         print_status(
                             f"Downloading '{basename}' (unknown final size)...",
-                            updating_status=f"Downloading '{basename}' ({format_number(downloaded_length, 'iec')} {format_number(download_rate, "iec")}/s)...",
+                            updating_status=f"Downloading '{basename}' ({format_number(downloaded_length, 'iec')} {format_number(download_rate, 'iec')}/s)...",
                         )
 
                     last_updated_length = downloaded_length
@@ -204,6 +211,8 @@ def download(
                 )
 
         time_elapsed = round(time.monotonic() - start_time)
-        print_string(f"Downloaded '{basename}' with size {format_number(downloaded_length, 'iec')} for {time_elapsed} {pluralize("second", time_elapsed)}")
+        print_string(
+            f"Downloaded '{basename}' with size {format_number(downloaded_length, 'iec')} for {time_elapsed} {pluralize('second', time_elapsed)}"
+        )
 
     shutil.move(tempfile, filename)

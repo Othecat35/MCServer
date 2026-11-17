@@ -3,7 +3,9 @@ from ..typings import Hashes, LoaderVersion
 from ..urls import quiltmc_api_url
 
 
-class GetLoaderVersionsError(Exception): pass
+class GetLoaderVersionsError(Exception):
+    pass
+
 
 def get_loader_versions() -> list[LoaderVersion]:
     response = networking.request(f"{quiltmc_api_url}/v3/versions/loader")
@@ -19,7 +21,7 @@ def get_loader_versions() -> list[LoaderVersion]:
         hashes: Hashes = {
             "sha1": version_hashes["sha1"],
             "sha256": version_hashes["sha256"],
-            "sha512": version_hashes["sha512"]
+            "sha512": version_hashes["sha512"],
         }
 
         loader_version: LoaderVersion = {

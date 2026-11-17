@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 
 def run(args: Namespace) -> int:
     if not ops_file_path.exists():
-        logger.info(f"Operator file '{ops_file_path.relative_to(current_dir)}' does not exist, creating new one")
+        logger.info(
+            f"Operator file '{ops_file_path.relative_to(current_dir)}' does not exist, creating new one"
+        )
         ops_file_path.write_text("[]")
 
     player_ids: list[str] = args.players

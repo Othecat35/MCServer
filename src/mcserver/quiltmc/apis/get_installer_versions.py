@@ -3,7 +3,9 @@ from ..typings import Hashes, InstallerVersion
 from ..urls import quiltmc_api_url
 
 
-class GetInstallerVersionError(Exception): pass
+class GetInstallerVersionError(Exception):
+    pass
+
 
 def get_installer_versions() -> list[InstallerVersion]:
     response = networking.request(f"{quiltmc_api_url}/v3/versions/installer")
@@ -19,7 +21,7 @@ def get_installer_versions() -> list[InstallerVersion]:
         hashes: Hashes = {
             "sha1": version_hashes["sha1"],
             "sha256": version_hashes["sha256"],
-            "sha512": version_hashes["sha512"]
+            "sha512": version_hashes["sha512"],
         }
 
         installer_version: InstallerVersion = {

@@ -1,10 +1,10 @@
-import json
 import logging
 from argparse import Namespace
+from datetime import UTC, datetime
 
 from .. import config, networking, paths, resolver, shared
 from ..modrinth import apis as modrinth_api
-from ..modrinth import slug_index
+from ..modrinth import project_records, slug_index
 from ..modrinth.typings import (
     Dependency,
     DependencyType,
@@ -22,10 +22,18 @@ dependency_types: dict[DependencyType, int] = {
     "incompatible": 3,
 }
 
-class GetVersionError(Exception): pass
-class GetDependenciesError(Exception): pass
+
+class GetVersionError(Exception):
+    pass
+
+
+class GetDependenciesError(Exception):
+    pass
+
+
 class ResolverTranslationError(Exception):
     pass
+
 
 def human_to_resolver(dependencies: list[Dependency]) -> dict[str, int]:
     resolver_dependencies: dict[str, int] = {}
@@ -52,10 +60,14 @@ def run(args: Namespace) -> int:
     projects: list[str] = args.projects
 
     if not (paths.configs_dir / "server.json").exists():
-        logger.error("Configuration file for server does not exist, is server initialized?")
+        logger.error(
+            "Configuration file for server does not exist, is server initialized?"
+        )
         return 1
 
-    server_config = config.read_config("server", shared.default_configs["server"]["format_version"])
+    server_config = config.read_config(
+        "server", shared.default_configs["server"]["format_version"]
+    )
     game_version: str = server_config["game_version"]
     loader_name: str = server_config["loader"]["name"]
 
@@ -64,20 +76,29 @@ def run(args: Namespace) -> int:
         logger.error(f"{loader_name.capitalize()} does not support mods")
         return 1
 
-    project_label, project_directory = shared.get_loader_context(loader_name)
-
     # mod vs project labeling
     project_label, project_directory = shared.get_loader_context(loader_name)
     if project_directory is None:
-        logger.error("Wait 'project_directory' it can't be None! it just to satisfy pyright")
+        logger.error(
+            "Wait 'project_directory' it can't be None! it just to satisfy pyright"
+        )
         return 1
 
     project_ids: list[str] = []
     project_versions: dict[str, ProjectVersion] = {}
     for project in projects:
-        versions = modrinth_api.get_project_versions(project, loader_name, game_version, include_changelog=False)
+        try:
+            versions = modrinth_api.get_project_versions(
+                project, loader_name, game_version, include_changelog=False
+            )
+        except modrinth_api.GetProjectVersionsError:
+            logger.error("Failed to get project versions!")
+            return 1
+
         if len(versions) == 0:
-            raise GetVersionError(f"{project} has no version for {loader_name.capitalize()} {game_version}")
+            raise GetVersionError(
+                f"{project} has no version for {loader_name.capitalize()} {game_version}"
+            )
 
         project_version = versions[0]
         project_id = project_version["project_id"]
@@ -114,12 +135,25 @@ def run(args: Namespace) -> int:
             dependencies = get_project_dependencies(project_id)
 
         if dependencies is None:
-            raise GetDependenciesError(f"No dependency provider available for {project_id}")
+            raise GetDependenciesError(
+                f"No dependency provider available for {project_id}"
+            )
 
         return human_to_resolver(dependencies)
 
+    try:
+        resolved_projects: list[ProjectData] = resolver.resolver_to_human(
+            resolver.resolve_dependencies(
+                project_ids, get_dependencies, resolver.required_only
+            )
+        )
+    except modrinth_api.GetProjectVersionsError:
+        logger.error("Failed to get project versions!")
+        return 1
 
-    resolved_projects: list[ProjectData] = resolver.resolver_to_human(resolver.resolve_dependencies(project_ids, get_dependencies, resolver.required_only))
+    resolved_project_data: dict[str, ProjectData] = {}
+    for project in resolved_projects:
+        resolved_project_data[project["project_id"]] = project
 
     all_project_ids: set[str] = set()
     incompatible_dependencies: set[str] = set()
@@ -150,7 +184,9 @@ def run(args: Namespace) -> int:
             continue
 
         if "highest_type" not in project:
-            logger.debug(f"{project_id} has no 'highest_type', this should be already handled by 'is_manual' but somehow it passed it")
+            logger.debug(
+                f"{project_id} has no 'highest_type', this should be already handled by 'is_manual' but somehow it passed it"
+            )
             continue
 
         match project["highest_type"]:
@@ -164,7 +200,11 @@ def run(args: Namespace) -> int:
     # Conflict detection
     conflicting_projects = required_dependencies & incompatible_dependencies
     if conflicting_projects:
-        logger.error(f"Found conflicting dependencies: {', '.join(conflicting_projects)}")
+        logger.error(
+            f"Found conflicting dependencies: {', '.join(conflicting_projects)}"
+        )
+        logger.error("Cannon continue.")
+        return 1
 
     # fetch additional info
     project_informations: dict[str, ProjectInformation] = {}
@@ -173,43 +213,57 @@ def run(args: Namespace) -> int:
 
     # Display information
     required_projects_count = len(required_projects)
-    logger.info(f"{shared.pluralize(project_label, required_projects_count).capitalize()} that {shared.pluralize('is', required_projects_count)} going to be downloaded:")
+    logger.info(
+        f"{shared.pluralize(project_label, required_projects_count).capitalize()} that {shared.pluralize('is', required_projects_count)} going to be downloaded:"
+    )
     required_project_display: list[str] = []
     for project_id in list(required_projects):
-        required_project_display.append(f"{project_informations[project_id]['project_name']} ({project_id})")
+        required_project_display.append(
+            f"{project_informations[project_id]['project_name']} ({project_id})"
+        )
 
     required_project_display.sort()
     print(f"  {', '.join(required_project_display)}\n")
 
     optional_projects_count = len(optional_projects)
     if optional_projects:
-        logger.info(f"{shared.pluralize(project_label, optional_projects_count).capitalize()} that {shared.pluralize('is', optional_projects_count)} optional:")
+        logger.info(
+            f"{shared.pluralize(project_label, optional_projects_count).capitalize()} that {shared.pluralize('is', optional_projects_count)} optional:"
+        )
         optional_project_display: list[str] = []
         for project_id in list(optional_projects):
-            optional_project_display.append(f"{project_informations[project_id]['project_name']} ({project_id})")
+            optional_project_display.append(
+                f"{project_informations[project_id]['project_name']} ({project_id})"
+            )
 
         optional_project_display.sort()
         print(f"  {', '.join(optional_project_display)}\n")
 
-
     incompatible_projects_count = len(incompatible_projects)
     if incompatible_projects:
-        logger.info(f"{shared.pluralize(project_label, incompatible_projects_count).capitalize()} that {shared.pluralize('is', incompatible_projects_count)} incompatible:")
+        logger.info(
+            f"{shared.pluralize(project_label, incompatible_projects_count).capitalize()} that {shared.pluralize('is', incompatible_projects_count)} incompatible:"
+        )
         incompatible_project_display: list[str] = []
         for project_id in list(incompatible_projects):
-            incompatible_project_display.append(f"{project_informations[project_id]['project_name']} ({project_id})")
+            incompatible_project_display.append(
+                f"{project_informations[project_id]['project_name']} ({project_id})"
+            )
 
         incompatible_project_display.sort()
         print(f"  {', '.join(incompatible_project_display)}\n")
 
     # Confirmation prompt
-    confirmation_answer = shared.confirmation_prompt("Do you want to continue?", default_option=True)
+    confirmation_answer = shared.confirmation_prompt(
+        "Do you want to continue?", default_option=True
+    )
 
     if not confirmation_answer:
         print("Cancelled")
         return 1
 
     for project_id in required_projects:
+        project_data = resolved_project_data[project_id]
         project_information = project_informations[project_id]
         project_version = project_versions[project_id]
         version_files = project_version["files"]
@@ -223,9 +277,39 @@ def run(args: Namespace) -> int:
         if primary_file is None:
             primary_file = version_files[0]
 
+        file_path = project_directory / primary_file["file_name"]
+        if file_path:
+            logger.info(f"File '{file_path}' already exist, skipping download")
+            continue
+
         logger.info(f"Downloading {project_information['project_name']}...")
         project_directory.mkdir(exist_ok=True, parents=True)
-        networking.download(primary_file['download_url'], project_directory / primary_file["file_name"], hashes=primary_file["file_hashes"])
+
+        sha512_hash = primary_file["file_hashes"].get("sha512")
+        if sha512_hash is not None:
+            networking.download(
+                primary_file["download_url"], file_path, hashes={"sha512": sha512_hash}
+            )
+        else:
+            networking.download(primary_file["download_url"], file_path)
+
+        project_records.write_record(
+            project_id,
+            {
+                "project_name": project_information.get("project_name"),
+                "project_slug": project_information.get("project_slug"),
+                "version_id": project_version["version_id"],
+                "version_environment": project_version["environment"],
+                "file": primary_file,
+                "added_time": datetime.now(tz=UTC).isoformat(),
+                "discovered_time": datetime.now(tz=UTC).isoformat(),
+                "updated_time": None,
+                "is_manual": project_data["is_manual"],
+                "highest_type": project_data["highest_type"],
+                "dependencies": project_data["dependencies"],
+                "dependents": project_data["dependents"],
+            },
+        )
 
     for project_information in project_informations.values():
         project_slug = project_information.get("project_slug")

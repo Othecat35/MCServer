@@ -42,12 +42,16 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
     response = networking.request(
         f"{constants.modrinth_api_url}/v2/projects", query_parameters
     )
+    response_json = response["json"]
 
-    if "json" not in response:
-        raise GetProjectInformationsError("Cannot load JSON response")
+    if response_json is None:
+        raise GetProjectInformationsError("Response is not a JSON")
+
+    if not isinstance(response_json, list):
+        raise GetProjectInformationsError("Response JSON is not an array")
 
     project_informations: list[ProjectInformation] = []
-    for information in response["json"]:
+    for information in response_json:
         # Checks
         project_status: ProjectStatus = information["status"]
         if project_status not in shared.PROJECT_STATUS:

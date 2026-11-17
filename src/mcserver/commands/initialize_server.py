@@ -1,7 +1,6 @@
 import copy
 import logging
 from argparse import Namespace
-from pathlib import Path
 
 from .. import __version__, config, shared, state
 from ..metadata import metadata_file, set_metadata
@@ -9,6 +8,7 @@ from ..modrinth.paths import modrinth_dir, project_records_dir
 from ..modrinth.shared import SearchSortIndex
 
 logger = logging.getLogger(__name__)
+
 
 def run(args: Namespace) -> int:
     # CLI arguments

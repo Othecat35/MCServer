@@ -6,6 +6,7 @@ from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
+
 # TypedDicts
 class BannedPlayerEntry(TypedDict):
     uuid: str

@@ -17,6 +17,7 @@ class SlugIndex(TypedDict):
     project_id: str
     updated_date: str  # ISO-8601
 
+
 class SlugIndexData(TypedDict):
     format_version: int
     data: dict[str, SlugIndex]
@@ -24,9 +25,7 @@ class SlugIndexData(TypedDict):
 
 def format_migrator(data: Any) -> Any:
     print(data)
-    format_changes = [{
-        "renamed": {"last_updated": "updated_time"}
-    }]
+    format_changes = [{"renamed": {"last_updated": "updated_time"}}]
 
     logger.debug("Testing this very dangerous experimental feature")
     new_data = {}
@@ -37,14 +36,15 @@ def format_migrator(data: Any) -> Any:
                 logger.debug(f"there's no key named {renamed_from}")
                 continue
 
-            logger.debug(f"Renamed key from '{renamed_from}' to '{renamed_to}' for {key}")
-            new_data[key] = {
-                renamed_to: value.pop(renamed_from)
-            }
+            logger.debug(
+                f"Renamed key from '{renamed_from}' to '{renamed_to}' for {key}"
+            )
+            new_data[key] = {renamed_to: value.pop(renamed_from)}
 
         new_data[key].update(value)
 
     return new_data
+
 
 # Variables
 _slug_index: dict[str, SlugIndex] | None = None
@@ -163,7 +163,9 @@ def update_slug_index(project_slug: str, project_id: str):
     }
 
     _slug_index[project_slug] = slug_index
-    logger.debug(f"Updated slug index for project slug {project_slug} to project ID {project_id}")
+    logger.debug(
+        f"Updated slug index for project slug {project_slug} to project ID {project_id}"
+    )
 
 
 def save_slug_index() -> None:
@@ -176,7 +178,7 @@ def save_slug_index() -> None:
     logger.debug("Saving slug index to file")
     slug_index_data: SlugIndexData = {
         "format_version": current_format_version,
-        "data": _slug_index
+        "data": _slug_index,
     }
 
     shared.update_file(slug_index_file, json.dumps(slug_index_data).encode())

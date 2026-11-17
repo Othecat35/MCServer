@@ -11,7 +11,8 @@ from .shared import mcserver_dir
 
 logger = logging.getLogger(__name__)
 
-type MCServerActions = Literal["server_running"]
+type MCServerActions = Literal["initializing_server", "server_running"]
+
 
 # TypedDict
 class State(TypedDict):

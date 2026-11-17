@@ -1,6 +1,5 @@
 import argparse
 import sys
-from pathlib import Path
 from types import FunctionType
 
 from . import __version__

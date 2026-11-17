@@ -29,7 +29,6 @@ ansi_codes = {
     "yellow": "\033[93m",
     "bold": "\033[1m",
     "reset": "\033[0m",
-
     "clear_line": "\x1b[K",
     "cursor_down": "\x1b[B",
     "cursor_up": "\x1b[A",
@@ -208,7 +207,12 @@ def ansi(name: str, output_to: Literal["stdout", "strderr"] = "stdout"):
         case "never":
             return ""
         case "auto":
-            if output_to == "stdout" and sys.stdout.isatty() or output_to == "strderr" and sys.stderr.isatty():
+            if (
+                output_to == "stdout"
+                and sys.stdout.isatty()
+                or output_to == "strderr"
+                and sys.stderr.isatty()
+            ):
                 return ansi_codes.get(name, "")
         case _:
             raise ValueError(
@@ -247,6 +251,7 @@ def project_environment_name(project_environment: str) -> str:
 
     return project_environments.get(project_environment, project_environment)
 
+
 def update_file(file_path: Path, file_data: bytes):
     temporary_file = Path(str(file_path) + ".tmp")
     logger.debug(f"Writing into '{temporary_file}'")
@@ -254,15 +259,21 @@ def update_file(file_path: Path, file_data: bytes):
     logger.debug(f"Replacing '{temporary_file}' with '{file_path}'")
     temporary_file.replace(file_path)
 
+
 def print_status(status: str, updating_status: str | None = None) -> None:
     global last_status
     if updating_status is not None and stdout_istty:
-        print(f"{ansi('first_column')}{ansi('clear_line')}{updating_status}", end="", flush=True)
+        print(
+            f"{ansi('first_column')}{ansi('clear_line')}{updating_status}",
+            end="",
+            flush=True,
+        )
     else:
         if status != last_status:
             print(status, end="", flush=True)
 
     last_status = status
+
 
 def print_string(string: str) -> None:
     print(f"{ansi('first_column')}{ansi('clear_line')}{string}")

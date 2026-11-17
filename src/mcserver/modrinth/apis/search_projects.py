@@ -64,16 +64,16 @@ def search_projects(
         query_parameters["query"] = search_query
 
     response = networking.request(
-        f"{modrinth_api_url}/v2/search", query=query_parameters
+        f"{modrinth_api_url}/v2/search", query=query_parameters, expect_json=True
     )
+    response_json = response["json"]
 
     # Mostly just to make pyright happy
-    if "json" in response:
-        response_json = response["json"]
-        if isinstance(response_json, list):
-            raise SearchProjectsError("Response JSON is a list")
-    else:
-        raise SearchProjectsError("Response is not JSON")
+    if response_json is None:
+        raise SearchProjectsError("Response is not a JSON")
+
+    if not isinstance(response_json, dict):
+        raise SearchProjectsError("Response JSON is not an object")
 
     search_hits: list[SearchHit] = []
     for hit in response_json["hits"]:

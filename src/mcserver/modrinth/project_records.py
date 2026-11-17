@@ -1,5 +1,5 @@
 import json
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 from ..shared import update_file
 from .paths import modrinth_dir
@@ -13,9 +13,14 @@ class ProjectRecordFormatVersionError(Exception):
     pass
 
 
+class Dependency(TypedDict):
+    project_id: str
+    dependency_type: DependencyType
+
+
 class ProjectRecordPayload(TypedDict):
     # Project
-    project_name: str
+    project_name: str | None
     project_slug: str | None
 
     # Version
@@ -24,15 +29,15 @@ class ProjectRecordPayload(TypedDict):
     file: File | None
 
     # Metadata
-    added_time: str | None # probably ISO-8601
-    discovered_time: str # probably ISO-8601
-    updated_time: str | None # probably ISO-8601
+    added_time: str | None  # probably ISO-8601
+    discovered_time: str  # probably ISO-8601
+    updated_time: str | None  # probably ISO-8601
 
     # Relationships
     is_manual: bool
     highest_type: DependencyType | None
-    dependencies: dict[str, int]
-    dependents: dict[str, int]
+    dependencies: list[Dependency]
+    dependents: list[Dependency]
 
 
 class ProjectRecordData(ProjectRecordPayload):

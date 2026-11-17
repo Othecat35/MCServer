@@ -7,6 +7,7 @@ from ..paths import current_dir
 
 logger = logging.getLogger(__name__)
 
+
 def run(args: Namespace) -> int:
     # Check MCServer status
     if not state.state_file.parent.exists():

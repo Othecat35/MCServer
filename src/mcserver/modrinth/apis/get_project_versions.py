@@ -58,13 +58,18 @@ def get_project_versions(
     response = networking.request(
         f"{constants.modrinth_api_url}/v2/project/{project_id}/version",
         query=query_parameters,
+        expect_json=True,
     )
+    response_json = response["json"]
 
-    if "json" not in response:
-        raise GetProjectVersionsError("Cannot load JSON response")
+    if response_json is None:
+        raise GetProjectVersionsError("Response is not a JSON")
+
+    if not isinstance(response_json, list):
+        raise GetProjectVersionsError("Response JSON is not an array")
 
     project_versions: list[ProjectVersion] = []
-    for version in response["json"]:
+    for version in response_json:
         dependencies: list[Dependency] = []
         for dependency in version.get("dependencies", []):
             version_dependency: Dependency = {

@@ -33,8 +33,16 @@ def main():
     log_handler = ClearLineHandler(sys.stdout)
     log_handler.setFormatter(logging.Formatter("[%(levelname)s]: %(message)s"))
     if debug_mode:
-        logging.basicConfig(level=logging.DEBUG, format="[%(levelname)s] [%(module)s]: %(message)s", handlers=[log_handler])
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="[%(levelname)s] [%(module)s]: %(message)s",
+            handlers=[log_handler],
+        )
     else:
-        logging.basicConfig(level=logging.INFO, format="[%(levelname)s]: %(message)s", handlers=[log_handler])
+        logging.basicConfig(
+            level=logging.INFO,
+            format="[%(levelname)s]: %(message)s",
+            handlers=[log_handler],
+        )
 
     sys.exit(cli.main())

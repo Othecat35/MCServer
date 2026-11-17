@@ -1,10 +1,7 @@
 # Modules
 # Standard
-import json
 import logging
 from typing import Literal, TypedDict
-
-from .paths import banned_ips_file_path
 
 logger = logging.getLogger(__name__)
 

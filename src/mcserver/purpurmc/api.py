@@ -8,11 +8,14 @@ from .. import networking
 from ..constants import purpurmc_api_url
 
 
-class GetProjectsError(Exception): pass
+class GetProjectsError(Exception):
+    pass
+
 
 # TypedDicts
 class ProjectList(TypedDict):
     projects: list[str]
+
 
 class BuildCommit(TypedDict):
     author_name: str  # original: author
@@ -79,9 +82,7 @@ def get_projects() -> ProjectList:
     if not isinstance(response_json, dict):
         raise GetProjectsError("Response is not an object")
 
-    project_list: ProjectList = {
-        "projects": response_json["projects"]
-    }
+    project_list: ProjectList = {"projects": response_json["projects"]}
 
     return project_list
 
