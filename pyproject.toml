@@ -14,6 +14,16 @@ description = "A CLI tool to manage Minecraft: Java Edition servers."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Android",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Natural Language :: English"
+]
 
 [project.urls]
 Homepage = "https://github.com/Othecat35/MCServer"

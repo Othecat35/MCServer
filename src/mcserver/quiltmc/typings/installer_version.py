@@ -5,7 +5,7 @@ from .shared import Hashes
 
 class InstallerVersion(TypedDict):
     maven_coordinate: str
-    version: str
+    version_string: str
     download_url: str
     file_size: int
-    hashes: Hashes
+    hashes: Hashes #idk what this represents

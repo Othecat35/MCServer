@@ -26,7 +26,7 @@ def get_installer_versions() -> list[InstallerVersion]:
 
         installer_version: InstallerVersion = {
             "maven_coordinate": version["maven"],
-            "version": version["version"],
+            "version_string": version["version"],
             "download_url": version["url"],
             "file_size": version["file_size"],
             "hashes": hashes,

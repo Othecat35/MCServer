@@ -26,7 +26,7 @@ def get_loader_versions() -> list[LoaderVersion]:
 
         loader_version: LoaderVersion = {
             "maven_coordinate": version["maven"],
-            "version": version["version"],
+            "version_string": version["version"],
             "build_number": version["build"],
             "version_separator": version["separator"],
             "file_size": version["file_size"],
