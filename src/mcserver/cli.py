@@ -227,6 +227,13 @@ def main() -> int:
         dest="sort_index",
     )
 
+    # 'list' command
+    list_command = commands.add_parser(
+        "list", help="List added projects", description="List add mods/plugins"
+    )
+
+    list_command.set_defaults(command_name="list")
+
     # 'op' command
     op_command = commands.add_parser(
         "op", help="Manage operator players", description="Manage the operator status"

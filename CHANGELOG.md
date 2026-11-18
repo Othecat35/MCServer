@@ -314,7 +314,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.7.4...HEAD
+[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.8.0...HEAD
+[4.8.0]: https://github.com/Othecat35/MCServer/compare/v4.7.4...v4.8.0
 [4.7.4]: https://github.com/Othecat35/MCServer/compare/v4.7.3...v4.7.4
 [4.7.3]: https://github.com/Othecat35/MCServer/compare/v4.7.2...v4.7.3
 [4.7.2]: https://github.com/Othecat35/MCServer/compare/v4.7.1...v4.7.2

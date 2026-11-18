@@ -6,6 +6,7 @@ import sys
 import textwrap
 from pathlib import Path
 from typing import Literal
+from warnings import deprecated
 
 # MCServer
 from .constants import iec_prefixes, si_prefixes
@@ -165,7 +166,7 @@ def get_loader_context(loader_name: str) -> tuple[str, Path | None]:
     else:  # Vanilla
         return ("project", None)
 
-
+@deprecated("Use get_loader_context instead")
 def set_loader_context(loader_name: str) -> None:
     global loader_context
     logger.debug("set_loader_context was called!")
