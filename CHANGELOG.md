@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.7.4] - 2026-11-18
+
+### Fixed
+
+- `add` thinks every mod file already exists, now it works properly
+
 ## [4.7.3] - 2026-11-17
 
 ### Added
@@ -308,7 +314,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.7.2...HEAD
+[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.7.4...HEAD
+[4.7.4]: https://github.com/Othecat35/MCServer/compare/v4.7.3...v4.7.4
 [4.7.3]: https://github.com/Othecat35/MCServer/compare/v4.7.2...v4.7.3
 [4.7.2]: https://github.com/Othecat35/MCServer/compare/v4.7.1...v4.7.2
 [4.7.1]: https://github.com/Othecat35/MCServer/compare/v4.7.0...v4.7.1

@@ -278,7 +278,7 @@ def run(args: Namespace) -> int:
             primary_file = version_files[0]
 
         file_path = project_directory / primary_file["file_name"]
-        if file_path:
+        if file_path.exists():
             logger.info(f"File '{file_path}' already exist, skipping download")
             continue
 
