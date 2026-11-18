@@ -201,7 +201,7 @@ def wrap_string(
 
 
 # ANSI
-def ansi(name: str, output_to: Literal["stdout", "strderr"] = "stdout"):
+def ansi(name: str, output_to: Literal["stdout", "strderr"] = "stdout") -> str:
     match color_output_mode:
         case "always":
             return ansi_codes.get(name, "")
@@ -219,6 +219,8 @@ def ansi(name: str, output_to: Literal["stdout", "strderr"] = "stdout"):
             raise ValueError(
                 f"Invalid string '{color_output_mode}' of variable color_output_mode"
             )
+
+    return ""
 
 
 def wrap_ansi(string: str, ansi_name: str):
