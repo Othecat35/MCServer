@@ -1,6 +1,9 @@
 import json
 import logging
+import os
+import shutil
 from argparse import Namespace
+from pathlib import Path
 
 from .. import state
 from ..paths import current_dir
@@ -11,7 +14,7 @@ logger = logging.getLogger(__name__)
 def run(args: Namespace) -> int:
     # Check MCServer status
     if not state.state_file.parent.exists():
-        logger.error("State file not exist, is MCServer initialized?")
+        logger.error("Directory '.mcserver'  not exist, is MCServer initialized?")
         return 1
 
     current_state = state.get_state()
@@ -31,10 +34,6 @@ def run(args: Namespace) -> int:
     # Set state
     state.set_state("server_running")
 
-    import os
-    import shutil
-    from pathlib import Path
-
     from .. import config, shared
 
     # Load configs
@@ -44,6 +43,15 @@ def run(args: Namespace) -> int:
 
     jarfile = current_dir / Path(launcher_config["jarfile"]).name
     memory_config = launcher_config["ram"]
+
+    # Check stuff
+    if not shutil.which("java"):
+        logger.error("'java' not found, is Java installed?")
+        return 1
+
+    if memory_config["min"] > memory_config["max"]:
+        logger.error("Minimum RAM is bigger than maximum RAM")
+        return 1
 
     # Download jarfile
     if not jarfile.exists():
@@ -148,22 +156,13 @@ def run(args: Namespace) -> int:
                 )
                 return 1
 
-    # Check stuff
-    if not shutil.which("java"):
-        logger.error("'java' not found, is Java installed?")
-        return 1
-
-    if memory_config["min"] > memory_config["max"]:
-        logger.error("Minimum RAM is bigger than maximum RAM")
-        return 1
-
     # Run the server
-    java_command_argv = [
+    java_command_argv: list[str] = [
         "java",
         f"-Xmx{memory_config['max']}M",
         f"-Xms{memory_config['min']}M",
         "-jar",
-        jarfile,
+        str(jarfile),
     ]
 
     if launcher_config["is_nogui"]:
