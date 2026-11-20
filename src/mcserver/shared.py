@@ -5,39 +5,43 @@ import shutil
 import sys
 import textwrap
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypedDict
 from warnings import deprecated
 
 # MCServer
 from .constants import iec_prefixes, si_prefixes
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
+
+class LoaderContext(TypedDict):
+    project_directory: Path | None
+    project_label: Literal["project", "mod", "plugin"]
 
 # Variables
-mod_loaders = ["fabric"]  # , "quilt"]
-plugin_loaders = ["paper", "purpur"]
-loader_list = ["vanilla"] + mod_loaders + plugin_loaders
+mod_loaders: list[str] = ["fabric"]  # , "quilt"]
+plugin_loaders: list[str] = ["paper", "purpur"]
+loader_list: list[str] = ["vanilla"] + mod_loaders + plugin_loaders
 
-loader_context = {"project_directory": None, "project_label": "project"}
+loader_context: LoaderContext = {"project_directory": None, "project_label": "project"}
 
-special_plural = {"is": "are", "this": "these"}
+special_plural: dict[str, str] = {"is": "are", "this": "these"}
 
 color_output_mode: Literal["always", "never", "auto"] = "auto"
-ansi_codes = {
-    "gray": "\033[90m",
-    "green": "\033[92m",
-    "red": "\033[91m",
-    "yellow": "\033[93m",
-    "bold": "\033[1m",
-    "reset": "\033[0m",
+ansi_codes: dict[str, str] = {
+    "gray": "\x1b[90m",
+    "green": "\x1b[92m",
+    "red": "\x1b[91m",
+    "yellow": "\x1b[93m",
+    "bold": "\x1b[1m",
+    "reset": "\x1b[0m",
     "clear_line": "\x1b[K",
     "cursor_down": "\x1b[B",
     "cursor_up": "\x1b[A",
     "first_column": "\x1b[G",
 }
 
-stdout_istty = sys.stdout.isatty()
-isatty = stdout_istty and sys.stderr.isatty()
+stdout_istty: bool = sys.stdout.isatty()
+isatty: bool = stdout_istty and sys.stderr.isatty()
 last_status: str | None = None
 
 default_configs = {
@@ -76,7 +80,7 @@ plugins_dir: Path = Path("plugins")
 
 
 # Functions
-def pluralize(singular: str, count: int = 0, plural: str = ""):
+def pluralize(singular: str, count: int = 0, plural: str = "") -> str:
     if count != 1:
         if plural:
             return plural
@@ -94,7 +98,7 @@ def pluralize(singular: str, count: int = 0, plural: str = ""):
     return singular
 
 
-def format_number(number: float, unit_type: str = "si"):
+def format_number(number: float, unit_type: str = "si") -> str:
     is_negative = number < 0
     number = abs(number)
     unit_multiples = 0
@@ -131,14 +135,14 @@ def merge_dict(base: dict, update: dict) -> dict:
 
 
 def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
-    accepted_value = "y/n"
+    accepted_value: str = "y/n"
     if default_option:
-        accepted_value = "Y/n"
+        accepted_value: str = "Y/n"
     else:
-        accepted_value = "y/N"
+        accepted_value: str = "y/N"
 
     try:
-        answer = input(f"{prompt} [{accepted_value}]: ")
+        answer: str = input(f"{prompt} [{accepted_value}]: ")
     except KeyboardInterrupt:
         print()  # To avoid weird no newline when Ctrl+C
         return False
@@ -154,7 +158,7 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
             return False
 
 
-def support_mod(loader_name) -> bool:
+def support_mods(loader_name: str) -> bool:
     return loader_name in mod_loaders or loader_name in plugin_loaders
 
 
@@ -182,14 +186,14 @@ def wrap_string(
     initial_indent: str | int = "",
     subsequent_indent: str | int = "",
     width: int | None = None,
-):
+) -> str:
     if isinstance(initial_indent, int):
         initial_indent = " " * initial_indent
 
     if isinstance(subsequent_indent, int):
         subsequent_indent = " " * subsequent_indent
 
-    terminal_width = width or shutil.get_terminal_size().columns
+    terminal_width: int = width or shutil.get_terminal_size().columns
     return "\n".join(
         textwrap.wrap(
             string,
@@ -223,7 +227,7 @@ def ansi(name: str, output_to: Literal["stdout", "strderr"] = "stdout") -> str:
     return ""
 
 
-def wrap_ansi(string: str, ansi_name: str):
+def wrap_ansi(string: str, ansi_name: str) -> str:
     return f"{ansi(ansi_name)}{string}{ansi('reset')}"
 
 
@@ -255,7 +259,7 @@ def project_environment_name(project_environment: str) -> str:
     return project_environments.get(project_environment, project_environment)
 
 
-def update_file(file_path: Path, file_data: bytes):
+def update_file(file_path: Path, file_data: bytes) -> None:
     temporary_file = Path(str(file_path) + ".tmp")
     logger.debug(f"Writing into '{temporary_file}'")
     temporary_file.write_bytes(file_data)

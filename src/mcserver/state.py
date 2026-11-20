@@ -9,7 +9,7 @@ from typing import Literal, NotRequired, TypedDict
 # MCServer
 from .shared import mcserver_dir
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 type MCServerActions = Literal["initializing_server", "server_running"]
 
@@ -29,21 +29,21 @@ class CurrentState(TypedDict):
 
 
 # Paths
-proc_dir = Path("/proc")
-state_file = mcserver_dir / "state.json"
+proc_dir: Path = Path("/proc")
+state_file: Path = mcserver_dir / "state.json"
 
 
 # Functions
 def get_start_time(process_id: int | str) -> int:
     process_id = str(process_id)
 
-    proc_pid = proc_dir / process_id
+    proc_pid: Path = proc_dir / process_id
     if not proc_pid.exists():
         logger.debug(f"Process ID ({process_id}) does not exist")
         return 0
 
-    pid_stat = proc_pid / "stat"
-    pid_stat_data = pid_stat.read_text()
+    pid_stat: Path = proc_pid / "stat"
+    pid_stat_data: str = pid_stat.read_text()
 
     start_time: int = int(pid_stat_data.split()[21])
     return start_time
