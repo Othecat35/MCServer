@@ -1,6 +1,5 @@
-from typing import TypedDict
+from .shared import Version
 
 
-class GameVersion(TypedDict):
-    version_string: str
-    is_stable: bool
+class GameVersion(Version):
+    pass

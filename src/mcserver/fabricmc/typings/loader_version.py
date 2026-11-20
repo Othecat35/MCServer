@@ -1,9 +1,7 @@
-from typing import TypedDict
+from .shared import Version
 
 
-class LoaderVersion(TypedDict):
+class LoaderVersion(Version):
     version_separator: str
     build_number: int
     maven_coordinate: str
-    version_string: str
-    is_stable: bool

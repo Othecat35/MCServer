@@ -1,8 +1,7 @@
-from typing import TypedDict
+from .shared import Version
 
 
-class InstallerVersion(TypedDict):
+class InstallerVersion(Version):
     download_url: str
     maven_coordinate: str
     version_string: str
-    is_stable: bool

@@ -1,17 +1,17 @@
 from ... import networking
+from ...urls import fabricmc_meta_url
 from ..typings import InstallerVersion
-from ..urls import fabricmc_meta_url
 
 
-class GetInstallerVersionError(Exception): pass
+class GetInstallerVersionsError(Exception): pass
 
 def get_installer_versions() -> list[InstallerVersion]:
     response = networking.request(f"{fabricmc_meta_url}/v2/versions/installer")
     response_json = response["json"]
     if response_json is None:
-        raise GetInstallerVersionError("Response is not a JSON")
+        raise GetInstallerVersionsError("Response is not a JSON")
     elif not isinstance(response_json, list):
-        raise GetInstallerVersionError("Response JSON is not a list")
+        raise GetInstallerVersionsError("Response JSON is not a list")
 
     installer_versions: list[InstallerVersion] = []
     for version in response_json:

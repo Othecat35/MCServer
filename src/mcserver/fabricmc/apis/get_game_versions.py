@@ -1,17 +1,17 @@
 from ... import networking
+from ...urls import fabricmc_meta_url
 from ..typings import GameVersion
-from ..urls import fabricmc_meta_url
 
 
-class GetGameVersionError(Exception): pass
+class GetGameVersionsError(Exception): pass
 
 def get_game_versions() -> list[GameVersion]:
     response = networking.request(f"{fabricmc_meta_url}/v2/versions/game")
     response_json = response["json"]
     if response_json is None:
-        raise GetGameVersionError("Response is not a JSON")
+        raise GetGameVersionsError("Response is not a JSON")
     elif not isinstance(response_json, list):
-        raise GetGameVersionError("Response JSON is not a list")
+        raise GetGameVersionsError("Response JSON is not a list")
 
     game_versions: list[GameVersion] = []
     for version in response_json:

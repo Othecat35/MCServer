@@ -1,4 +1,4 @@
-from ..urls import fabricmc_meta_url
+from ...urls import fabricmc_meta_url
 
 
 def get_server_download_url(game_version: str, loader_version: str, installer_version: str) -> str:
