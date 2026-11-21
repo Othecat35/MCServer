@@ -16,13 +16,13 @@ def get_installer_versions() -> list[InstallerVersion]:
 
     installer_versions: list[InstallerVersion] = []
     for version in response_json:
-        installer_version_data: InstallerVersion = {
+        installer_version: InstallerVersion = {
             "download_url": version["url"],
             "maven_coordinate": version["maven"],
             "version_string": version["version"],
             "is_stable": version["stable"]
         }
 
-        installer_versions.append(installer_version_data)
+        installer_versions.append(installer_version)
 
     return installer_versions

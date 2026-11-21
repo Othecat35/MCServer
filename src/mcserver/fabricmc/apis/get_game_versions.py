@@ -16,11 +16,11 @@ def get_game_versions() -> list[GameVersion]:
 
     game_versions: list[GameVersion] = []
     for version in response_json:
-        game_version_data: GameVersion = {
+        game_version: GameVersion = {
             "version_string": version["version"],
             "is_stable": version["stable"]
         }
 
-        game_versions.append(game_version_data)
+        game_versions.append(game_version)
 
     return game_versions
