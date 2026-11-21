@@ -1,6 +1,7 @@
 from ... import networking
+from ...networking import ResponseObject
+from ...urls import quiltmc_meta_url
 from ..typings import Hashes, LoaderVersion
-from ..urls import quiltmc_api_url
 
 
 class GetLoaderVersionsError(Exception):
@@ -8,8 +9,8 @@ class GetLoaderVersionsError(Exception):
 
 
 def get_loader_versions() -> list[LoaderVersion]:
-    response = networking.request(f"{quiltmc_api_url}/v3/versions/loader")
-    response_json = response["json"]
+    response: ResponseObject = networking.request(f"{quiltmc_meta_url}/v3/versions/loader")
+    response_json: list | dict | None = response["json"]
     if response_json is None:
         raise GetLoaderVersionsError("Response is not a JSON")
     elif not isinstance(response_json, list):

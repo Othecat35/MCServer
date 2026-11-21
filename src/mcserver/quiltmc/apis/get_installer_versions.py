@@ -1,6 +1,7 @@
 from ... import networking
+from ...networking import ResponseObject
+from ...urls import quiltmc_meta_url
 from ..typings import Hashes, InstallerVersion
-from ..urls import quiltmc_api_url
 
 
 class GetInstallerVersionError(Exception):
@@ -8,8 +9,8 @@ class GetInstallerVersionError(Exception):
 
 
 def get_installer_versions() -> list[InstallerVersion]:
-    response = networking.request(f"{quiltmc_api_url}/v3/versions/installer")
-    response_json = response["json"]
+    response: ResponseObject = networking.request(f"{quiltmc_meta_url}/v3/versions/installer")
+    response_json: list | dict | None = response["json"]
     if response_json is None:
         raise GetInstallerVersionError("Response is not a JSON")
     elif not isinstance(response_json, list):

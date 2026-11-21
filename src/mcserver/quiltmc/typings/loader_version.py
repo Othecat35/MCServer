@@ -1,16 +1,8 @@
-from typing import TypedDict
-
-from .shared import Hashes
+from .shared import Version
 
 
-class LoaderVersion(TypedDict):
-    maven_coordinate: str
-    version_string: str
-    """The version for this loader release."""
+class LoaderVersion(Version):
     build_number: int
     """The build number of the loader"""
     version_separator: str
     """The separator used in the loader version"""
-    file_size: int
-    """The size of the file in bytes"""
-    hashes: Hashes # idk what this represents
