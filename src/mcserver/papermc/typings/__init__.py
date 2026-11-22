@@ -6,4 +6,10 @@ from .build_information import (
     FileHashes,
 )
 
-__all__ = ["BuildChannel", "BuildCommit", "BuildDownload", "BuildInformation", "FileHashes"]
+__all__ = [
+    "BuildChannel",
+    "BuildCommit",
+    "BuildDownload",
+    "BuildInformation",
+    "FileHashes",
+]

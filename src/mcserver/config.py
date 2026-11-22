@@ -76,6 +76,7 @@ def read_config(config_name: str, current_format_version: int) -> dict[str, Any]
 
     return config_data
 
+
 def config_exists(config_name: str) -> bool:
     config_filename = f"{config_name}.json"
     config_path = configs_dir / config_filename

@@ -13,9 +13,11 @@ from .constants import iec_prefixes, si_prefixes
 
 logger: logging.Logger = logging.getLogger(__name__)
 
+
 class LoaderContext(TypedDict):
     project_directory: Path | None
     project_label: Literal["project", "mod", "plugin"]
+
 
 # Variables
 mod_loaders: list[str] = ["fabric"]  # , "quilt"]
@@ -169,6 +171,7 @@ def get_loader_context(loader_name: str) -> tuple[str, Path | None]:
         return ("plugin", plugins_dir)
     else:  # Vanilla
         return ("project", None)
+
 
 @deprecated("Use get_loader_context instead")
 def set_loader_context(loader_name: str) -> None:

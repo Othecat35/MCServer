@@ -4,10 +4,14 @@ from ...urls import legacyfabric_meta_url
 from ..typings import LoaderVersion
 
 
-class GetLoaderVersionsError(Exception): pass
+class GetLoaderVersionsError(Exception):
+    pass
+
 
 def get_loader_versions() -> list[LoaderVersion]:
-    response: ResponseObject = networking.request(f"{legacyfabric_meta_url}/v2/versions/loader")
+    response: ResponseObject = networking.request(
+        f"{legacyfabric_meta_url}/v2/versions/loader"
+    )
     response_json: list | dict | None = response["json"]
     if response_json is None:
         raise GetLoaderVersionsError("Response is not a JSON")
@@ -21,7 +25,7 @@ def get_loader_versions() -> list[LoaderVersion]:
             "build_number": version["build"],
             "maven_coordinate": version["maven"],
             "version_string": version["version"],
-            "is_stable": version["stable"]
+            "is_stable": version["stable"],
         }
 
         loader_versions.append(loader_version)

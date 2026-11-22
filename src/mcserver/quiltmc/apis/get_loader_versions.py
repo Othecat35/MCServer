@@ -9,7 +9,9 @@ class GetLoaderVersionsError(Exception):
 
 
 def get_loader_versions() -> list[LoaderVersion]:
-    response: ResponseObject = networking.request(f"{quiltmc_meta_url}/v3/versions/loader")
+    response: ResponseObject = networking.request(
+        f"{quiltmc_meta_url}/v3/versions/loader"
+    )
     response_json: list | dict | None = response["json"]
     if response_json is None:
         raise GetLoaderVersionsError("Response is not a JSON")

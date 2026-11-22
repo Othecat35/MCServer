@@ -9,7 +9,9 @@ class GetInstallerVersionError(Exception):
 
 
 def get_installer_versions() -> list[InstallerVersion]:
-    response: ResponseObject = networking.request(f"{quiltmc_meta_url}/v3/versions/installer")
+    response: ResponseObject = networking.request(
+        f"{quiltmc_meta_url}/v3/versions/installer"
+    )
     response_json: list | dict | None = response["json"]
     if response_json is None:
         raise GetInstallerVersionError("Response is not a JSON")

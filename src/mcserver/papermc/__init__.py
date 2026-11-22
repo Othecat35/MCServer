@@ -7,4 +7,11 @@ from .typings import (
     FileHashes,
 )
 
-__all__: list[str] = ["BuildChannel", "BuildCommit", "BuildDownload", "BuildInformation", "FileHashes", "papermc_api"]
+__all__: list[str] = [
+    "BuildChannel",
+    "BuildCommit",
+    "BuildDownload",
+    "BuildInformation",
+    "FileHashes",
+    "papermc_api",
+]

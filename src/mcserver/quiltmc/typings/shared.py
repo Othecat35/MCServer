@@ -9,6 +9,7 @@ class Hashes(TypedDict):
     sha512: str
     """The SHA-512 hash"""
 
+
 class Version(TypedDict):
     maven_coordinate: str
     version_string: str
