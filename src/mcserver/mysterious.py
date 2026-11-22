@@ -22,6 +22,10 @@ def nothing_to_see_here_move_along() -> NoReturn:
         "Why did the chicken cross the road?",
         "What's the meaning of life?",
         "/warp this_is_a_very_long_phrase_that_hopefully_is_not_in_any_dictionary",
+        "418 I'm a teapot",
+        "Hold F3+C for 10 seconds for a surprise!",
+        "Segmentation fault (core dumped)",
+        "about:mozilla in Firefox?"
     ]
 
     message: str = random.choice(messages)
