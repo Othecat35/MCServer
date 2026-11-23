@@ -9,7 +9,7 @@ from ..shared import pluralize
 logger = logging.getLogger(__name__)
 
 
-def run(args: Namespace) -> int:
+def whitelist_list(args: Namespace) -> int:
     if not whitelist_file_path.exists():
         logger.error(
             f"Whitelist file '{whitelist_file_path.relative_to(current_dir)}' does not exist"

@@ -10,7 +10,7 @@ from ..modrinth.shared import SearchSortIndex
 logger = logging.getLogger(__name__)
 
 
-def run(args: Namespace) -> int:
+def initialize_server(args: Namespace) -> int:
     # CLI arguments
     game_version: str = args.game_version
 

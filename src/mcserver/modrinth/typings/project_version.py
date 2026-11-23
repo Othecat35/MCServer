@@ -1,8 +1,7 @@
 from typing import Literal, NotRequired, TypedDict
 
-from .shared import Environment
+from .shared import Dependency, Environment
 
-type DependencyType = Literal["required", "optional", "incompatible", "embedded"]
 type FileType = Literal[
     "required-resource-pack",
     "optional-resource-pack sources-jar",
@@ -18,15 +17,11 @@ type VersionStatus = Literal[
 type VersionType = Literal["release", "beta", "alpha"]
 
 
-class Dependency(TypedDict):
+class VersionDependency(Dependency):
     version_id: NotRequired[str | None]
     """The ID of the version that this version depends on"""
-    project_id: NotRequired[str | None]
-    """The ID of the project that this version depends on"""
     file_name: NotRequired[str | None]
     """The file name of the dependency, mostly used for showing external dependencies on modpacks"""
-    dependency_type: DependencyType
-    """The type of dependency that this version has"""
 
 
 class FileHashes(TypedDict):
@@ -58,7 +53,7 @@ class ProjectVersion(TypedDict):
     """The version number. Ideally will follow semantic versioning"""
     changelog: NotRequired[str | None]
     """The changelog for this version"""
-    dependencies: NotRequired[list[Dependency]]
+    dependencies: NotRequired[list[VersionDependency]]
     """A list of specific versions of projects that this version depends on"""
     game_versions: NotRequired[list[str]]
     """A list of versions of Minecraft that this version supports"""

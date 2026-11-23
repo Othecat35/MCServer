@@ -33,11 +33,11 @@ def get_project_versions(
     from ... import networking
     from .. import constants, shared
     from ..typings import (
-        Dependency,
         File,
         FileHashes,
         FileType,
         RequestedVersionStatus,
+        VersionDependency,
         VersionStatus,
         VersionType,
     )
@@ -70,9 +70,9 @@ def get_project_versions(
 
     project_versions: list[ProjectVersion] = []
     for version in response_json:
-        dependencies: list[Dependency] = []
+        dependencies: list[VersionDependency] = []
         for dependency in version.get("dependencies", []):
-            version_dependency: Dependency = {
+            version_dependency: VersionDependency = {
                 "dependency_type": dependency["dependency_type"]
             }
 

@@ -1,7 +1,7 @@
 from argparse import Namespace
 
 
-def run(args: Namespace) -> int:
+def remove_projects(args: Namespace) -> int:
     import logging as log
 
     log.error("Command is not implemented yet.")

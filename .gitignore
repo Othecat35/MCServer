@@ -1,6 +1,7 @@
-.mcserver/
+/.mcserver/
+/.ruff_cache
 __pycache__/
-dist/
-mods/
-Launcher.jar
-a.iso
+/dist/
+/mods/
+/Launcher.jar
+/a.iso

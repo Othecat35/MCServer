@@ -3,6 +3,8 @@ from collections import deque
 from collections.abc import Callable
 from typing import Literal, TypedDict
 
+from .modrinth.typings import Dependency
+
 logger = logging.getLogger(__name__)
 
 type DependencyType = Literal["required", "optional", "incompatible", "embedded"]
@@ -19,11 +21,6 @@ dependency_types2: list[DependencyType] = [
     "required",
     "incompatible",
 ]
-
-
-class Dependency(TypedDict):
-    project_id: str
-    dependency_type: DependencyType
 
 
 class Project(TypedDict):
@@ -47,6 +44,10 @@ class ProjectData(TypedDict):
 def human_to_resolver(dependencies: list[Dependency]) -> dict[str, int]:
     resolver_dependencies: dict[str, int] = {}
     for dependency in dependencies:
+        if "project_id" not in dependency or dependency["project_id"] is None:
+            logger.debug("A dependency has no 'project_id' or it is None")
+            continue
+
         resolver_dependencies[dependency["project_id"]] = dependency_types[
             dependency["dependency_type"]
         ]

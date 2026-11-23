@@ -19,7 +19,7 @@ from ..shared import (
 logger = logging.getLogger(__name__)
 
 
-def run(args: Namespace) -> int:
+def search_projects(args: Namespace) -> int:
     search_query: list[str] = args.search_query
     search_limit: int | None = args.search_limit
     page_number: int = args.page_number

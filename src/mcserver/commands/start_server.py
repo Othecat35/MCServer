@@ -11,7 +11,7 @@ from ..paths import current_dir
 logger = logging.getLogger(__name__)
 
 
-def run(args: Namespace) -> int:
+def start_server(args: Namespace) -> int:
     # Check MCServer status
     if not state.state_file.parent.exists():
         logger.error("Directory '.mcserver'  not exist, is MCServer initialized?")

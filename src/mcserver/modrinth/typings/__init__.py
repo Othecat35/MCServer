@@ -9,18 +9,23 @@ from .project_information import (
     RequestedProjectStatus,
 )
 from .project_version import (
-    Dependency,
-    DependencyType,
     File,
     FileHashes,
     FileType,
     ProjectVersion,
     RequestedVersionStatus,
+    VersionDependency,
     VersionStatus,
     VersionType,
 )
 from .search_projects import AllProjectType, DisclosureType, SearchHit, SearchResult
-from .shared import Environment, EnvironmentSide, ProjectType
+from .shared import (
+    Dependency,
+    DependencyType,
+    Environment,
+    EnvironmentSide,
+    ProjectType,
+)
 
 __all__ = [
     "AllProjectType",
@@ -45,6 +50,7 @@ __all__ = [
     "RequestedVersionStatus",
     "SearchHit",
     "SearchResult",
+    "VersionDependency",
     "VersionStatus",
     "VersionType",
 ]

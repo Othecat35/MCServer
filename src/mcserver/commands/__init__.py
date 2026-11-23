@@ -1,21 +1,21 @@
-from .add_projects import run as add_projects
-from .import_setup import run as import_setup
-from .initialize_server import run as initialize_server
-from .list_projects import run as list_projects
-from .op_grant import run as op_grant
-from .op_list import run as op_list
-from .op_revoke import run as op_revoke
-from .print_help import run as print_help
-from .remove_projects import run as remove_projects
-from .search_projects import run as search_projects
-from .server_status import run as server_status
-from .show_projects import run as show_projects
-from .start_server import run as start_server
-from .stop_server import run as stop_server
-from .update_projects import run as update_projects
-from .whitelist_add import run as whitelist_add
-from .whitelist_list import run as whitelist_list
-from .whitelist_remove import run as whitelist_remove
+from .add_projects import add_projects
+from .import_setup import import_setup
+from .initialize_server import initialize_server
+from .list_projects import list_projects
+from .op_grant import op_grant
+from .op_list import op_list
+from .op_revoke import op_revoke
+from .print_help import print_help
+from .remove_projects import remove_projects
+from .search_projects import search_projects
+from .server_status import server_status
+from .show_projects import show_projects
+from .start_server import start_server
+from .stop_server import stop_server
+from .update_projects import update_projects
+from .whitelist_add import whitelist_add
+from .whitelist_list import whitelist_list
+from .whitelist_remove import whitelist_remove
 
 __all__ = [
     "add_projects",

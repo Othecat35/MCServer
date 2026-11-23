@@ -129,6 +129,24 @@ def is_index_outdated(project_slug: str) -> bool:
     return time_now - last_updated > time_to_live
 
 
+def is_slug_indexed(project_slug: str) -> bool:
+    _load_slug_index()
+    global _slug_index
+    if _slug_index is None:
+        logger.debug("Idk how _slug_index can be None")
+        _slug_index = {}
+
+    if project_slug not in _slug_index:
+        logger.debug(f"Project slug '{project_slug}' is not in the index")
+        return False
+
+    if "project_id" not in _slug_index[project_slug]:
+        logger.debug(f"Project slug '{project_slug}' does not have 'project_id'")
+        return False
+
+    return True
+
+
 def slug_to_id(project_slug: str) -> str:
     _load_slug_index()
     global _slug_index

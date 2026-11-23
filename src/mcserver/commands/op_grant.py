@@ -10,7 +10,7 @@ from ..server_files.paths import ops_file_path
 logger = logging.getLogger(__name__)
 
 
-def run(args: Namespace) -> int:
+def op_grant(args: Namespace) -> int:
     if not ops_file_path.exists():
         logger.info(
             f"Operator file '{ops_file_path.relative_to(current_dir)}' does not exist, creating new one"

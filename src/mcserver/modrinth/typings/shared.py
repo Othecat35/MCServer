@@ -1,4 +1,16 @@
-from typing import Literal
+from typing import Literal, NotRequired, TypedDict
+
+type DependencyType = Literal["required", "optional", "incompatible", "embedded"]
+type EnvironmentSide = Literal["required", "optional", "unsupported", "unknown"]
+type ProjectType = Literal["mod", "modpack", "resourcepack", "shader"]
+
+
+class Dependency(TypedDict):
+    project_id: NotRequired[str | None]
+    """The ID of the project that this version depends on"""
+    dependency_type: DependencyType
+    """The type of dependency that this version has"""
+
 
 type Environment = Literal[
     "client_and_server",
@@ -12,6 +24,3 @@ type Environment = Literal[
     "client_or_server_prefers_both",
     "unknown",
 ]
-
-type EnvironmentSide = Literal["required", "optional", "unsupported", "unknown"]
-type ProjectType = Literal["mod", "modpack", "resourcepack", "shader"]

@@ -1,7 +1,7 @@
 from argparse import Namespace
 
 
-def run(args: Namespace) -> int:
+def import_setup(args: Namespace) -> int:
     file: str = args.file
     import logging as log
 

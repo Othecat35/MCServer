@@ -8,7 +8,7 @@ from ..shared import get_loader_context
 logger = logging.getLogger(__name__)
 
 
-def run(args: Namespace) -> int:
+def list_projects(args: Namespace) -> int:
     if not config.config_exists("server"):
         logger.error("Configuration for 'server' does not exist")
         return 1

@@ -5,15 +5,17 @@ from datetime import UTC, datetime
 from .. import config, networking, paths, resolver, shared
 from ..modrinth import apis as modrinth_api
 from ..modrinth import project_records, slug_index
+from ..modrinth.project_records import ProjectRecordPayload
 from ..modrinth.typings import (
     Dependency,
     DependencyType,
     ProjectInformation,
     ProjectVersion,
+    VersionDependency,
 )
 from ..resolver import ProjectData
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 dependency_types: dict[DependencyType, int] = {
     "embedded": 0,
@@ -35,13 +37,30 @@ class ResolverTranslationError(Exception):
     pass
 
 
+def version_dependencies_to_dependencies(
+    version_dependencies: list[VersionDependency],
+) -> list[Dependency]:
+    dependencies: list[Dependency] = []
+    for version_dependency in version_dependencies:
+        dependency: Dependency = {
+            "dependency_type": version_dependency["dependency_type"]
+        }
+
+        if "project_id" in version_dependency:
+            dependency["project_id"] = version_dependency["project_id"]
+
+        dependencies.append(dependency)
+
+    return dependencies
+
+
 def human_to_resolver(dependencies: list[Dependency]) -> dict[str, int]:
     resolver_dependencies: dict[str, int] = {}
     for dependency in dependencies:
         if "project_id" not in dependency:
             raise ResolverTranslationError("'project_id' does not exist in dependency")
 
-        dependency_id = dependency["project_id"]
+        dependency_id: str | None = dependency["project_id"]
         if dependency_id is None:
             raise ResolverTranslationError("'project_id' is None")
 
@@ -56,23 +75,23 @@ def human_to_resolver(dependencies: list[Dependency]) -> dict[str, int]:
     return resolver_dependencies
 
 
-def run(args: Namespace) -> int:
+def add_projects(args: Namespace) -> int:
     projects: list[str] = args.projects
 
     if not (paths.configs_dir / "server.json").exists():
         logger.error(
-            "Configuration file for server does not exist, is server initialized?"
+            "Configuration file for 'server' does not exist, is server initialized?"
         )
         return 1
 
-    server_config = config.read_config(
+    server_config: dict = config.read_config(
         "server", shared.default_configs["server"]["format_version"]
     )
     game_version: str = server_config["game_version"]
     loader_name: str = server_config["loader"]["name"]
 
-    # mod compatibility test
-    if not shared.support_mod(loader_name):
+    # mod compatibility check
+    if not shared.supports_mod(loader_name):
         logger.error(f"{loader_name.capitalize()} does not support mods")
         return 1
 
@@ -87,6 +106,11 @@ def run(args: Namespace) -> int:
     project_ids: list[str] = []
     project_versions: dict[str, ProjectVersion] = {}
     for project in projects:
+        if slug_index.is_slug_indexed(project):
+            project_id: str = slug_index.slug_to_id(project)
+            project_ids.append(project_id)
+            continue
+
         try:
             versions = modrinth_api.get_project_versions(
                 project, loader_name, game_version, include_changelog=False
@@ -106,6 +130,11 @@ def run(args: Namespace) -> int:
         project_ids.append(project_id)
 
     def get_project_dependencies(project_id: str) -> list[Dependency]:
+        if project_records.record_exists(project_id):
+            project_record = project_records.read_record(project_id)
+            project_dependencies: list = project_record["dependencies"]
+            return project_dependencies
+
         versions = modrinth_api.get_project_versions(
             project_id, loader_name, game_version, include_changelog=False
         )
@@ -116,21 +145,25 @@ def run(args: Namespace) -> int:
 
         version = versions[0]
         project_versions[project_id] = version
-        version_dependencies = version.get("dependencies")
+        version_dependencies: list[VersionDependency] | None = version.get(
+            "dependencies"
+        )
         if version_dependencies is None:
             logger.debug(
                 "Version for '{project_id}' did not have 'dependencies', returning an empty list"
             )
             version_dependencies = []
 
-        return version_dependencies
+        return version_dependencies_to_dependencies(version_dependencies)
 
     def get_dependencies(project_id) -> dict[str, int]:
         dependencies: list[Dependency] | None = None
         if project_id in project_versions:
-            project_version = project_versions[project_id]
+            project_version: ProjectVersion = project_versions[project_id]
             if "dependencies" in project_version:
-                dependencies = project_version["dependencies"]
+                dependencies = version_dependencies_to_dependencies(
+                    project_version["dependencies"]
+                )
         else:
             dependencies = get_project_dependencies(project_id)
 
@@ -259,8 +292,58 @@ def run(args: Namespace) -> int:
     )
 
     if not confirmation_answer:
-        print("Cancelled")
+        print("Cancelled.")
         return 1
+
+    for project_data in resolved_projects:
+        project_id: str = project_data["project_id"]
+
+        project_information = project_informations[project_id]
+        project_version = project_versions.get(project_id)
+
+        if project_version is not None:
+            version_files = project_version["files"]
+
+            primary_file = None
+            for file in version_files:
+                if file["is_primary"]:
+                    primary_file = file
+                    break
+
+            if primary_file is None:
+                primary_file = version_files[0]
+
+            record_payload: ProjectRecordPayload = {
+                "project_name": project_information.get("project_name"),
+                "project_slug": project_information.get("project_slug"),
+                "version_id": project_version["version_id"],
+                "version_environment": project_version["environment"],
+                "file": primary_file,
+                "added_time": datetime.now(tz=UTC).isoformat(),
+                "discovered_time": datetime.now(tz=UTC).isoformat(),
+                "updated_time": None,
+                "is_manual": project_data["is_manual"],
+                "highest_type": project_data["highest_type"],
+                "dependencies": project_data["dependencies"],
+                "dependents": project_data["dependents"],
+            }
+        else:
+            record_payload: ProjectRecordPayload = {
+                "project_name": project_information.get("project_name"),
+                "project_slug": project_information.get("project_slug"),
+                "version_id": None,
+                "version_environment": None,
+                "file": None,
+                "added_time": None,
+                "discovered_time": datetime.now(tz=UTC).isoformat(),
+                "updated_time": None,
+                "is_manual": project_data["is_manual"],
+                "highest_type": project_data["highest_type"],
+                "dependencies": project_data["dependencies"],
+                "dependents": project_data["dependents"],
+            }
+
+        project_records.write_record(project_id, record_payload)
 
     for project_id in required_projects:
         project_data = resolved_project_data[project_id]
@@ -292,24 +375,6 @@ def run(args: Namespace) -> int:
             )
         else:
             networking.download(primary_file["download_url"], file_path)
-
-        project_records.write_record(
-            project_id,
-            {
-                "project_name": project_information.get("project_name"),
-                "project_slug": project_information.get("project_slug"),
-                "version_id": project_version["version_id"],
-                "version_environment": project_version["environment"],
-                "file": primary_file,
-                "added_time": datetime.now(tz=UTC).isoformat(),
-                "discovered_time": datetime.now(tz=UTC).isoformat(),
-                "updated_time": None,
-                "is_manual": project_data["is_manual"],
-                "highest_type": project_data["highest_type"],
-                "dependencies": project_data["dependencies"],
-                "dependents": project_data["dependents"],
-            },
-        )
 
     for project_information in project_informations.values():
         project_slug = project_information.get("project_slug")

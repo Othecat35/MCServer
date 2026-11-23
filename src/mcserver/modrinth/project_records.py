@@ -3,7 +3,7 @@ from typing import TypedDict
 
 from ..shared import update_file
 from .paths import modrinth_dir
-from .typings import DependencyType, Environment, File
+from .typings import Dependency, DependencyType, Environment, File
 
 project_records_dir = modrinth_dir / "project_records"
 current_format_version = 1
@@ -11,11 +11,6 @@ current_format_version = 1
 
 class ProjectRecordFormatVersionError(Exception):
     pass
-
-
-class Dependency(TypedDict):
-    project_id: str
-    dependency_type: DependencyType
 
 
 class ProjectRecordPayload(TypedDict):

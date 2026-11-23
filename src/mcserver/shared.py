@@ -160,7 +160,7 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
             return False
 
 
-def support_mods(loader_name: str) -> bool:
+def supports_mod(loader_name: str) -> bool:
     return loader_name in mod_loaders or loader_name in plugin_loaders
 
 
