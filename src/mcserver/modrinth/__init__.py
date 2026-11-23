@@ -1,4 +1,10 @@
-from .apis import get_project_informations, get_project_versions, search_projects
+from .apis import (
+    GetProjectInformationsError,
+    GetProjectVersionsError,
+    get_project_informations,
+    get_project_versions,
+    search_projects,
+)
 from .typings import (
     AllProjectType,
     Dependency,
@@ -39,6 +45,8 @@ __all__: list[str] = [
     "FileHashes",
     "FileType",
     "GalleryImage",
+    "GetProjectInformationsError",
+    "GetProjectVersionsError",
     "ModeratorMessage",
     "MonetizationStatus",
     "ProjectInformation",
@@ -55,5 +63,5 @@ __all__: list[str] = [
     "VersionType",
     "get_project_informations",
     "get_project_versions",
-    "search_projects",
+    "search_projects"
 ]

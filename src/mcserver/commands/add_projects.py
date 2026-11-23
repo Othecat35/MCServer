@@ -2,10 +2,9 @@ import logging
 from argparse import Namespace
 from datetime import UTC, datetime
 
-from .. import config, networking, paths, resolver, shared
-from ..modrinth import apis as modrinth_api
+from .. import config, modrinth, networking, paths, resolver, shared
 from ..modrinth import project_records, slug_index
-from ..modrinth.project_records import ProjectRecordPayload
+from ..modrinth.project_records import ProjectRecordData, ProjectRecordPayload
 from ..modrinth.typings import (
     Dependency,
     DependencyType,
@@ -104,7 +103,7 @@ def add_projects(args: Namespace) -> int:
         return 1
 
     project_ids: list[str] = []
-    project_versions: dict[str, ProjectVersion] = {}
+    version_cache: dict[str, ProjectVersion] = {}
     for project in projects:
         if slug_index.is_slug_indexed(project):
             project_id: str = slug_index.slug_to_id(project)
@@ -112,10 +111,10 @@ def add_projects(args: Namespace) -> int:
             continue
 
         try:
-            versions = modrinth_api.get_project_versions(
+            versions = modrinth.get_project_versions(
                 project, loader_name, game_version, include_changelog=False
             )
-        except modrinth_api.GetProjectVersionsError:
+        except modrinth.GetProjectVersionsError:
             logger.error("Failed to get project versions!")
             return 1
 
@@ -126,16 +125,19 @@ def add_projects(args: Namespace) -> int:
 
         project_version = versions[0]
         project_id = project_version["project_id"]
-        project_versions[project_id] = project_version
+        version_cache[project_id] = project_version
         project_ids.append(project_id)
 
+    record_cache: dict[str, ProjectRecordData] = {}
     def get_project_dependencies(project_id: str) -> list[Dependency]:
         if project_records.record_exists(project_id):
-            project_record = project_records.read_record(project_id)
+            project_record: ProjectRecordData = project_records.read_record(project_id)
+            record_cache[project_id] = project_record
+
             project_dependencies: list = project_record["dependencies"]
             return project_dependencies
 
-        versions = modrinth_api.get_project_versions(
+        versions = modrinth.get_project_versions(
             project_id, loader_name, game_version, include_changelog=False
         )
         if len(versions) == 0:
@@ -144,7 +146,7 @@ def add_projects(args: Namespace) -> int:
             )
 
         version = versions[0]
-        project_versions[project_id] = version
+        version_cache[project_id] = version
         version_dependencies: list[VersionDependency] | None = version.get(
             "dependencies"
         )
@@ -158,8 +160,8 @@ def add_projects(args: Namespace) -> int:
 
     def get_dependencies(project_id) -> dict[str, int]:
         dependencies: list[Dependency] | None = None
-        if project_id in project_versions:
-            project_version: ProjectVersion = project_versions[project_id]
+        if project_id in version_cache:
+            project_version: ProjectVersion = version_cache[project_id]
             if "dependencies" in project_version:
                 dependencies = version_dependencies_to_dependencies(
                     project_version["dependencies"]
@@ -180,7 +182,7 @@ def add_projects(args: Namespace) -> int:
                 project_ids, get_dependencies, resolver.required_only
             )
         )
-    except modrinth_api.GetProjectVersionsError:
+    except modrinth.GetProjectVersionsError:
         logger.error("Failed to get project versions!")
         return 1
 
@@ -241,7 +243,7 @@ def add_projects(args: Namespace) -> int:
 
     # fetch additional info
     project_informations: dict[str, ProjectInformation] = {}
-    for project in modrinth_api.get_project_informations(list(all_project_ids)):
+    for project in modrinth.get_project_informations(list(all_project_ids)):
         project_informations[project["project_id"]] = project
 
     # Display information
@@ -295,11 +297,42 @@ def add_projects(args: Namespace) -> int:
         print("Cancelled.")
         return 1
 
+    for project_id in required_projects:
+        project_data = resolved_project_data[project_id]
+        project_information = project_informations[project_id]
+        project_version = version_cache[project_id]
+        version_files = project_version["files"]
+
+        primary_file = None
+        for file in version_files:
+            if file["is_primary"]:
+                primary_file = file
+                break
+
+        if primary_file is None:
+            primary_file = version_files[0]
+
+        file_path = project_directory / primary_file["file_name"]
+        if file_path.exists():
+            logger.info(f"File '{file_path}' already exist, skipping download")
+            continue
+
+        logger.info(f"Downloading {project_information['project_name']}...")
+        project_directory.mkdir(exist_ok=True, parents=True)
+
+        sha512_hash = primary_file["file_hashes"].get("sha512")
+        if sha512_hash is not None:
+            networking.download(
+                primary_file["download_url"], file_path, hashes={"sha512": sha512_hash}
+            )
+        else:
+            networking.download(primary_file["download_url"], file_path)
+
     for project_data in resolved_projects:
         project_id: str = project_data["project_id"]
 
         project_information = project_informations[project_id]
-        project_version = project_versions.get(project_id)
+        project_version = version_cache.get(project_id)
 
         if project_version is not None:
             version_files = project_version["files"]
@@ -344,37 +377,6 @@ def add_projects(args: Namespace) -> int:
             }
 
         project_records.write_record(project_id, record_payload)
-
-    for project_id in required_projects:
-        project_data = resolved_project_data[project_id]
-        project_information = project_informations[project_id]
-        project_version = project_versions[project_id]
-        version_files = project_version["files"]
-
-        primary_file = None
-        for file in version_files:
-            if file["is_primary"]:
-                primary_file = file
-                break
-
-        if primary_file is None:
-            primary_file = version_files[0]
-
-        file_path = project_directory / primary_file["file_name"]
-        if file_path.exists():
-            logger.info(f"File '{file_path}' already exist, skipping download")
-            continue
-
-        logger.info(f"Downloading {project_information['project_name']}...")
-        project_directory.mkdir(exist_ok=True, parents=True)
-
-        sha512_hash = primary_file["file_hashes"].get("sha512")
-        if sha512_hash is not None:
-            networking.download(
-                primary_file["download_url"], file_path, hashes={"sha512": sha512_hash}
-            )
-        else:
-            networking.download(primary_file["download_url"], file_path)
 
     for project_information in project_informations.values():
         project_slug = project_information.get("project_slug")
