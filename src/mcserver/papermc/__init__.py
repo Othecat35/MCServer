@@ -1,4 +1,4 @@
-from . import apis as papermc_api
+from .apis import get_build_information
 from .typings import (
     BuildChannel,
     BuildCommit,
@@ -13,5 +13,5 @@ __all__: list[str] = [
     "BuildDownload",
     "BuildInformation",
     "FileHashes",
-    "papermc_api",
+    "get_build_information"
 ]

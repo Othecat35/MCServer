@@ -1,4 +1,4 @@
-from . import apis as quiltmc_api
+from .apis import get_installer_versions, get_loader_versions
 from .typings import Hashes, InstallerVersion, LoaderVersion, Version
 
 __all__: list[str] = [
@@ -6,5 +6,6 @@ __all__: list[str] = [
     "InstallerVersion",
     "LoaderVersion",
     "Version",
-    "quiltmc_api",
+    "get_installer_versions",
+    "get_loader_versions"
 ]

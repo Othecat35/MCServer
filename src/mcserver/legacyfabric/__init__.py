@@ -1,4 +1,9 @@
-from . import apis as legacyfabric_api
+from .apis import (
+    get_game_versions,
+    get_installer_versions,
+    get_loader_versions,
+    get_server_download_url,
+)
 from .typings import GameVersion, InstallerVersion, LoaderVersion, Version
 
 __all__: list[str] = [
@@ -6,5 +11,8 @@ __all__: list[str] = [
     "InstallerVersion",
     "LoaderVersion",
     "Version",
-    "legacyfabric_api",
+    "get_game_versions",
+    "get_installer_versions",
+    "get_loader_versions",
+    "get_server_download_url"
 ]
