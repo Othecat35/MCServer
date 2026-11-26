@@ -112,6 +112,7 @@ def command_function(args: argparse.Namespace) -> int:
             logger.error(f"Unknown command: {command_name}")
             return 1
 
+
 # Reusable flags
 directory_parser = argparse.ArgumentParser(add_help=False)
 current_dir: Path = Path.cwd()
@@ -129,13 +130,14 @@ player_parser.add_argument(
     nargs="+",
     type=str,
     help="List of player names or UUIDs",
-    metavar="Player",
+    metavar="Players",
 )
 
 # Parser Setup
 parser: argparse.ArgumentParser = argparse.ArgumentParser(
     description="A CLI tool for managing Minecraft: Java Edition servers.",
     epilog="Designed for Linux and Termux.",
+    parents=[directory_parser],
     add_help=True,
     allow_abbrev=False,
 )
@@ -156,7 +158,7 @@ commands = parser.add_subparsers(title="Commands")
 
 # 'add' command
 add_command = commands.add_parser(
-    "add", help="Add mods or plugins", parents=[directory_parser]
+    "add", help="Add mods or plugins", description="Add mods or plugins to the server."
 )
 
 add_command.set_defaults(command_name="add")
@@ -166,7 +168,6 @@ add_command.add_argument("projects", nargs="+", type=str, help="Project names")
 init_command = commands.add_parser(
     "init",
     help="Initialize server configuration",
-    parents=[directory_parser],
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     description="Initialize a new server configuration.",
 )
@@ -236,7 +237,9 @@ init_command.add_argument(
 
 # 'list' command
 list_command = commands.add_parser(
-    "list", help="List added projects", parents=[directory_parser], description="List add mods/plugins"
+    "list",
+    help="List added projects",
+    description="List add mods/plugins",
 )
 
 list_command.set_defaults(command_name="list")
@@ -255,7 +258,7 @@ op_subcommands = op_command.add_subparsers(title="Subcommands")
 op_grant_command = op_subcommands.add_parser(
     "grant",
     help="Grant operator permissions to players",
-    parents=[directory_parser, player_parser],
+    parents=[player_parser],
     description="Grant operator permissions to one or more players.",
 )
 
@@ -277,9 +280,8 @@ op_grant_command.add_argument(
 
 op_grant_command.add_argument(
     "--permission-level",
-    type=int,
-    choices=[0, 1, 2, 3, 4],
-    metavar="{0,1,2,3,4}",
+    type=bound_int(0, 4),
+    metavar="0-4",
     help="Operator permission level",
 )
 
@@ -287,7 +289,6 @@ op_grant_command.add_argument(
 op_list_command = op_subcommands.add_parser(
     "list",
     help="List operator players",
-    parents=[directory_parser],
     description="Display all players with operator permissions.",
 )
 
@@ -297,7 +298,7 @@ op_list_command.set_defaults(command_name="op_list")
 op_revoke_command = op_subcommands.add_parser(
     "revoke",
     help="Revoke operator permissions from players",
-    parents=[directory_parser, player_parser],
+    parents=[player_parser],
     description="Revoke operator permissions from one or more players.",
 )
 
@@ -307,7 +308,6 @@ op_revoke_command.set_defaults(command_name="op_revoke")
 search_command = commands.add_parser(
     "search",
     help="Search Modrinth projects",
-    parents=[directory_parser],
     description="Search for projects on Modrinth.",
 )
 
@@ -372,7 +372,6 @@ search_command.add_argument(
 show_command = commands.add_parser(
     "show",
     help="Show Modrinth project information",
-    parents=[directory_parser],
     description="Show information about Modrinth projects",
 )
 
@@ -444,6 +443,7 @@ whitelist_remove_command = whitelist_subcommands.add_parser(
 )
 
 whitelist_remove_command.set_defaults(command_name="whitelist_remove")
+
 
 def main() -> int:
     args = parser.parse_args()
