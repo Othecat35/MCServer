@@ -13,5 +13,5 @@ __all__: list[str] = [
     "BuildDownload",
     "BuildInformation",
     "FileHashes",
-    "get_build_information"
+    "get_build_information",
 ]

@@ -63,5 +63,5 @@ __all__: list[str] = [
     "VersionType",
     "get_project_informations",
     "get_project_versions",
-    "search_projects"
+    "search_projects",
 ]

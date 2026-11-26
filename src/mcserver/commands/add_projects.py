@@ -129,6 +129,7 @@ def add_projects(args: Namespace) -> int:
         project_ids.append(project_id)
 
     record_cache: dict[str, ProjectRecordData] = {}
+
     def get_project_dependencies(project_id: str) -> list[Dependency]:
         if project_records.record_exists(project_id):
             project_record: ProjectRecordData = project_records.read_record(project_id)

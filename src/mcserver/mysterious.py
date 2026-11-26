@@ -25,7 +25,7 @@ def nothing_to_see_here_move_along() -> NoReturn:
         "418 I'm a teapot",
         "Hold F3+C for 10 seconds for a surprise!",
         "Segmentation fault (core dumped)",
-        "about:mozilla in Firefox?"
+        "about:mozilla in Firefox?",
     ]
 
     message: str = random.choice(messages)

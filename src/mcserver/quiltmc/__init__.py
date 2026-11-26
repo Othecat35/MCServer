@@ -7,5 +7,5 @@ __all__: list[str] = [
     "LoaderVersion",
     "Version",
     "get_installer_versions",
-    "get_loader_versions"
+    "get_loader_versions",
 ]

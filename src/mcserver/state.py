@@ -46,7 +46,9 @@ def get_start_time(process_id: int | str) -> int:
     pid_stat_data: str = pid_stat.read_text()
 
     last_close_parenthesis: int = pid_stat_data.rfind(")")
-    remaining_fields: list[str] = pid_stat_data[last_close_parenthesis + 1:].strip().split()
+    remaining_fields: list[str] = (
+        pid_stat_data[last_close_parenthesis + 1 :].strip().split()
+    )
     start_time: int = int(remaining_fields[19])
     return start_time
 

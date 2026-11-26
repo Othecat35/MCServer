@@ -14,5 +14,5 @@ __all__: list[str] = [
     "get_game_versions",
     "get_installer_versions",
     "get_loader_versions",
-    "get_server_download_url"
+    "get_server_download_url",
 ]
