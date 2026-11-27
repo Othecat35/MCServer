@@ -1,19 +1,34 @@
 import os
 from pathlib import Path
 
-home_dir = Path.home()
-working_dir = Path.cwd()
+# user
+home_dir: Path = Path.home()
+working_dir: Path = Path.cwd()
 
-mcserver_dir = working_dir / ".mcserver"
-metadata_file = mcserver_dir / "metadata.json"
-configs_dir = mcserver_dir / "configs"
+# .mcserver
+mcserver_dir: Path = working_dir / ".mcserver"
 
-mods_dir = working_dir / "mods"
-plugins_dir = working_dir / "plugins"
+metadata_file: Path = mcserver_dir / "metadata.json"
+state_file: Path = mcserver_dir / "state.json"
 
-cache_dir = Path.home() / ".cache"
-xdg_cache_dir = os.getenv("XDG_CACHE_HOME")
-if xdg_cache_dir:
-    cache_dir = Path(xdg_cache_dir)
+configs_dir: Path = mcserver_dir / "configs"
+tempfiles_dir = mcserver_dir / "tempfiles"
 
-mcserver_cache_dir = cache_dir / "mcserver"
+# modrinth
+modrinth_dir: Path = mcserver_dir / "modrinth"
+project_records_dir: Path = modrinth_dir / "project_records"
+
+# project
+mods_dir: Path = working_dir / "mods"
+plugins_dir: Path = working_dir / "plugins"
+
+# cache
+cache_dir: Path = home_dir / ".cache"
+xdg_cache_dir: str | None = os.getenv("XDG_CACHE_HOME")
+if xdg_cache_dir is not None:
+    cache_dir: Path = Path(xdg_cache_dir)
+
+mcserver_cache_dir: Path = cache_dir / "mcserver"
+
+# system
+proc_dir: Path = Path("/proc")

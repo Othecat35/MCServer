@@ -3,12 +3,13 @@
 import copy
 import json
 import logging
+from pathlib import Path
 from typing import Any
 
 # MCServer
 from .paths import configs_dir
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class ConfigVersionError(Exception):
@@ -34,13 +35,13 @@ def write_config(
             f"COnfiguration directory '{configs_dir}' does not exist"
         )
 
-    config_filename = f"{config_name}.json"
-    config_path = configs_dir / config_filename
+    config_filename: str = f"{config_name}.json"
+    config_path: Path = configs_dir / config_filename
 
-    configuration_data = {"format_version": format_version}
+    configuration_data: dict = {"format_version": format_version}
 
     configuration_data.update(copy.deepcopy(config_data))
-    config_json = json.dumps(configuration_data, indent=2)
+    config_json: str = json.dumps(configuration_data, indent=2)
 
     logger.debug(f"Writing configuration data for {config_name}")
     config_path.write_text(config_json)
@@ -57,8 +58,8 @@ def read_config(config_name: str, current_format_version: int) -> dict[str, Any]
         FileNotFoundError: The configuration file does not exist
     """
 
-    config_filename = f"{config_name}.json"
-    config_path = configs_dir / config_filename
+    config_filename: str = f"{config_name}.json"
+    config_path: Path = configs_dir / config_filename
 
     if not config_path.exists():
         raise FileNotFoundError(
@@ -66,8 +67,8 @@ def read_config(config_name: str, current_format_version: int) -> dict[str, Any]
         )
 
     logger.debug(f"Reading configuration for {config_name}")
-    config_json = config_path.read_text()
-    config_data = json.loads(config_json)
+    config_json: str = config_path.read_text()
+    config_data: dict = json.loads(config_json)
 
     if config_data["format_version"] > current_format_version:
         raise ConfigVersionError(
@@ -78,6 +79,6 @@ def read_config(config_name: str, current_format_version: int) -> dict[str, Any]
 
 
 def config_exists(config_name: str) -> bool:
-    config_filename = f"{config_name}.json"
-    config_path = configs_dir / config_filename
+    config_filename: str = f"{config_name}.json"
+    config_path: Path = configs_dir / config_filename
     return config_path.exists()

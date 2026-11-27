@@ -29,8 +29,8 @@ def main():
 
     from . import cli
 
-    debug_mode = os.getenv("MCSERVER_DEBUG") == "1"
-    log_handler = ClearLineHandler(sys.stdout)
+    debug_mode: bool = os.getenv("MCSERVER_DEBUG") == "1"
+    log_handler: ClearLineHandler = ClearLineHandler(sys.stdout)
     log_handler.setFormatter(logging.Formatter("[%(levelname)s]: %(message)s"))
     if debug_mode:
         logging.basicConfig(

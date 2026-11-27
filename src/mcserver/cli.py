@@ -11,7 +11,7 @@ from .shared import loader_list
 def bound_int(min_integer: int, max_integer: int | None = None) -> Callable:
     def parse(cli_string: str) -> int:
         try:
-            integer = int(cli_string)
+            integer: int = int(cli_string)
         except ValueError:
             raise argparse.ArgumentTypeError(f"{cli_string} is not an integer")
 
@@ -19,10 +19,12 @@ def bound_int(min_integer: int, max_integer: int | None = None) -> Callable:
             raise argparse.ArgumentTypeError(
                 f"{integer} must be higher than or equal to {min_integer}"
             )
+
         if max_integer is not None and integer > max_integer:
             raise argparse.ArgumentTypeError(
                 f"{integer} must be between {min_integer} and {max_integer}"
             )
+
         return integer
 
     return parse
@@ -114,7 +116,7 @@ def command_function(args: argparse.Namespace) -> int:
 
 
 # Reusable flags
-directory_parser = argparse.ArgumentParser(add_help=False)
+directory_parser: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
 current_dir: Path = Path.cwd()
 directory_parser.add_argument(
     "--directory",
@@ -124,7 +126,7 @@ directory_parser.add_argument(
     metavar="Path",
 )
 
-player_parser = argparse.ArgumentParser(add_help=False)
+player_parser: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
 player_parser.add_argument(
     "players",
     nargs="+",
@@ -154,10 +156,10 @@ parser.add_argument(
     version="%(prog)s " + __version__,
 )
 
-commands = parser.add_subparsers(title="Commands")
+commands: argparse.Action = parser.add_subparsers(title="Commands")
 
 # 'add' command
-add_command = commands.add_parser(
+add_command: argparse.ArgumentParser = commands.add_parser(
     "add", help="Add mods or plugins", description="Add mods or plugins to the server."
 )
 
@@ -165,7 +167,7 @@ add_command.set_defaults(command_name="add")
 add_command.add_argument("projects", nargs="+", type=str, help="Project names")
 
 # 'init' command
-init_command = commands.add_parser(
+init_command: argparse.ArgumentParser = commands.add_parser(
     "init",
     help="Initialize server configuration",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -236,7 +238,7 @@ init_command.add_argument(
 )
 
 # 'list' command
-list_command = commands.add_parser(
+list_command: argparse.ArgumentParser = commands.add_parser(
     "list",
     help="List added projects",
     description="List add mods/plugins",
@@ -245,17 +247,17 @@ list_command = commands.add_parser(
 list_command.set_defaults(command_name="list")
 
 # 'op' command
-op_command = commands.add_parser(
+op_command: argparse.ArgumentParser = commands.add_parser(
     "op",
     help="Manage operator permissions",
     description="Manage player operator permissions.",
 )
 
 op_command.set_defaults(parser=op_command)
-op_subcommands = op_command.add_subparsers(title="Subcommands")
+op_subcommands: argparse.Action = op_command.add_subparsers(title="Subcommands")
 
 # 'op grant'
-op_grant_command = op_subcommands.add_parser(
+op_grant_command: argparse.ArgumentParser = op_subcommands.add_parser(
     "grant",
     help="Grant operator permissions to players",
     parents=[player_parser],
@@ -286,7 +288,7 @@ op_grant_command.add_argument(
 )
 
 # 'op list'
-op_list_command = op_subcommands.add_parser(
+op_list_command: argparse.ArgumentParser = op_subcommands.add_parser(
     "list",
     help="List operator players",
     description="Display all players with operator permissions.",
@@ -295,7 +297,7 @@ op_list_command = op_subcommands.add_parser(
 op_list_command.set_defaults(command_name="op_list")
 
 # 'op revoke'
-op_revoke_command = op_subcommands.add_parser(
+op_revoke_command: argparse.ArgumentParser = op_subcommands.add_parser(
     "revoke",
     help="Revoke operator permissions from players",
     parents=[player_parser],
@@ -305,7 +307,7 @@ op_revoke_command = op_subcommands.add_parser(
 op_revoke_command.set_defaults(command_name="op_revoke")
 
 # 'search' command
-search_command = commands.add_parser(
+search_command: argparse.ArgumentParser = commands.add_parser(
     "search",
     help="Search Modrinth projects",
     description="Search for projects on Modrinth.",
@@ -369,7 +371,7 @@ search_command.add_argument(
 )
 
 # 'show' command
-show_command = commands.add_parser(
+show_command: argparse.ArgumentParser = commands.add_parser(
     "show",
     help="Show Modrinth project information",
     description="Show information about Modrinth projects",
@@ -379,7 +381,7 @@ show_command.set_defaults(command_name="show")
 show_command.add_argument("projects", nargs="+", type=str, help="Project slugs or IDs")
 
 # 'start' command
-start_command = commands.add_parser(
+start_command: argparse.ArgumentParser = commands.add_parser(
     "start", help="Start the server", description="Install and start the server"
 )
 
@@ -387,7 +389,7 @@ start_command.set_defaults(command_name="start")
 
 # status_command is not going to be implemented in this version
 # "stop" command
-stop_command = commands.add_parser(
+stop_command: argparse.ArgumentParser = commands.add_parser(
     "stop", help="Stop the server", description="Stop the running server"
 )
 
@@ -396,19 +398,19 @@ stop_command.set_defaults(command_name="stop")
 # update is not going to be implemented in this version
 # 'whitelist' command
 
-whitelist_command = commands.add_parser(
+whitelist_command: argparse.ArgumentParser = commands.add_parser(
     "whitelist",
     help="Manage the player whitelist",
     description="Manage the server's player whitelist.",
 )
 
 whitelist_command.set_defaults(parser=whitelist_command)
-whitelist_subcommands = whitelist_command.add_subparsers(
+whitelist_subcommands: argparse.Action = whitelist_command.add_subparsers(
     title="Subcommands",
 )
 
 # 'whitelist add'
-whitelist_add_command = whitelist_subcommands.add_parser(
+whitelist_add_command: argparse.ArgumentParser = whitelist_subcommands.add_parser(
     "add",
     help="Add players to the whitelist",
     parents=[player_parser],
@@ -426,7 +428,7 @@ whitelist_add_command.add_argument(
 )
 
 # 'whitelist list'
-whitelist_list_command = whitelist_subcommands.add_parser(
+whitelist_list_command: argparse.ArgumentParser = whitelist_subcommands.add_parser(
     "list",
     help="List whitelisted players",
     description="Display all players currently on the server whitelist.",
@@ -435,7 +437,7 @@ whitelist_list_command = whitelist_subcommands.add_parser(
 whitelist_list_command.set_defaults(command_name="whitelist_list")
 
 # 'whitelist remove'
-whitelist_remove_command = whitelist_subcommands.add_parser(
+whitelist_remove_command: argparse.ArgumentParser = whitelist_subcommands.add_parser(
     "remove",
     help="Remove players from the whitelist",
     parents=[player_parser],
@@ -446,5 +448,5 @@ whitelist_remove_command.set_defaults(command_name="whitelist_remove")
 
 
 def main() -> int:
-    args = parser.parse_args()
+    args: argparse.Namespace = parser.parse_args()
     return args.func(args)

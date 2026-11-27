@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Literal, NotRequired, TypedDict
 
 # MCServer
-from .shared import mcserver_dir
+from .paths import proc_dir, state_file
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -28,22 +28,16 @@ class CurrentState(TypedDict):
     action: NotRequired[str]
 
 
-# Paths
-proc_dir: Path = Path("/proc")
-state_file: Path = mcserver_dir / "state.json"
-
-
 # Functions
 def get_start_time(process_id: int | str) -> int:
     process_id = str(process_id)
 
     proc_pid: Path = proc_dir / process_id
     if not proc_pid.exists():
-        logger.debug(f"Process ID ({process_id}) does not exist")
-        return 0
+        raise FileNotFoundError(f"/proc does not have process ID '{process_id}'")
 
-    pid_stat: Path = proc_pid / "stat"
-    pid_stat_data: str = pid_stat.read_text()
+    pid_stat_file: Path = proc_pid / "stat"
+    pid_stat_data: str = pid_stat_file.read_text()
 
     last_close_parenthesis: int = pid_stat_data.rfind(")")
     remaining_fields: list[str] = (
@@ -62,7 +56,6 @@ def set_state(action: MCServerActions) -> None:
 
     state_data: str = json.dumps(current_state, indent=2)
     state_file.write_text(state_data)
-
 
 def get_state() -> CurrentState:
     current_state: CurrentState = {"is_active": False}

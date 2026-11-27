@@ -34,10 +34,11 @@ def set_metadata(mcserver_version: str) -> None:
 
 
 def get_metadata() -> Metadata:
-    metadata_data = metadata_file.read_text()
+    metadata_data: str = metadata_file.read_text()
     metadata: Metadata = json.loads(metadata_data)
     if metadata["format_version"] > metadata_format_version:
         raise MetadataFormatVersionError(
             "Existing metadata format version is higher than current metadata format version"
         )
+
     return metadata
