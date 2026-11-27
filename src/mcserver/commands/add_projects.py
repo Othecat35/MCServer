@@ -1,8 +1,9 @@
 import logging
 from argparse import Namespace
 from datetime import UTC, datetime
+from pathlib import Path
 
-from .. import config, modrinth, networking, paths, resolver, shared
+from .. import config, modrinth, networking, resolver, shared
 from ..modrinth import project_records, slug_index
 from ..modrinth.project_records import ProjectRecordData, ProjectRecordPayload
 from ..modrinth.typings import (
@@ -77,7 +78,7 @@ def human_to_resolver(dependencies: list[Dependency]) -> dict[str, int]:
 def add_projects(args: Namespace) -> int:
     projects: list[str] = args.projects
 
-    if not (paths.configs_dir / "server.json").exists():
+    if not config.config_exists("server"):
         logger.error(
             "Configuration file for 'server' does not exist, is server initialized?"
         )
@@ -89,7 +90,7 @@ def add_projects(args: Namespace) -> int:
     game_version: str = server_config["game_version"]
     loader_name: str = server_config["loader"]["name"]
 
-    # mod compatibility check
+    # mod/plugin compatibility check
     if not shared.supports_mod(loader_name):
         logger.error(f"{loader_name.capitalize()} does not support mods")
         return 1
@@ -111,7 +112,7 @@ def add_projects(args: Namespace) -> int:
             continue
 
         try:
-            versions = modrinth.get_project_versions(
+            versions: list[modrinth.ProjectVersion] = modrinth.get_project_versions(
                 project, loader_name, game_version, include_changelog=False
             )
         except modrinth.GetProjectVersionsError:
@@ -119,12 +120,12 @@ def add_projects(args: Namespace) -> int:
             return 1
 
         if len(versions) == 0:
-            raise GetVersionError(
+            logger.error(
                 f"{project} has no version for {loader_name.capitalize()} {game_version}"
             )
 
         project_version = versions[0]
-        project_id = project_version["project_id"]
+        project_id: str = project_version["project_id"]
         version_cache[project_id] = project_version
         project_ids.append(project_id)
 
@@ -135,10 +136,10 @@ def add_projects(args: Namespace) -> int:
             project_record: ProjectRecordData = project_records.read_record(project_id)
             record_cache[project_id] = project_record
 
-            project_dependencies: list = project_record["dependencies"]
+            project_dependencies: list[modrinth.Dependency] = project_record["dependencies"]
             return project_dependencies
 
-        versions = modrinth.get_project_versions(
+        versions: list[modrinth.ProjectVersion] = modrinth.get_project_versions(
             project_id, loader_name, game_version, include_changelog=False
         )
         if len(versions) == 0:
@@ -146,7 +147,7 @@ def add_projects(args: Namespace) -> int:
                 f"Project has no version for '{loader_name.capitalize()}' '{game_version}'"
             )
 
-        version = versions[0]
+        version: modrinth.ProjectVersion = versions[0]
         version_cache[project_id] = version
         version_dependencies: list[VersionDependency] | None = version.get(
             "dependencies"
@@ -164,11 +165,11 @@ def add_projects(args: Namespace) -> int:
         if project_id in version_cache:
             project_version: ProjectVersion = version_cache[project_id]
             if "dependencies" in project_version:
-                dependencies = version_dependencies_to_dependencies(
+                dependencies: list[Dependency] | None = version_dependencies_to_dependencies(
                     project_version["dependencies"]
                 )
         else:
-            dependencies = get_project_dependencies(project_id)
+            dependencies: list[Dependency] | None = get_project_dependencies(project_id)
 
         if dependencies is None:
             raise GetDependenciesError(
@@ -201,7 +202,7 @@ def add_projects(args: Namespace) -> int:
 
     # Putting projects and dependencies into its bucket
     for project in resolved_projects:
-        project_id = project["project_id"]
+        project_id: str = project["project_id"]
         all_project_ids.add(project_id)
         for dependency in project["dependencies"]:
             if "project_id" not in dependency or dependency["project_id"] is None:
@@ -234,12 +235,12 @@ def add_projects(args: Namespace) -> int:
                 incompatible_projects.add(project_id)
 
     # Conflict detection
-    conflicting_projects = required_dependencies & incompatible_dependencies
+    conflicting_projects: set[str] = required_dependencies & incompatible_dependencies
     if conflicting_projects:
         logger.error(
             f"Found conflicting dependencies: {', '.join(conflicting_projects)}"
         )
-        logger.error("Cannon continue.")
+        logger.error("Cannot continue.")
         return 1
 
     # fetch additional info
@@ -248,7 +249,7 @@ def add_projects(args: Namespace) -> int:
         project_informations[project["project_id"]] = project
 
     # Display information
-    required_projects_count = len(required_projects)
+    required_projects_count: int = len(required_projects)
     logger.info(
         f"{shared.pluralize(project_label, required_projects_count).capitalize()} that {shared.pluralize('is', required_projects_count)} going to be downloaded:"
     )
@@ -261,7 +262,7 @@ def add_projects(args: Namespace) -> int:
     required_project_display.sort()
     print(f"  {', '.join(required_project_display)}\n")
 
-    optional_projects_count = len(optional_projects)
+    optional_projects_count: int = len(optional_projects)
     if optional_projects:
         logger.info(
             f"{shared.pluralize(project_label, optional_projects_count).capitalize()} that {shared.pluralize('is', optional_projects_count)} optional:"
@@ -275,7 +276,7 @@ def add_projects(args: Namespace) -> int:
         optional_project_display.sort()
         print(f"  {', '.join(optional_project_display)}\n")
 
-    incompatible_projects_count = len(incompatible_projects)
+    incompatible_projects_count: int = len(incompatible_projects)
     if incompatible_projects:
         logger.info(
             f"{shared.pluralize(project_label, incompatible_projects_count).capitalize()} that {shared.pluralize('is', incompatible_projects_count)} incompatible:"
@@ -290,7 +291,7 @@ def add_projects(args: Namespace) -> int:
         print(f"  {', '.join(incompatible_project_display)}\n")
 
     # Confirmation prompt
-    confirmation_answer = shared.confirmation_prompt(
+    confirmation_answer: bool = shared.confirmation_prompt(
         "Do you want to continue?", default_option=True
     )
 
@@ -299,21 +300,21 @@ def add_projects(args: Namespace) -> int:
         return 1
 
     for project_id in required_projects:
-        project_data = resolved_project_data[project_id]
-        project_information = project_informations[project_id]
+        project_data: ProjectData = resolved_project_data[project_id]
+        project_information: ProjectInformation = project_informations[project_id]
         project_version = version_cache[project_id]
-        version_files = project_version["files"]
+        version_files: list[modrinth.File] = project_version["files"]
 
-        primary_file = None
+        primary_file: modrinth.File | None = None
         for file in version_files:
             if file["is_primary"]:
-                primary_file = file
+                primary_file: modrinth.File | None = file
                 break
 
         if primary_file is None:
-            primary_file = version_files[0]
+            primary_file: modrinth.File | None = version_files[0]
 
-        file_path = project_directory / primary_file["file_name"]
+        file_path: Path = project_directory / primary_file["file_name"]
         if file_path.exists():
             logger.info(f"File '{file_path}' already exist, skipping download")
             continue
@@ -321,7 +322,7 @@ def add_projects(args: Namespace) -> int:
         logger.info(f"Downloading {project_information['project_name']}...")
         project_directory.mkdir(exist_ok=True, parents=True)
 
-        sha512_hash = primary_file["file_hashes"].get("sha512")
+        sha512_hash: str | None = primary_file["file_hashes"].get("sha512")
         if sha512_hash is not None:
             networking.download(
                 primary_file["download_url"], file_path, hashes={"sha512": sha512_hash}

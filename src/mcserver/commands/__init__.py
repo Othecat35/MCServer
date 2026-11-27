@@ -17,7 +17,7 @@ from .whitelist_add import whitelist_add
 from .whitelist_list import whitelist_list
 from .whitelist_remove import whitelist_remove
 
-__all__ = [
+__all__: list[str] = [
     "add_projects",
     "import_setup",
     "initialize_server",
