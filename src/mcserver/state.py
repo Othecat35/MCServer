@@ -80,7 +80,12 @@ def get_state() -> CurrentState:
     else:
         return current_state
 
-    if file_state["start_time"] == get_start_time(file_state["process_id"]):
+    try:
+        start_time: int = get_start_time(file_state["process_id"])
+    except FileNotFoundError:
+        return current_state
+
+    if file_state["start_time"] == start_time:
         current_state["is_active"] = True
 
     return current_state

@@ -20,7 +20,7 @@ def list_projects(args: Namespace) -> int:
     project_label, _ = get_loader_context(server_config["loader"]["name"])
 
     project_list: list[str] = []
-    for project_record_file in project_records.project_records_dir.iterdir():
+    for project_record_file in paths.project_records_dir.iterdir():
         project_record = project_records.read_record(project_record_file.stem)
         project_list.append(
             f"{project_record['project_name']} ({project_record['project_slug']})"

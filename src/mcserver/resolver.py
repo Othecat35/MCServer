@@ -129,6 +129,8 @@ def resolve_dependencies(
 
     while queued_projects:
         project_id = queued_projects.popleft()
+        logger.debug(f"Processing project '{project_id}'")
+
         if project_id in visited_projects:
             logger.debug(f"Project '{project_id}' has already been visited")
             continue
@@ -145,10 +147,12 @@ def resolve_dependencies(
             )
             continue
 
+        logger.debug(f"Getting dependency for project '{project_id}'")
         dependencies = get_dependencies(project_id)
         dependency_graph[project_id]["dependencies"] = dependencies
 
         for dependency_id, dependency_type in dependencies.items():
+            logger.debug(f"Processing dependency '{dependency_id}' for project '{project_id}'")
             if dependency_id in dependency_graph:
                 dependency_project = dependency_graph[dependency_id]
 

@@ -182,13 +182,13 @@ def download(
                     )
                     if content_length != 0:
                         print_status(
-                            f"Downloading '{basename}' ({format_number(content_length, 'iec')})...",
-                            updating_status=f"Downloading '{basename}' ({format_number(downloaded_length, 'iec')}/{format_number(content_length, 'iec')} {format_number(download_rate, 'iec')}/s)... ({round(downloaded_length / content_length * 100)}%)",
+                            f"Downloading '{filename.relative_to(paths.current_dir)}' ({format_number(content_length, 'iec')})...",
+                            updating_status=f"Downloading '{filename.relative_to(paths.current_dir)}' ({format_number(downloaded_length, 'iec')}/{format_number(content_length, 'iec')} {format_number(download_rate, 'iec')}/s)... ({round(downloaded_length / content_length * 100)}%)",
                         )
                     else:
                         print_status(
-                            f"Downloading '{basename}' (unknown final size)...",
-                            updating_status=f"Downloading '{basename}' ({format_number(downloaded_length, 'iec')} {format_number(download_rate, 'iec')}/s)...",
+                            f"Downloading '{filename.relative_to(paths.current_dir)}' (unknown final size)...",
+                            updating_status=f"Downloading '{filename.relative_to(paths.current_dir)}' ({format_number(downloaded_length, 'iec')} {format_number(download_rate, 'iec')}/s)...",
                         )
 
                     last_updated_length: int = downloaded_length
@@ -206,7 +206,7 @@ def download(
 
         time_elapsed_download: int = round(time.monotonic() - start_time)
         print_string(
-            f"Downloaded '{basename}' with size {format_number(downloaded_length, 'iec')} for {time_elapsed_download} {pluralize('second', time_elapsed_download)}"
+            f"Downloaded '{filename.relative_to(paths.current_dir)}' with size {format_number(downloaded_length, 'iec')} for {time_elapsed_download} {pluralize('second', time_elapsed_download)}"
         )
 
     shutil.move(tempfile, filename)

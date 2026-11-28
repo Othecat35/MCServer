@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 # MCServer
-from . import paths
+from . import paths, shared
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def write_config(
     """
     if not paths.configs_dir.exists():
         raise FileNotFoundError(
-            f"COnfiguration directory '{paths.configs_dir}' does not exist"
+            f"Configuration directory '{paths.configs_dir}' does not exist"
         )
 
     config_filename: str = f"{config_name}.json"
@@ -43,8 +43,8 @@ def write_config(
     configuration_data.update(copy.deepcopy(config_data))
     config_json: str = json.dumps(configuration_data, indent=2)
 
-    logger.debug(f"Writing configuration data for {config_name}")
-    config_path.write_text(config_json)
+    logger.debug(f"Writing configuration for '{config_name}' at '{config_path.relative_to(paths.current_dir, walk_up=True)}'")
+    shared.update_file(config_path, config_json.encode())
 
 
 def read_config(config_name: str, current_format_version: int) -> dict[str, Any]:
@@ -66,7 +66,7 @@ def read_config(config_name: str, current_format_version: int) -> dict[str, Any]
             f"Configuration file for '{config_name}' does not exist"
         )
 
-    logger.debug(f"Reading configuration for {config_name} at {config_path.relative_to(paths.current_dir, walk_up=True)}")
+    logger.debug(f"Reading configuration for '{config_name}' at '{config_path.relative_to(paths.current_dir, walk_up=True)}'")
     config_json: str = config_path.read_text()
     config_data: dict = json.loads(config_json)
 

@@ -113,7 +113,7 @@ def initialize_server(args: Namespace) -> int:
     paths.mcserver_dir.mkdir(exist_ok=True)
     state.set_state("initializing_server")
 
-    config.configs_dir.mkdir(exist_ok=True)
+    paths.configs_dir.mkdir(exist_ok=True)
     paths.tempfiles_dir.mkdir(exist_ok=True)
 
     paths.modrinth_dir.mkdir(exist_ok=True)

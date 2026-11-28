@@ -303,33 +303,57 @@ def add_projects(args: Namespace) -> int:
     for project_id in required_projects:
         project_data: ProjectData = resolved_project_data[project_id]
         project_information: ProjectInformation = project_informations[project_id]
-        project_version = version_cache[project_id]
-        version_files: list[modrinth.File] = project_version["files"]
+        if project_id not in version_cache:
+            project_record = record_cache[project_id]
+            primary_file: modrinth.File | None = project_record["file"]
 
-        primary_file: modrinth.File | None = None
-        for file in version_files:
-            if file["is_primary"]:
-                primary_file: modrinth.File | None = file
-                break
+            if primary_file is None:
+                logger.error(f"Project record of {project_id} has no version file")
+                return 1
 
-        if primary_file is None:
-            primary_file: modrinth.File | None = version_files[0]
+            file_path: Path = project_directory / primary_file["file_name"]
+            if file_path.exists():
+                logger.info(f"File '{file_path}' already exist, skipping download")
+                continue
 
-        file_path: Path = project_directory / primary_file["file_name"]
-        if file_path.exists():
-            logger.info(f"File '{file_path}' already exist, skipping download")
-            continue
+            logger.info(f"Downloading {project_information['project_name']}...")
+            project_directory.mkdir(exist_ok=True, parents=True)
 
-        logger.info(f"Downloading {project_information['project_name']}...")
-        project_directory.mkdir(exist_ok=True, parents=True)
-
-        sha512_hash: str | None = primary_file["file_hashes"].get("sha512")
-        if sha512_hash is not None:
-            networking.download(
-                primary_file["download_url"], file_path, hashes={"sha512": sha512_hash}
-            )
+            sha512_hash: str | None = primary_file["file_hashes"].get("sha512")
+            if sha512_hash is not None:
+                networking.download(
+                    primary_file["download_url"], file_path, hashes={"sha512": sha512_hash}
+                )
+            else:
+                networking.download(primary_file["download_url"], file_path)
         else:
-            networking.download(primary_file["download_url"], file_path)
+            project_version = version_cache[project_id]
+            version_files: list[modrinth.File] = project_version["files"]
+
+            primary_file: modrinth.File | None = None
+            for file in version_files:
+                if file["is_primary"]:
+                    primary_file: modrinth.File | None = file
+                    break
+
+            if primary_file is None:
+                primary_file: modrinth.File | None = version_files[0]
+
+            file_path: Path = project_directory / primary_file["file_name"]
+            if file_path.exists():
+                logger.info(f"File '{file_path}' already exist, skipping download")
+                continue
+
+            logger.info(f"Downloading {project_information['project_name']}...")
+            project_directory.mkdir(exist_ok=True, parents=True)
+
+            sha512_hash: str | None = primary_file["file_hashes"].get("sha512")
+            if sha512_hash is not None:
+                networking.download(
+                    primary_file["download_url"], file_path, hashes={"sha512": sha512_hash}
+                )
+            else:
+                networking.download(primary_file["download_url"], file_path)
 
     for project_data in resolved_projects:
         project_id: str = project_data["project_id"]

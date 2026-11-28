@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def start_server(args: Namespace) -> int:
     paths.update_working_dir(args.directory)
     # Check MCServer status
-    if not paths.state_file_path.parent.exists():
+    if not paths.state_file.parent.exists():
         logger.error("Directory '.mcserver'  not exist, is MCServer initialized?")
         return 1
 
@@ -41,7 +41,6 @@ def start_server(args: Namespace) -> int:
         "launcher", shared.default_configs["launcher"]["format_version"]
     )
 
-    jarfile = paths.working_dir / Path(launcher_config["jarfile"]).name
     memory_config = launcher_config["ram"]
 
     # Check stuff
@@ -52,6 +51,8 @@ def start_server(args: Namespace) -> int:
     if memory_config["min"] > memory_config["max"]:
         logger.error("Minimum RAM is bigger than maximum RAM")
         return 1
+
+    jarfile = paths.working_dir / Path(launcher_config["jarfile"]).name
 
     # Download jarfile
     if not jarfile.exists():
@@ -80,7 +81,7 @@ def start_server(args: Namespace) -> int:
                 )
                 networking.download(
                     fabricmc_meta.download_url(game_version, loader_version, "1.1.2"),
-                    jarfile.name,
+                    jarfile,
                 )
 
             # case "quilt":
@@ -104,7 +105,7 @@ def start_server(args: Namespace) -> int:
                 )["download_props"]["server:default"]
                 networking.download(
                     download_prop["download_url"],
-                    jarfile.name,
+                    jarfile,
                     hashes={"sha256": download_prop["file_hashes"]["sha256"]},
                 )
             case "purpur":
@@ -118,7 +119,7 @@ def start_server(args: Namespace) -> int:
                 )
                 networking.download(
                     purpurmc_api.download_url("purpur", game_version, loader_version),
-                    jarfile.name,
+                    jarfile,
                     hashes={"md5": project_build["artifact_md5"]},
                 )
 
