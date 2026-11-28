@@ -42,10 +42,11 @@ def start_server(args: Namespace) -> int:
     )
 
     memory_config = launcher_config["ram"]
+    java_path: Path = Path(launcher_config["java_path"])
 
     # Check stuff
-    if not shutil.which("java"):
-        logger.error("'java' not found, is Java installed?")
+    if not java_path.exists():
+        logger.error(f"'{java_path}' not found, is Java installed?")
         return 1
 
     if memory_config["min"] > memory_config["max"]:
@@ -159,7 +160,7 @@ def start_server(args: Namespace) -> int:
 
     # Run the server
     java_command_argv: list[str] = [
-        "java",
+        str(java_path),
         f"-Xmx{memory_config['max']}M",
         f"-Xms{memory_config['min']}M",
         "-jar",
@@ -171,4 +172,4 @@ def start_server(args: Namespace) -> int:
 
     # Execute java
     logger.debug(f"Executing command: {' '.join(java_command_argv)}")
-    os.execvp(java_command_argv[0], java_command_argv)
+    os.execv(java_command_argv[0], java_command_argv)

@@ -190,7 +190,6 @@ init_command.add_argument(
     type=str,
     choices=loader_list,
     help="Mod loader to use",
-    metavar="Loader",
     dest="loader_name",
 )
 
@@ -219,6 +218,13 @@ init_command.add_argument(
 )
 
 init_command.add_argument(
+    "--java-path",
+    type=str,
+    metavar="Path",
+    help="Path to the java executable",
+)
+
+init_command.add_argument(
     "--search-limit",
     default=20,
     type=bound_int(1, 100),
@@ -233,7 +239,6 @@ init_command.add_argument(
     type=str,
     choices=search_sort_index,
     help="Sort order for search results",
-    metavar="Index",
     dest="sort_index",
 )
 
@@ -276,7 +281,6 @@ op_grant_command.add_argument(
     "--online-mode",
     type=str,
     choices=["true", "false"],
-    metavar="{true,false}",
     help="Override the server's online-mode setting",
 )
 
@@ -366,7 +370,6 @@ search_command.add_argument(
     type=str,
     choices=loader_list,
     help="Override the mod loader filter",
-    metavar="Loader",
     dest="loader_name",
 )
 
@@ -423,7 +426,6 @@ whitelist_add_command.add_argument(
     "--online-mode",
     type=str,
     choices=["true", "false"],
-    metavar="{true,false}",
     help="Override the server's online-mode setting",
 )
 

@@ -1,6 +1,8 @@
 import copy
 import logging
+import shutil
 from argparse import Namespace
+from pathlib import Path
 
 from .. import __version__, config, paths, shared, state
 from ..metadata import set_metadata
@@ -18,7 +20,7 @@ def initialize_server(args: Namespace) -> int:
     loader_name: str = args.loader_name
     loader_version: str | None = args.loader_version
 
-    # java_path: Path = args.java_executable
+    java_path: str | None = args.java_path
     min_ram: int = args.min_ram
     max_ram: int = args.max_ram
 
@@ -26,6 +28,20 @@ def initialize_server(args: Namespace) -> int:
     sort_index: SearchSortIndex = args.sort_index
 
     # Validation
+    if java_path is None:
+        which_java: str | None = shutil.which("java")
+        if which_java is None:
+            logger.error("Can't find 'java' binary, is Java installed?")
+            return 1
+
+        java_executable: Path = Path(which_java)
+        logger.info(f"Java executable is: '{java_executable}'")
+    else:
+        java_executable: Path = Path(java_path)
+        if not java_executable.exists():
+            logger.error(f"'[{java_executable}' does not exist, is Java installed?")
+            return 1
+
     if min_ram > max_ram:
         logger.error("Minimum RAM cannot be larger than maximum RAM")
         return 1
@@ -130,7 +146,7 @@ def initialize_server(args: Namespace) -> int:
         config_override: dict = {}
         match config_name:
             case "launcher":
-                config_override = {"ram": {"min": min_ram, "max": max_ram}}
+                config_override = {"java_path": str(java_executable), "ram": {"min": min_ram, "max": max_ram}}
 
             case "modrinth":
                 config_override = {

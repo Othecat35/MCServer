@@ -16,6 +16,8 @@ $CACHE means $XDG_CACHE_HOME or $HOME/.cache
 - Added 'ram.max' with value 2048
 - Added 'jarfile' with value "Server.jar"
 - Added 'is_nogui': with value true
+[2] - 2026-11-28
+- Added 'jar_executable' with value "/usr/bin/env java"
 
 .mcserver/configs/modrinth.json:
 [1] - ?

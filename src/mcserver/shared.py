@@ -47,13 +47,14 @@ last_status: str = ""
 
 default_configs = {
     "launcher": {
-        "format_version": 1,
+        "format_version": 2,
         "config_data": {
             "ram": {
                 "_comment": "Memory size in MebiByte (MiB)",
                 "min": 512,
                 "max": 2_048,
             },
+            "java_executable": "/usr/bin/env java",
             "jarfile": "Server.jar",
             "is_nogui": True,
         },
