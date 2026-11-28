@@ -26,6 +26,21 @@ def nothing_to_see_here_move_along() -> NoReturn:
         "Hold F3+C for 10 seconds for a surprise!",
         "Segmentation fault (core dumped)",
         "about:mozilla in Firefox?",
+        "Press Ctrl+Alt+F3 together and see what happen.",
+        "Othecat35 was here!",
+        "sudo make me a sandwich",
+        "Notch left the game",
+        "Do a barrel roll!",
+        "Have you tried stopping the server and starting it again?",
+        "One must continously pet the watchdog.",
+        "One does not simply enter the source code.",
+        "Keyboard not found. Press F1 to continue.",
+        "Press F to pay respect.",
+        "FIX MOJANG BEDROCK!",
+        "FIX BEDROCK MOJANG!",
+        "This server is powered by hopes and prayers.",
+        "Chrome ate all of your RAM before the Minecraft server does.",
+        "You're communicating like it was in 1960s",
     ]
 
     message: str = random.choice(messages)
