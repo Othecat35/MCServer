@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 # MCServer
-from .paths import configs_dir
+from . import paths
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -30,13 +30,13 @@ def write_config(
     Raises:
         FileNotFoundError: The configuration directory does not exist
     """
-    if not configs_dir.exists():
+    if not paths.configs_dir.exists():
         raise FileNotFoundError(
-            f"COnfiguration directory '{configs_dir}' does not exist"
+            f"COnfiguration directory '{paths.configs_dir}' does not exist"
         )
 
     config_filename: str = f"{config_name}.json"
-    config_path: Path = configs_dir / config_filename
+    config_path: Path = paths.configs_dir / config_filename
 
     configuration_data: dict = {"format_version": format_version}
 
@@ -59,14 +59,14 @@ def read_config(config_name: str, current_format_version: int) -> dict[str, Any]
     """
 
     config_filename: str = f"{config_name}.json"
-    config_path: Path = configs_dir / config_filename
+    config_path: Path = paths.configs_dir / config_filename
 
     if not config_path.exists():
         raise FileNotFoundError(
             f"Configuration file for '{config_name}' does not exist"
         )
 
-    logger.debug(f"Reading configuration for {config_name}")
+    logger.debug(f"Reading configuration for {config_name} at {config_path.relative_to(paths.current_dir, walk_up=True)}")
     config_json: str = config_path.read_text()
     config_data: dict = json.loads(config_json)
 
@@ -80,5 +80,5 @@ def read_config(config_name: str, current_format_version: int) -> dict[str, Any]
 
 def config_exists(config_name: str) -> bool:
     config_filename: str = f"{config_name}.json"
-    config_path: Path = configs_dir / config_filename
+    config_path: Path = paths.configs_dir / config_filename
     return config_path.exists()
