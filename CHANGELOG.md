@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.9.0] - 2026-11-28
+
+### Added
+
+- `--directory` flag to specify where the command will run
+- `--java-path` flag in `init` to specify what java executable to use to run the server
+
 ## [4.8.1] - 2026-11-19
 
 ### Fixed
@@ -326,7 +333,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.8.0...HEAD
+[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.9.0...HEAD
+[4.9.0]: https://github.com/Othecat35/MCServer/compare/v4.8.1...v4.9.0
+[4.8.1]: https://github.com/Othecat35/MCServer/compare/v4.8.0...v4.8.1
 [4.8.0]: https://github.com/Othecat35/MCServer/compare/v4.7.4...v4.8.0
 [4.7.4]: https://github.com/Othecat35/MCServer/compare/v4.7.3...v4.7.4
 [4.7.3]: https://github.com/Othecat35/MCServer/compare/v4.7.2...v4.7.3

@@ -49,9 +49,9 @@ Supported loaders:
 - Remove whitelisted players: `mcserver whitelist remove <players>`
 
 ### Examples
-- Create a Fabric 1.20.1 server, add Thdilos' Fox Origin, and start the server
+- Create a Fabric 1.20.1 server that run with java termuin 17 JVM, add Thdilos' Fox Origin, and start the server
 ```bash
-mcserver init --game-version=1.20.1 --loader=fabric
+mcserver init --game-version=1.20.1 --loader=fabric --java-path=/usr/lib/jvm/java-17-temurin-jdk/bin/java
 mcserver add thdilos-fox-origin
 mcserver start
 ```
