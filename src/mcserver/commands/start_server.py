@@ -5,15 +5,15 @@ import shutil
 from argparse import Namespace
 from pathlib import Path
 
-from .. import state
-from ..paths import current_dir
+from .. import paths, state
 
 logger = logging.getLogger(__name__)
 
 
 def start_server(args: Namespace) -> int:
+    paths.update_working_dir(args.directory)
     # Check MCServer status
-    if not state.state_file.parent.exists():
+    if not paths.state_file_path.parent.exists():
         logger.error("Directory '.mcserver'  not exist, is MCServer initialized?")
         return 1
 
@@ -41,7 +41,7 @@ def start_server(args: Namespace) -> int:
         "launcher", shared.default_configs["launcher"]["format_version"]
     )
 
-    jarfile = current_dir / Path(launcher_config["jarfile"]).name
+    jarfile = paths.working_dir / Path(launcher_config["jarfile"]).name
     memory_config = launcher_config["ram"]
 
     # Check stuff

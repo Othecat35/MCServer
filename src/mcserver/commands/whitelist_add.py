@@ -2,20 +2,20 @@ import logging
 from argparse import Namespace
 from uuid import UUID
 
+from .. import paths
 from ..minecraft.player_identity import separate_uuids_and_names
-from ..paths import current_dir
-from ..server_files.paths import whitelist_file_path
 from ..server_files.whitelist import WhitelistedPlayer
 
 logger = logging.getLogger(__name__)
 
 
 def whitelist_add(args: Namespace) -> int:
-    if not whitelist_file_path.exists():
+    paths.update_working_dir(args.directory)
+    if not paths.whitelist_file.exists():
         logger.info(
-            f"Whitelist file '{whitelist_file_path.relative_to(current_dir)}' does not exist, creating new one"
+            f"Whitelist file '{paths.whitelist_file.relative_to(paths.current_dir, walk_up=True)}' does not exist, creating new one"
         )
-        whitelist_file_path.write_text("[]")
+        paths.whitelist_file.write_text("[]")
 
     player_ids: list[str] = args.players
     online_mode: str | None = args.online_mode

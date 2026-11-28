@@ -12,8 +12,7 @@ from pathlib import Path
 from typing import TypedDict
 
 # MCServer
-from . import __version__
-from .paths import current_dir, tempfiles_dir
+from . import __version__, paths
 from .shared import (
     format_number,
     pluralize,
@@ -122,7 +121,7 @@ def download(
     headers.setdefault("User-Agent", user_agent)
 
     basename: str = filename.name
-    tempfile: Path = tempfiles_dir / basename
+    tempfile: Path = paths.tempfiles_dir / basename
 
     request_url: urllib.request.Request = urllib.request.Request(url, headers=headers, method="GET")
 
@@ -202,7 +201,7 @@ def download(
             logger.debug(f"Got hash: {calculated_hash}")
             if calculated_hash != expected_hash:
                 raise DownloadURLError(
-                    f"Downloaded file '{tempfile.relative_to(current_dir)}' hash does not match with the expected {hash_name} hash"
+                    f"Downloaded file '{tempfile.relative_to(paths.current_dir, walk_up=True)}' hash does not match with the expected {hash_name} hash"
                 )
 
         time_elapsed_download: int = round(time.monotonic() - start_time)

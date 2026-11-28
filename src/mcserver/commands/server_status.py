@@ -1,8 +1,11 @@
+import logging
 from argparse import Namespace
 
 
-def server_status(args: Namespace) -> int:
-    import logging as log
+from .. import paths
+logger: logging.Logger = logging.getLogger(__name__)
 
-    log.error("Command is not implemented yet.")
+def server_status(args: Namespace) -> int:
+    paths.update_working_dir(args.directory)
+    logger.error("Command is not implemented yet.")
     return 1

@@ -3,8 +3,8 @@ import logging
 from typing import TypedDict
 from uuid import UUID
 
+from .. import paths
 from ..shared import update_file
-from .paths import ops_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +28,8 @@ def list_players() -> list[OperatorPlayer]:
 
     Returns:
         List of operator players"""
-    logger.debug(f"Reading {ops_file_path}")
-    ops_json: list[OperatorFilePlayer] = json.loads(ops_file_path.read_text())
+    logger.debug(f"Reading {paths.ops_file}")
+    ops_json: list[OperatorFilePlayer] = json.loads(paths.ops_file.read_text())
 
     operator_players: list[OperatorPlayer] = []
     for player in ops_json:
@@ -62,12 +62,12 @@ def remove_players(
 
     Returns:
         List of operator players that are removed"""
-    if not ops_file_path.exists():
-        raise FileNotFoundError(f"File '{ops_file_path}' does not exist")
+    if not paths.ops_file.exists():
+        raise FileNotFoundError(f"File '{paths.ops_file}' does not exist")
 
-    ops_file_data = json.loads(ops_file_path.read_text())
+    ops_file_data = json.loads(paths.ops_file.read_text())
     if not isinstance(ops_file_data, list):
-        raise TypeError(f"JSON root of file '{ops_file_path}' is not an array")
+        raise TypeError(f"JSON root of file '{paths.ops_file}' is not an array")
 
     if player_uuids is None:
         player_uuids = []
@@ -112,7 +112,7 @@ def remove_players(
     if len(removed_players) == 0:
         logger.debug("No player is removed, skipping updating the file")
     else:
-        update_file(ops_file_path, json.dumps(new_ops_data, indent=2).encode())
+        update_file(paths.ops_file, json.dumps(new_ops_data, indent=2).encode())
 
     return removed_players
 
@@ -128,12 +128,12 @@ def upsert_players(
     Raises:
         FileNotFoundError: whitelist_file_path does not exist
         TypeError: whitelist_file_path's JSON root is not an array"""
-    if not ops_file_path.exists():
-        raise FileNotFoundError(f"File '{ops_file_path}' does not exist")
+    if not paths.ops_file.exists():
+        raise FileNotFoundError(f"File '{paths.ops_file}' does not exist")
 
-    ops_file_data = json.loads(ops_file_path.read_text())
+    ops_file_data = json.loads(paths.ops_file.read_text())
     if not isinstance(ops_file_data, list):
-        raise TypeError(f"JSON root of file '{ops_file_path}' is not an array")
+        raise TypeError(f"JSON root of file '{paths.ops_file}' is not an array")
 
     if not isinstance(operator_players, list):
         operator_players = [operator_players]
@@ -176,4 +176,4 @@ def upsert_players(
         logger.debug(info_message)
         new_ops_file_data.append(operator_file_player)
 
-    update_file(ops_file_path, json.dumps(new_ops_file_data, indent=2).encode())
+    update_file(paths.ops_file, json.dumps(new_ops_file_data, indent=2).encode())

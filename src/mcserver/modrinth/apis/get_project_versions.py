@@ -30,8 +30,8 @@ def get_project_versions(
     import json
     import logging
 
-    from ... import networking
-    from .. import constants, shared
+    from ... import networking, urls
+    from .. import shared
     from ..typings import (
         File,
         FileHashes,
@@ -56,7 +56,7 @@ def get_project_versions(
         query_parameters["featured"] = json.dumps(featured)
 
     response = networking.request(
-        f"{constants.modrinth_api_url}/v2/project/{project_id}/version",
+        f"{urls.modrinth_api_url}/v2/project/{project_id}/version",
         query=query_parameters,
         expect_json=True,
     )

@@ -1,16 +1,15 @@
+import logging
 from argparse import Namespace
 
+from .. import paths, shared
+from ..modrinth import apis as modrinth_api
+from ..shared import format_number, pluralize
+
+logger = logging.getLogger(__name__)
 
 def show_projects(args: Namespace) -> int:
+    paths.update_working_dir(args.directory)
     projects: list[str] = args.projects
-
-    import logging
-
-    from .. import shared
-    from ..modrinth import apis as modrinth_api
-    from ..shared import format_number, pluralize
-
-    logger = logging.getLogger(__name__)
 
     logger.info(f"Getting {pluralize('project', len(projects))} informations...")
     project_informations = modrinth_api.get_project_informations(projects)

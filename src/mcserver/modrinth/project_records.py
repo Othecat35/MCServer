@@ -1,11 +1,10 @@
 import json
 from typing import TypedDict
 
+from .. import paths
 from ..shared import update_file
-from .paths import modrinth_dir
 from .typings import Dependency, DependencyType, Environment, File
 
-project_records_dir = modrinth_dir / "project_records"
 current_format_version = 1
 
 
@@ -40,7 +39,7 @@ class ProjectRecordData(ProjectRecordPayload):
 
 
 def record_exists(project_id: str) -> bool:
-    return (project_records_dir / f"{project_id}.json").exists()
+    return (paths.project_records_dir / f"{project_id}.json").exists()
 
 
 def write_record(project_id: str, record_payload: ProjectRecordPayload) -> None:
@@ -53,17 +52,17 @@ def write_record(project_id: str, record_payload: ProjectRecordPayload) -> None:
         FileNotFoundError: Path to `project_records_dir` does not exist
         NotADirectoryError: Path to `project_record_dir` is not a directory
     """
-    if not project_records_dir.exists():
+    if not paths.project_records_dir.exists():
         raise FileNotFoundError(
-            f"Failed to create a project record for '{project_id}': Directory {project_records_dir} does not exist"
+            f"Failed to create a project record for '{project_id}': Directory {paths.project_records_dir} does not exist"
         )
 
-    if not project_records_dir.is_dir():
+    if not paths.project_records_dir.is_dir():
         raise NotADirectoryError(
-            f"Failed to create a project record for '{project_id}': Path {project_records_dir} is not a directory."
+            f"Failed to create a project record for '{project_id}': Path {paths.project_records_dir} is not a directory."
         )
 
-    project_record_file = project_records_dir / f"{project_id}.json"
+    project_record_file = paths.project_records_dir / f"{project_id}.json"
     record_data: ProjectRecordData = {
         **record_payload,
         "format_version": current_format_version,
@@ -84,7 +83,7 @@ def read_record(project_id: str) -> ProjectRecordData:
     Returns:
         ThData of the project record
     """
-    project_record_file = project_records_dir / f"{project_id}.json"
+    project_record_file = paths.project_records_dir / f"{project_id}.json"
     if not project_record_file.exists():
         raise FileNotFoundError(
             f"Failed to read record data for project ID '{project_id}': File {project_record_file} does not exist"
@@ -109,7 +108,7 @@ def delete_record(project_id: str):
     Raises:
         FileNotFoundError: The record file for the project does not exist
     """
-    project_record_file = project_records_dir / f"{project_id}.json"
+    project_record_file = paths.project_records_dir / f"{project_id}.json"
     if not project_record_file.exists():
         return
 

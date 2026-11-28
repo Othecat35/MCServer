@@ -1,7 +1,7 @@
 import logging
 from argparse import Namespace
 
-from .. import config, shared
+from .. import config, paths, shared
 from ..modrinth import project_records
 from ..shared import get_loader_context
 
@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def list_projects(args: Namespace) -> int:
+    paths.update_working_dir(args.directory)
     if not config.config_exists("server"):
         logger.error("Configuration for 'server' does not exist")
         return 1

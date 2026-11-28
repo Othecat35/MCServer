@@ -1,19 +1,19 @@
 import logging
 from argparse import Namespace
 
+from .. import paths
 from ..minecraft.player_identity import separate_uuids_and_names
-from ..paths import current_dir
 from ..server_files import ops
-from ..server_files.paths import ops_file_path
 from ..shared import pluralize
 
 logger = logging.getLogger(__name__)
 
 
 def op_revoke(args: Namespace) -> int:
-    if not ops_file_path.exists():
+    paths.update_working_dir(args.directory)
+    if not paths.ops_file.exists():
         logger.error(
-            f"Operator file '{ops_file_path.relative_to(current_dir)}' does not exist"
+            f"Operator file '{paths.ops_file.relative_to(paths.current_dir, walk_up=True)}' does not exist"
         )
         return 1
     player_ids: list[str] = args.players

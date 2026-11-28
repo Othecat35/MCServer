@@ -7,9 +7,11 @@ import textwrap
 from pathlib import Path
 from typing import Literal, NamedTuple
 
+from . import paths
+
 # MCServer
 from .constants import iec_prefixes, social_prefixes
-from .paths import mods_dir
+
 logger: logging.Logger = logging.getLogger(__name__)
 
 
@@ -164,9 +166,9 @@ def supports_mod(loader_name: str) -> bool:
 
 def get_loader_context(loader_name: str) -> LoaderContext:
     if loader_name in mod_loaders:
-        return LoaderContext("mod", mods_dir)
+        return LoaderContext("mod", paths.mods_dir)
     elif loader_name in plugin_loaders:
-        return LoaderContext("plugin", plugins_dir)
+        return LoaderContext("plugin", paths.plugins_dir)
     else:  # Vanilla
         return LoaderContext("project", None)
 

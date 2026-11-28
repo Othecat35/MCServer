@@ -22,8 +22,8 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
     if isinstance(project_ids, str):
         project_ids = [project_ids]
 
-    from ... import networking
-    from .. import constants, shared
+    from ... import networking, urls
+    from .. import shared
     from ..typings import (
         DonationPlatform,
         Environment,
@@ -40,7 +40,7 @@ def get_project_informations(project_ids: list[str] | str) -> list[ProjectInform
     query_parameters = {"ids": json.dumps(project_ids)}
 
     response = networking.request(
-        f"{constants.modrinth_api_url}/v2/projects", query_parameters
+        f"{urls.modrinth_api_url}/v2/projects", query_parameters
     )
     response_json = response["json"]
 

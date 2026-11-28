@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Literal, NotRequired, TypedDict
 
 # MCServer
-from .paths import proc_dir, state_file
+from . import paths
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class CurrentState(TypedDict):
 def get_start_time(process_id: int | str) -> int:
     process_id = str(process_id)
 
-    proc_pid: Path = proc_dir / process_id
+    proc_pid: Path = paths.proc_dir / process_id
     if not proc_pid.exists():
         raise FileNotFoundError(f"/proc does not have process ID '{process_id}'")
 
@@ -55,16 +55,16 @@ def set_state(action: MCServerActions) -> None:
     }
 
     state_data: str = json.dumps(current_state, indent=2)
-    state_file.write_text(state_data)
+    paths.state_file.write_text(state_data)
 
 def get_state() -> CurrentState:
     current_state: CurrentState = {"is_active": False}
 
-    if not state_file.exists():
+    if not paths.state_file.exists():
         logger.debug("State file does not exist")
         return current_state
 
-    state_data: str = state_file.read_text()
+    state_data: str = paths.state_file.read_text()
     file_state: State = json.loads(state_data)  # I ran out of naming
 
     if "action" in file_state:

@@ -1,8 +1,7 @@
 import json
 import logging
 
-from ... import networking
-from ...constants import modrinth_api_url
+from ... import networking, urls
 from .. import shared
 from ..shared import SearchSortIndex
 from ..typings import (
@@ -64,7 +63,7 @@ def search_projects(
         query_parameters["query"] = search_query
 
     response = networking.request(
-        f"{modrinth_api_url}/v2/search", query=query_parameters, expect_json=True
+        f"{urls.modrinth_api_url}/v2/search", query=query_parameters, expect_json=True
     )
     response_json = response["json"]
 

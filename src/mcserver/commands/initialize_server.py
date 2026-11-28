@@ -2,15 +2,16 @@ import copy
 import logging
 from argparse import Namespace
 
-from .. import __version__, config, shared, state
-from ..metadata import metadata_file, set_metadata
-from ..modrinth.paths import modrinth_dir, project_records_dir
+from .. import __version__, config, paths, shared, state
+from ..metadata import set_metadata
 from ..modrinth.shared import SearchSortIndex
 
 logger = logging.getLogger(__name__)
 
 
 def initialize_server(args: Namespace) -> int:
+    paths.update_working_dir(args.directory)
+
     # CLI arguments
     game_version: str = args.game_version
 
@@ -30,13 +31,13 @@ def initialize_server(args: Namespace) -> int:
         return 1
 
     # Is first initializing
-    is_first_initialize = not metadata_file.exists()
+    is_first_initialize = not paths.metadata_file.exists()
 
     if not is_first_initialize:
         logger.info("Server is already initialized, exiting...")
         return 1
 
-    shared.set_loader_context(loader_name)
+    _, project_directory = shared.get_loader_context(loader_name)
 
     # Special loader version
     if loader_name == "vanilla":
@@ -109,17 +110,17 @@ def initialize_server(args: Namespace) -> int:
             logger.error("No stable version found")
             return 1
 
-    shared.mcserver_dir.mkdir(exist_ok=True)
+    paths.mcserver_dir.mkdir(exist_ok=True)
     state.set_state("initializing_server")
 
     config.configs_dir.mkdir(exist_ok=True)
-    shared.tempfiles_dir.mkdir(exist_ok=True)
+    paths.tempfiles_dir.mkdir(exist_ok=True)
 
-    modrinth_dir.mkdir(exist_ok=True)
-    project_records_dir.mkdir(exist_ok=True)
+    paths.modrinth_dir.mkdir(exist_ok=True)
+    paths.project_records_dir.mkdir(exist_ok=True)
 
-    if shared.loader_context["project_directory"] is not None:
-        shared.loader_context["project_directory"].mkdir(exist_ok=True)
+    if project_directory is not None:
+        project_directory.mkdir(exist_ok=True)
 
     # Write configuration to file
     for config_name in shared.default_configs:

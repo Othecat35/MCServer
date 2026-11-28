@@ -1,8 +1,12 @@
+import logging
 from argparse import Namespace
 
+from .. import paths
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 def update_projects(args: Namespace) -> int:
-    import logging as log
+    paths.update_working_dir(args.directory)
 
-    log.error("Command is not implemented yet.")
+    logger.error("Command is not implemented yet.")
     return 1

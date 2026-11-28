@@ -1,7 +1,7 @@
 import logging
 
+from .. import paths
 from . import properties
-from .paths import server_properties_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -14,19 +14,19 @@ def get_online_mode() -> bool:
     Returns:
         Boolean of whether the server is online-mode or not
     """
-    if not server_properties_file_path.exists():
+    if not paths.server_properties_file.exists():
         logger.debug(
-            f"'{server_properties_file_path}' does not exist, returning True for online-mode"
+            f"'{paths.server_properties_file}' does not exist, returning True for online-mode"
         )
         return True
 
-    server_properties_data = properties.loads(server_properties_file_path.read_text())[
+    server_properties_data = properties.loads(paths.server_properties_file.read_text())[
         "data"
     ]
     server_online_mode = server_properties_data.get("online-mode")
     if server_online_mode is None:
         logger.debug(
-            f"'{server_properties_file_path}' does not have 'online_mode', returning True"
+            f"'{paths.server_properties_file}' does not have 'online_mode', returning True"
         )
         return True
 
@@ -38,19 +38,19 @@ def get_online_mode() -> bool:
 
 
 def get_operator_permission_level() -> int:
-    if not server_properties_file_path.exists():
+    if not paths.server_properties_file.exists():
         logger.debug(
-            f"'{server_properties_file_path}' does not exist, returning 4 for op-permission-level"
+            f"'{paths.server_properties_file}' does not exist, returning 4 for op-permission-level"
         )
         return 4
 
-    server_properties_data = properties.loads(server_properties_file_path.read_text())[
+    server_properties_data = properties.loads(paths.server_properties_file.read_text())[
         "data"
     ]
     server_op_permission_level = server_properties_data.get("op-permission-level")
     if server_op_permission_level is None:
         logger.debug(
-            f"'{server_properties_file_path}' does not have 'server_op_permission_level', returning 4 for op-permission-level"
+            f"'{paths.server_properties_file}' does not have 'server_op_permission_level', returning 4 for op-permission-level"
         )
         return 4
 

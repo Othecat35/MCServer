@@ -3,7 +3,7 @@ from argparse import Namespace
 from datetime import UTC, datetime
 from pathlib import Path
 
-from .. import config, modrinth, networking, resolver, shared
+from .. import config, modrinth, networking, paths, resolver, shared
 from ..modrinth import project_records, slug_index
 from ..modrinth.project_records import ProjectRecordData, ProjectRecordPayload
 from ..modrinth.typings import (
@@ -76,6 +76,7 @@ def human_to_resolver(dependencies: list[Dependency]) -> dict[str, int]:
 
 
 def add_projects(args: Namespace) -> int:
+    paths.update_working_dir(args.directory)
     projects: list[str] = args.projects
 
     if not config.config_exists("server"):

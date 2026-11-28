@@ -6,8 +6,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, TypedDict
 
 # MCServer
-from .. import shared
-from ..paths import mcserver_cache_dir
+from .. import paths, shared
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +49,6 @@ def format_migrator(data: Any) -> Any:
 _slug_index: dict[str, SlugIndex] | None = None
 current_format_version = 2
 
-# Paths
-slug_index_file = mcserver_cache_dir / "slug_index.json"
-
 
 # Functions
 def _load_slug_index() -> None:
@@ -61,20 +57,20 @@ def _load_slug_index() -> None:
         logger.debug("Slug index is already set, not reloading")
         return
 
-    if not slug_index_file.exists():
+    if not paths.slug_index_file.exists():
         logger.debug(
-            f"{slug_index_file} does not exist, setting _slug_index to empty dictionary"
+            f"{paths.slug_index_file} does not exist, setting _slug_index to empty dictionary"
         )
         _slug_index = {}
         return
 
-    slug_index_json = slug_index_file.read_text()
+    slug_index_json = paths.slug_index_file.read_text()
 
     try:
         slug_index_data = json.loads(slug_index_json)
         if not isinstance(slug_index_data, dict):
             logger.warning(
-                f"{slug_index_file} should be an object! Rebuilding it from scratch"
+                f"{paths.slug_index_file} should be an object! Rebuilding it from scratch"
             )  # that's all I can say.
             _slug_index = {}
             return
@@ -93,7 +89,7 @@ def _load_slug_index() -> None:
         _slug_index = slug_index
     except json.JSONDecodeError:
         logger.warning(
-            f"{slug_index_file} is corrupted! Rebuilding it from scratch"
+            f"{paths.slug_index_file} is corrupted! Rebuilding it from scratch"
         )  # that's all I can say.
         _slug_index = {}
 
@@ -191,7 +187,7 @@ def save_slug_index() -> None:
         logger.debug("Slug index is not set")
         return
 
-    mcserver_cache_dir.mkdir(parents=True, exist_ok=True)
+    paths.mcserver_cache_dir.mkdir(parents=True, exist_ok=True)
 
     logger.debug("Saving slug index to file")
     slug_index_data: SlugIndexData = {
@@ -199,4 +195,4 @@ def save_slug_index() -> None:
         "data": _slug_index,
     }
 
-    shared.update_file(slug_index_file, json.dumps(slug_index_data).encode())
+    shared.update_file(paths.slug_index_file, json.dumps(slug_index_data).encode())

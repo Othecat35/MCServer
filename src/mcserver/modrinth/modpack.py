@@ -99,3 +99,5 @@ def apply_server_overrides(file_path: str | Path) -> None:
 
     with zipfile.ZipFile(file_path) as zip_file:
         _extract_zip(zip_file, "server-overrides/")
+
+# I haven't touch this for months

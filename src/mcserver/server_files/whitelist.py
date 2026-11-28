@@ -3,9 +3,9 @@ import logging
 from typing import TypedDict
 from uuid import UUID
 
+from .. import paths
 from ..minecraft.player_identity import PlayerIdentity
 from ..shared import update_file
-from .paths import whitelist_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +20,9 @@ class WhitelistedFilePlayer(TypedDict):
 
 
 def list_players() -> list[WhitelistedPlayer]:
-    logger.debug(f"Reading whitelist file {whitelist_file_path}")
+    logger.debug(f"Reading whitelist file {paths.whitelist_file}")
     whitelist_data: list[WhitelistedFilePlayer] = json.loads(
-        whitelist_file_path.read_text()
+        paths.whitelist_file.read_text()
     )
 
     whitelisted_players: list[WhitelistedPlayer] = []
@@ -55,12 +55,12 @@ def remove_players(
 
     Returns:
         List of whitelisted players that are removed"""
-    if not whitelist_file_path.exists():
-        raise FileNotFoundError(f"File '{whitelist_file_path}' does not exist")
+    if not paths.whitelist_file.exists():
+        raise FileNotFoundError(f"File '{paths.whitelist_file}' does not exist")
 
-    whitelist_file_data = json.loads(whitelist_file_path.read_text())
+    whitelist_file_data = json.loads(paths.whitelist_file.read_text())
     if not isinstance(whitelist_file_data, list):
-        raise TypeError(f"JSON root of file '{whitelist_file_path}' is not an array")
+        raise TypeError(f"JSON root of file '{paths.whitelist_file}' is not an array")
 
     if player_uuids is None:
         player_uuids = []
@@ -104,7 +104,7 @@ def remove_players(
         logger.debug("No player is removed, skipping updating the file")
     else:
         update_file(
-            whitelist_file_path, json.dumps(new_whitelist_data, indent=2).encode()
+            paths.whitelist_file, json.dumps(new_whitelist_data, indent=2).encode()
         )
 
     return removed_players
@@ -121,12 +121,12 @@ def upsert_players(
     Raises:
         FileNotFoundError: whitelist_file_path does not exist
         TypeError: whitelist_file_path's JSON root is not an array"""
-    if not whitelist_file_path.exists():
-        raise FileNotFoundError(f"File '{whitelist_file_path}' does not exist")
+    if not paths.whitelist_file.exists():
+        raise FileNotFoundError(f"File '{paths.whitelist_file}' does not exist")
 
-    whitelist_file_data = json.loads(whitelist_file_path.read_text())
+    whitelist_file_data = json.loads(paths.whitelist_file.read_text())
     if not isinstance(whitelist_file_data, list):
-        raise TypeError(f"JSON root of file '{whitelist_file_path}' is not an array")
+        raise TypeError(f"JSON root of file '{paths.whitelist_file}' is not an array")
 
     if not isinstance(whitelisted_players, list):
         whitelisted_players = [whitelisted_players]
@@ -163,5 +163,5 @@ def upsert_players(
         new_whitelist_file_data.append(whitelisted_file_player)
 
     update_file(
-        whitelist_file_path, json.dumps(new_whitelist_file_data, indent=2).encode()
+        paths.whitelist_file, json.dumps(new_whitelist_file_data, indent=2).encode()
     )

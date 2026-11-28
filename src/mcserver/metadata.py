@@ -4,7 +4,7 @@ import json
 from typing import TypedDict
 
 # MCServer
-from .paths import metadata_file
+from . import paths
 
 metadata_format_version = 1
 
@@ -30,11 +30,11 @@ def set_metadata(mcserver_version: str) -> None:
     }
 
     metadata_data: str = json.dumps(metadata)
-    metadata_file.write_text(metadata_data)
+    paths.metadata_file.write_text(metadata_data)
 
 
 def get_metadata() -> Metadata:
-    metadata_data: str = metadata_file.read_text()
+    metadata_data: str = paths.metadata_file.read_text()
     metadata: Metadata = json.loads(metadata_data)
     if metadata["format_version"] > metadata_format_version:
         raise MetadataFormatVersionError(

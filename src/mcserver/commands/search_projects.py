@@ -2,9 +2,7 @@ import logging
 import math
 from argparse import Namespace
 
-from mcserver import paths
-
-from .. import config
+from .. import config, paths
 from ..modrinth import apis as modrinth_apis
 from ..modrinth.shared import SearchSortIndex
 from ..modrinth.typings import Environment
@@ -20,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 def search_projects(args: Namespace) -> int:
+    paths.update_working_dir(args.directory)
+
     search_query: list[str] = args.search_query
     search_limit: int | None = args.search_limit
     page_number: int = args.page_number

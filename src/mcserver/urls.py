@@ -5,3 +5,5 @@ fabricmc_meta_url: str = "https://meta.fabricmc.net"
 legacyfabric_meta_url: str = "https://meta.legacyfabric.net"
 
 quiltmc_meta_url: str = "https://meta.quiltmc.org"
+
+modrinth_api_url: str = "https://api.modrinth.com"
