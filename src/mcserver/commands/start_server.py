@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import shutil
 from argparse import Namespace
 from pathlib import Path
 
@@ -169,6 +168,8 @@ def start_server(args: Namespace) -> int:
 
     if launcher_config["is_nogui"]:
         java_command_argv.append("nogui")
+
+    os.chdir(paths.working_dir)
 
     # Execute java
     logger.debug(f"Executing command: {' '.join(java_command_argv)}")

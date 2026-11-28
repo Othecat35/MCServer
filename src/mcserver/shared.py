@@ -72,6 +72,7 @@ default_configs = {
     },
 }
 
+
 # Functions
 def pluralize(singular: str, count: int = 0, plural: str = "") -> str:
     if count != 1:

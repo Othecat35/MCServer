@@ -5,6 +5,7 @@ from .. import paths
 
 logger: logging.Logger = logging.getLogger(__name__)
 
+
 def update_projects(args: Namespace) -> int:
     paths.update_working_dir(args.directory)
 

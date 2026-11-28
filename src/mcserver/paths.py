@@ -44,6 +44,7 @@ ops_file = working_dir / "ops.json"
 server_properties_file = working_dir / "server.properties"
 whitelist_file = working_dir / "whitelist.json"
 
+
 # update working dir
 def update_working_dir(path: Path = current_dir) -> None:
     global working_dir

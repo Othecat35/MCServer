@@ -57,6 +57,7 @@ def set_state(action: MCServerActions) -> None:
     state_data: str = json.dumps(current_state, indent=2)
     paths.state_file.write_text(state_data)
 
+
 def get_state() -> CurrentState:
     current_state: CurrentState = {"is_active": False}
 

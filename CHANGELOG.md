@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.9.1] - 2026-11-28
+
+### Fixed
+
+- Make sure to change java directory to `--directory`
+
 ## [4.9.0] - 2026-11-28
 
 ### Added
@@ -333,7 +339,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better mod conflict error
 - Faster mod resolving
 
-[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.9.0...HEAD
+[unreleased]: https://github.com/Othecat35/MCServer/compare/v4.9.1...HEAD
+[4.9.1]: https://github.com/Othecat35/MCServer/compare/v4.9.0...v4.9.1
 [4.9.0]: https://github.com/Othecat35/MCServer/compare/v4.8.1...v4.9.0
 [4.8.1]: https://github.com/Othecat35/MCServer/compare/v4.8.0...v4.8.1
 [4.8.0]: https://github.com/Othecat35/MCServer/compare/v4.7.4...v4.8.0

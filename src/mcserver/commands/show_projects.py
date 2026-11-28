@@ -7,6 +7,7 @@ from ..shared import format_number, pluralize
 
 logger = logging.getLogger(__name__)
 
+
 def show_projects(args: Namespace) -> int:
     paths.update_working_dir(args.directory)
     projects: list[str] = args.projects

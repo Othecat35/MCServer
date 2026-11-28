@@ -152,7 +152,9 @@ def resolve_dependencies(
         dependency_graph[project_id]["dependencies"] = dependencies
 
         for dependency_id, dependency_type in dependencies.items():
-            logger.debug(f"Processing dependency '{dependency_id}' for project '{project_id}'")
+            logger.debug(
+                f"Processing dependency '{dependency_id}' for project '{project_id}'"
+            )
             if dependency_id in dependency_graph:
                 dependency_project = dependency_graph[dependency_id]
 

@@ -137,7 +137,9 @@ def add_projects(args: Namespace) -> int:
             project_record: ProjectRecordData = project_records.read_record(project_id)
             record_cache[project_id] = project_record
 
-            project_dependencies: list[modrinth.Dependency] = project_record["dependencies"]
+            project_dependencies: list[modrinth.Dependency] = project_record[
+                "dependencies"
+            ]
             return project_dependencies
 
         versions: list[modrinth.ProjectVersion] = modrinth.get_project_versions(
@@ -166,8 +168,10 @@ def add_projects(args: Namespace) -> int:
         if project_id in version_cache:
             project_version: ProjectVersion = version_cache[project_id]
             if "dependencies" in project_version:
-                dependencies: list[Dependency] | None = version_dependencies_to_dependencies(
-                    project_version["dependencies"]
+                dependencies: list[Dependency] | None = (
+                    version_dependencies_to_dependencies(
+                        project_version["dependencies"]
+                    )
                 )
         else:
             dependencies: list[Dependency] | None = get_project_dependencies(project_id)
@@ -322,7 +326,9 @@ def add_projects(args: Namespace) -> int:
             sha512_hash: str | None = primary_file["file_hashes"].get("sha512")
             if sha512_hash is not None:
                 networking.download(
-                    primary_file["download_url"], file_path, hashes={"sha512": sha512_hash}
+                    primary_file["download_url"],
+                    file_path,
+                    hashes={"sha512": sha512_hash},
                 )
             else:
                 networking.download(primary_file["download_url"], file_path)
@@ -350,7 +356,9 @@ def add_projects(args: Namespace) -> int:
             sha512_hash: str | None = primary_file["file_hashes"].get("sha512")
             if sha512_hash is not None:
                 networking.download(
-                    primary_file["download_url"], file_path, hashes={"sha512": sha512_hash}
+                    primary_file["download_url"],
+                    file_path,
+                    hashes={"sha512": sha512_hash},
                 )
             else:
                 networking.download(primary_file["download_url"], file_path)

@@ -42,6 +42,7 @@ user_agent: str = (
 )
 read_chunk_size: int = 1024 * 64  # 64KiB
 
+
 # Functions
 def request(
     url: str,
@@ -123,7 +124,9 @@ def download(
     basename: str = filename.name
     tempfile: Path = paths.tempfiles_dir / basename
 
-    request_url: urllib.request.Request = urllib.request.Request(url, headers=headers, method="GET")
+    request_url: urllib.request.Request = urllib.request.Request(
+        url, headers=headers, method="GET"
+    )
 
     logger.debug(f"Downloading URL: {request_url.full_url}")
     logger.debug(f"Temporary file: {tempfile}")

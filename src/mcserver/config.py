@@ -43,7 +43,9 @@ def write_config(
     configuration_data.update(copy.deepcopy(config_data))
     config_json: str = json.dumps(configuration_data, indent=2)
 
-    logger.debug(f"Writing configuration for '{config_name}' at '{config_path.relative_to(paths.current_dir, walk_up=True)}'")
+    logger.debug(
+        f"Writing configuration for '{config_name}' at '{config_path.relative_to(paths.current_dir, walk_up=True)}'"
+    )
     shared.update_file(config_path, config_json.encode())
 
 
@@ -66,7 +68,9 @@ def read_config(config_name: str, current_format_version: int) -> dict[str, Any]
             f"Configuration file for '{config_name}' does not exist"
         )
 
-    logger.debug(f"Reading configuration for '{config_name}' at '{config_path.relative_to(paths.current_dir, walk_up=True)}'")
+    logger.debug(
+        f"Reading configuration for '{config_name}' at '{config_path.relative_to(paths.current_dir, walk_up=True)}'"
+    )
     config_json: str = config_path.read_text()
     config_data: dict = json.loads(config_json)
 

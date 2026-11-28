@@ -1,9 +1,10 @@
 import logging
 from argparse import Namespace
 
-
 from .. import paths
+
 logger: logging.Logger = logging.getLogger(__name__)
+
 
 def server_status(args: Namespace) -> int:
     paths.update_working_dir(args.directory)

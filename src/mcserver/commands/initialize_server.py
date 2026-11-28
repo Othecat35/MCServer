@@ -146,7 +146,10 @@ def initialize_server(args: Namespace) -> int:
         config_override: dict = {}
         match config_name:
             case "launcher":
-                config_override = {"java_path": str(java_executable), "ram": {"min": min_ram, "max": max_ram}}
+                config_override = {
+                    "java_path": str(java_executable),
+                    "ram": {"min": min_ram, "max": max_ram},
+                }
 
             case "modrinth":
                 config_override = {

@@ -7,6 +7,7 @@ from .. import paths, state
 
 logger: logging.Logger = logging.getLogger(__name__)
 
+
 def stop_server(args: Namespace) -> int:
     paths.update_working_dir(args.directory)
     current_state = state.get_state()
