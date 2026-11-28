@@ -7,9 +7,16 @@ Supported platforms:
 - Linux
 - and Termux.
 
+Supported loaders:
+- Vanilla (its not a loader)
+- Fabric
+- Paper
+- Purpur
+
 ## Requirements
 - Python 3.12 or newer (Python 3.14 is recommended)
 - JRE (depends on Minecraft version)
+
 
 ## How to install
 - Using pip: Just run `pip install mcserver-cli`
@@ -65,20 +72,20 @@ mcserver whitelist list
 mcserver whitelist add Notch
 ```
 
-- Granting Notch operator level 4 and can bypass player limit and list all operators
-```bash
-mcserver op grant Notch --permission-level=4 --bypasses-player-limit
-mcserver op list
-```
-
 - Remove me from the whitelist
 ```bash
 mcserver whitelist remove Othecat35
 ```
 
-- Stop a running server on current directory with sigterm
+- Granting Notch operator level 4 and can bypass player limit, then list all operators
 ```bash
-mcserver stop
+mcserver op grant Notch --permission-level=4 --bypasses-player-limit
+mcserver op list
+```
+
+- Stop a running server on a directory with sigterm
+```bash
+mcserver --directory=server stop
 ```
 
 ## Note

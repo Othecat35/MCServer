@@ -3,6 +3,7 @@ from pathlib import Path
 
 # user
 home_dir: Path = Path.home()
+current_dir: Path = Path.cwd()
 working_dir: Path = Path.cwd()
 
 # .mcserver
@@ -32,3 +33,11 @@ mcserver_cache_dir: Path = cache_dir / "mcserver"
 
 # system
 proc_dir: Path = Path("/proc")
+
+def update_working_dir(path: Path) -> None:
+    global working_dir
+    global mods_dir, plugins_dir
+    working_dir = path
+
+    mods_dir = path / "mods"
+    plugins_dir = path / "plugins"

@@ -5,26 +5,23 @@ import shutil
 import sys
 import textwrap
 from pathlib import Path
-from typing import Literal, TypedDict
-from warnings import deprecated
+from typing import Literal, NamedTuple
 
 # MCServer
-from .constants import iec_prefixes, si_prefixes
-
+from .constants import iec_prefixes, social_prefixes
+from .paths import mods_dir
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-class LoaderContext(TypedDict):
-    project_directory: Path | None
+class LoaderContext(NamedTuple):
     project_label: Literal["project", "mod", "plugin"]
+    project_directory: Path | None
 
 
 # Variables
 mod_loaders: list[str] = ["fabric"]  # , "quilt"]
 plugin_loaders: list[str] = ["paper", "purpur"]
 loader_list: list[str] = ["vanilla"] + mod_loaders + plugin_loaders
-
-loader_context: LoaderContext = {"project_directory": None, "project_label": "project"}
 
 special_plural: dict[str, str] = {"is": "are", "this": "these"}
 
@@ -44,7 +41,7 @@ ansi_codes: dict[str, str] = {
 
 stdout_istty: bool = sys.stdout.isatty()
 isatty: bool = stdout_istty and sys.stderr.isatty()
-last_status: str | None = None
+last_status: str = ""
 
 default_configs = {
     "launcher": {
@@ -72,15 +69,6 @@ default_configs = {
     },
 }
 
-# Paths
-current_dir: Path = Path.cwd()
-mcserver_dir: Path = Path(".mcserver")
-tempfiles_dir: Path = mcserver_dir / "tempfiles"
-
-mods_dir: Path = Path("mods")
-plugins_dir: Path = Path("plugins")
-
-
 # Functions
 def pluralize(singular: str, count: int = 0, plural: str = "") -> str:
     if count != 1:
@@ -100,30 +88,36 @@ def pluralize(singular: str, count: int = 0, plural: str = "") -> str:
     return singular
 
 
-def format_number(number: float, unit_type: str = "si") -> str:
-    is_negative = number < 0
-    number = abs(number)
-    unit_multiples = 0
-    prefixes = []
+def format_number(number: float, unit_type: Literal["social", "iec"] = "social") -> str:
+    """Return a formatted number with up to 2 decimal accuracy
 
-    if unit_type == "si":
-        unit_multiples = 1_000
-        prefixes = si_prefixes
+    Raises:
+        ValueError: 'unit_type' is not a valid number unit type
+
+    Returns:
+        A human-readable number with an optional magnitude prefix."""
+
+    is_negative: bool = number < 0
+    absolute_number: float = abs(number)
+
+    if unit_type == "social":
+        unit_multiples: int = 1_000
+        unit_prefixes: list[str] = social_prefixes
     elif unit_type == "iec":
-        unit_multiples = 1_024
-        prefixes = iec_prefixes
+        unit_multiples: int = 1_024
+        unit_prefixes: list[str] = iec_prefixes
     else:
         raise ValueError(f"'{unit_type}' is not a valid number unit type")
 
     iteration = 0
-    while number >= unit_multiples:
-        if iteration >= len(prefixes) - 1:
+    while absolute_number >= unit_multiples:
+        if iteration >= len(unit_prefixes) - 1:
             break
 
-        number /= unit_multiples
+        absolute_number /= unit_multiples
         iteration += 1
 
-    return f"{'-' if is_negative else ''}{round(number, 2):g}{prefixes[iteration]}"
+    return f"{'-' if is_negative else ''}{round(absolute_number, 2):g}{unit_prefixes[iteration]}"
 
 
 def merge_dict(base: dict, update: dict) -> dict:
@@ -137,7 +131,6 @@ def merge_dict(base: dict, update: dict) -> dict:
 
 
 def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
-    accepted_value: str = "y/n"
     if default_option:
         accepted_value: str = "Y/n"
     else:
@@ -150,9 +143,9 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
         return False
 
     match answer.lower():
-        case "y" | "yes":
+        case "y" | "yes" | "yep":
             return True
-        case "n" | "no":
+        case "n" | "no" | "nope":
             return False
         case "":
             return default_option
@@ -161,27 +154,21 @@ def confirmation_prompt(prompt: str, default_option: bool = False) -> bool:
 
 
 def supports_mod(loader_name: str) -> bool:
+    """Return true if loader supports mod or plugin
+
+    Returns:
+        True when loader supports mod or plugin
+    """
     return loader_name in mod_loaders or loader_name in plugin_loaders
 
 
-def get_loader_context(loader_name: str) -> tuple[str, Path | None]:
+def get_loader_context(loader_name: str) -> LoaderContext:
     if loader_name in mod_loaders:
-        return ("mod", mods_dir)
+        return LoaderContext("mod", mods_dir)
     elif loader_name in plugin_loaders:
-        return ("plugin", plugins_dir)
+        return LoaderContext("plugin", plugins_dir)
     else:  # Vanilla
-        return ("project", None)
-
-
-@deprecated("Use get_loader_context instead")
-def set_loader_context(loader_name: str) -> None:
-    global loader_context
-    logger.debug("set_loader_context was called!")
-
-    if loader_name in mod_loaders:
-        loader_context = {"project_directory": mods_dir, "project_label": "mod"}
-    elif loader_name in plugin_loaders:
-        loader_context = {"project_directory": plugins_dir, "project_label": "plugin"}
+        return LoaderContext("project", None)
 
 
 def wrap_string(
@@ -232,18 +219,6 @@ def ansi(name: str, output_to: Literal["stdout", "strderr"] = "stdout") -> str:
 
 def wrap_ansi(string: str, ansi_name: str) -> str:
     return f"{ansi(ansi_name)}{string}{ansi('reset')}"
-
-
-# def mod_environment_color(environment: str, padding: int = 0):
-#     if environment == "required":
-#         return wrap_ansi(f"{'Required': <{padding}}", "green")
-#     elif environment == "optional":
-#         return wrap_ansi(f"{'Optional': <{padding}}", "yellow")
-#     elif environment == "unsupported":
-#         return wrap_ansi(f"{'Unsupported': <{padding}}", "red")
-#     elif environment == "unknown":
-#         return wrap_ansi(f"{'Unknown': <{padding}}", "gray")
-#     return f"{environment: <{padding}}"
 
 
 def project_environment_name(project_environment: str) -> str:

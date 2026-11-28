@@ -1,7 +1,7 @@
 import logging
 from argparse import Namespace
 
-from ..paths import current_dir
+from .. import paths
 from ..server_files import whitelist
 from ..server_files.paths import whitelist_file_path
 from ..shared import pluralize
@@ -10,9 +10,10 @@ logger = logging.getLogger(__name__)
 
 
 def whitelist_list(args: Namespace) -> int:
+    paths.working_dir = args.directory
     if not whitelist_file_path.exists():
         logger.error(
-            f"Whitelist file '{whitelist_file_path.relative_to(current_dir)}' does not exist"
+            f"Whitelist file '{whitelist_file_path.relative_to(paths.current_dir)}' does not exist"
         )
         return 1
 
